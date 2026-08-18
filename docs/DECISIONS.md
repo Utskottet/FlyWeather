@@ -84,3 +84,44 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   `.spec.ts` files (both tools default to matching `*.spec.*`, which
   collided before this was added). Added `@testing-library/react` for
   rendering components in tests and `jsdom` for the DOM environment.
+
+## Block 4
+
+- **Map library: Leaflet, not MapLibre GL.** MapLibre needs a vector-tile
+  style source, which in practice means a keyed provider (MapTiler, etc.)
+  — AGENTS.md explicitly says not to make the whole product depend on a
+  credential we don't have. Leaflet works directly with free OSM raster
+  tiles, no key required, and §14 says to pick whichever "materially
+  reduces complexity" — for a marker-heavy, tile-only map this is Leaflet.
+  Used `react-leaflet` v5 for idiomatic React integration rather than
+  wrapping raw Leaflet by hand.
+- **Rose markers via `renderToStaticMarkup`, not React portals into
+  `L.divIcon`.** A portal-based marker would let a mounted marker's rose
+  re-render in place without recreating the Leaflet icon — useful once
+  the time slider (Block 5) changes wind data per tick. But nothing in
+  Block 4 needs that yet (the bottom sheet shows static fixture-free
+  data), and building it now would be exactly the kind of premature
+  abstraction the project's own ground rules warn against. Revisit this
+  when Block 5 actually needs reactive marker updates.
+- **No fake wind/weather data on the map or in the sheet.** Every rose on
+  the live map renders `windDirectionDeg: null`, `windSpeedMs: null`,
+  `state: "gray"` — not fixture numbers. AGENTS.md is explicit that
+  "Production must not contain fake fixture weather" outside tests/dev
+  harnesses; since no live or forecast provider exists until Block 5/6,
+  gray/unknown is the only honest state to show. The dev-only rose
+  gallery (`gallery.html`) is the sanctioned place for fixture data.
+- **Only sites with non-null coordinates are placed on the map**,
+  regardless of their `verified` flag — the map's technical requirement
+  is "has a coordinate," not "coordinate is verified." Currently 5 of 24
+  enabled sites qualify (hammar, ravlunda, ven-n, ven-sv, ven-v); the
+  other 19 stay off the map rather than crash or get a guessed pin, per
+  Block 4's Definition of Done.
+- **`npm run dev` and `npm run build` now both run `validate:sites`
+  first**, so `public/generated/sites.json` (gitignored, fetched at
+  runtime via `fetch("/generated/sites.json")`) is always freshly
+  regenerated from the current `SITES.md` rather than possibly stale.
+- **Map-fit-to-bounds happens once, on data load** (via `MapContainer`'s
+  `bounds`/`boundsOptions` props, set only after the async site fetch
+  resolves), not recomputed on every render — matches §16's "store map
+  position while moving the time slider" intent even though the slider
+  itself doesn't exist until Block 5.

@@ -1,10 +1,18 @@
+import { locatedEnabledSites } from "../domain/sites.ts";
+import { SiteMap } from "../components/Map/SiteMap.tsx";
+import { useSitesData } from "./useSitesData.ts";
+import "./App.css";
+
 function App() {
-  return (
-    <main>
-      <h1>PG South Weather</h1>
-      <p>Scaffold in place. Map and rose UI land in later blocks.</p>
-    </main>
-  );
+  const { data, loading, error } = useSitesData();
+
+  if (loading) return <div className="app-status">Loading sites…</div>;
+  if (error) return <div className="app-status">Failed to load site data: {error}</div>;
+  if (!data) return null;
+
+  const sites = locatedEnabledSites(data.sites);
+
+  return <SiteMap sites={sites} />;
 }
 
 export default App;

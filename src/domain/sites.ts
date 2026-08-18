@@ -119,3 +119,23 @@ export const sitesDataSchema = z
 export type Sector = z.infer<typeof sectorSchema>;
 export type Site = z.infer<typeof siteSchema>;
 export type SitesData = z.infer<typeof sitesDataSchema>;
+
+/** Shape of public/generated/sites.json as written by scripts/parse-sites.ts. */
+export interface GeneratedSitesFile {
+  generatedAt: string;
+  schemaVersion: number;
+  defaults: SitesData["defaults"];
+  sites: Site[];
+}
+
+/** A site with coordinates known to be present (narrows the nullable schema type). */
+export type LocatedSite = Site & {
+  coordinates: Site["coordinates"] & { lat: number; lon: number };
+};
+
+/** Enabled sites that have a non-null coordinate, regardless of verified status. */
+export function locatedEnabledSites(sites: Site[]): LocatedSite[] {
+  return sites.filter(
+    (s): s is LocatedSite => s.enabled && s.coordinates.lat !== null && s.coordinates.lon !== null,
+  );
+}
