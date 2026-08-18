@@ -78,3 +78,35 @@ export function describeRingSector(
     "Z",
   ].join(" ");
 }
+
+const COMPASS_16 = [
+  "N",
+  "NNE",
+  "NE",
+  "ENE",
+  "E",
+  "ESE",
+  "SE",
+  "SSE",
+  "S",
+  "SSW",
+  "SW",
+  "WSW",
+  "W",
+  "WNW",
+  "NW",
+  "NNW",
+] as const;
+
+export type Compass16 = (typeof COMPASS_16)[number];
+
+/** Nearest 16-point compass label for a degree value (§31 compass/degree conversion tests). */
+export function degreesToCompass16(deg: number): Compass16 {
+  const index = Math.round(normalizeDeg(deg) / 22.5) % 16;
+  return COMPASS_16[index];
+}
+
+/** Center degree of a 16-point compass label (inverse of degreesToCompass16). */
+export function compass16ToDegrees(label: Compass16): number {
+  return normalizeDeg(COMPASS_16.indexOf(label) * 22.5);
+}

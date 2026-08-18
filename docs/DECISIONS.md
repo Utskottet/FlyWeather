@@ -125,3 +125,45 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   resolves), not recomputed on every render — matches §16's "store map
   position while moving the time slider" intent even though the slider
   itself doesn't exist until Block 5.
+
+## Block 5
+
+- **Pulled forward a minimal slice of the flyability engine (§5)** even
+  though it isn't its own numbered block, because this is the first point
+  with real forecast direction/speed data to evaluate against site
+  sectors. Implemented exactly the direction-result, speed-result, and
+  overall-result rules §5.2-§5.4 already specify (`src/domain/
+  flyability.ts`) — not a new policy invention. In particular it
+  reproduces AGENTS.md's own worked example verbatim: a good direction
+  with unverified site speed limits reads ORANGE, never GREEN. Since
+  every current site still has `wind_speed.verified: false` (Block 2),
+  GREEN is currently unreachable in practice but the logic is written
+  generally so it activates automatically once a site gets verified
+  numbers - not hardcoded to "never green."
+- **Forecast provider: Open-Meteo**, per §12's explicit V1 preference, no
+  API key required. Requests `wind_speed_unit=ms` and `timezone=UTC`
+  directly from the API rather than converting client-side, and
+  `forecast_days=5` to guarantee the full NOW..+72h window is covered
+  regardless of what hour "now" happens to be.
+- **Each site's forecast is fetched once and windowed to [NOW..+72h]** in
+  `useSiteForecasts`; the time slider only ever indexes into this
+  already-fetched, already-windowed array (§26's "no API call for every
+  slider tick"), verified directly in
+  `tests/e2e/time-slider.spec.ts` by counting network requests before
+  and after moving the slider.
+- **No map jump on slider movement** falls out of the Block 4 design for
+  free — `MapContainer`'s `bounds` prop only applies at initial mount, so
+  re-rendering markers with new per-tick wind data never touches the
+  map's pan/zoom state. Verified in the same E2E test by comparing the
+  Leaflet map pane's CSS transform before and after moving the slider.
+- **Weather glyphs are small hand-drawn SVG shapes** (`WeatherGlyph`),
+  not emoji or an icon font/asset pack — avoids cross-platform emoji
+  rendering inconsistency and an extra asset dependency, while staying
+  visually secondary to the rose per §8 (16-28px, positioned below/beside
+  it, never inside).
+- **Compass-label and unit conversion helpers** (`degreesToCompass16` /
+  `compass16ToDegrees` in `direction.ts`, `units.ts`'s km/h-mph-knots<->m/s
+  functions) were added specifically to satisfy §31's "wind unit
+  conversion tests" and "compass/degrees conversion tests" requirements,
+  and are now used for real in the site sheet's direction readout (e.g.
+  "WSW (238°)").

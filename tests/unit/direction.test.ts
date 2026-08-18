@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  compass16ToDegrees,
+  degreesToCompass16,
   describeRingSector,
   isAngleInSector,
   normalizeDeg,
@@ -116,5 +118,31 @@ describe("describeRingSector", () => {
   it("uses the large-arc flag for a sweep greater than 180deg", () => {
     const d = describeRingSector(50, 50, 20, 40, 0, 270);
     expect(d).toContain("A 40 40 0 1 1");
+  });
+});
+
+describe("degreesToCompass16 / compass16ToDegrees (§31)", () => {
+  it("maps cardinal and intercardinal points correctly", () => {
+    expect(degreesToCompass16(0)).toBe("N");
+    expect(degreesToCompass16(90)).toBe("E");
+    expect(degreesToCompass16(180)).toBe("S");
+    expect(degreesToCompass16(270)).toBe("W");
+    expect(degreesToCompass16(225)).toBe("SW");
+  });
+
+  it("rounds to the nearest point near a boundary", () => {
+    expect(degreesToCompass16(10)).toBe("N");
+    expect(degreesToCompass16(12)).toBe("NNE");
+  });
+
+  it("wraps 360 back to N", () => {
+    expect(degreesToCompass16(360)).toBe("N");
+    expect(degreesToCompass16(359)).toBe("N");
+  });
+
+  it("round-trips label -> degrees -> label", () => {
+    for (const label of ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const) {
+      expect(degreesToCompass16(compass16ToDegrees(label))).toBe(label);
+    }
   });
 });
