@@ -60,41 +60,70 @@ Explicitly not in this block: map, rose, any UI.
 fetch-heavy research task, not a coding task — keeping it separate avoids
 mixing a large WebFetch/research budget with UI coding budget.
 
-Sources (per `MASTER_SPEC.md` §21, §41):
+Pre-split by region into three sub-blocks (~24 enabled sites + the index +
+m.cps.to is too many fetches for one confident session). Each sub-block ends
+with its own commit and audit rows — do not combine sub-blocks even if
+budget looks fine partway through.
+
+Sources for all sub-blocks (per `MASTER_SPEC.md` §21, §41):
 - `https://www.cps.to/flygstallen/` — canonical index, confirms which sites
-  are real flying-site pages vs. articles.
+  are real flying-site pages vs. articles. Fetch once, in Block 2a, and
+  reuse the result (record it in `docs/SITE_DATA_AUDIT.md`) rather than
+  re-fetching in 2b/2c.
 - Each individual CPS site page for coordinates, stated direction, ridge
   height, description, restrictions.
 - `https://m.cps.to/` — cross-check against existing Holfuy roses/sectors
   where a site has one, and confirm Holfuy station IDs already recorded in
-  `SITES.md`/`MASTER_SPEC.md` §11 are still current.
+  `SITES.md`/`MASTER_SPEC.md` §11 are still current. Fetch once, in 2a.
 
-Deliverables:
-- Update `SITES.md`: fill in `coordinates.lat/lon` for currently-null sites,
-  set `coordinates.verified: true` only when taken directly from a CPS page
-  or other reliable source (record which in the audit, not just in a commit
-  message).
+Shared rules for all three sub-blocks:
+- Fill in `coordinates.lat/lon` for currently-null sites; set
+  `coordinates.verified: true` only when taken directly from a CPS page or
+  other reliable source (record which source in the audit, not just in a
+  commit message).
 - Do **not** flip `rose.verified` or `wind_speed.verified` to true from CPS
   prose alone — §24 is explicit that compass-label sectors stay provisional
   until independently checked. Leave the wrap-around/orange bands as-is
   unless a page gives an exact degree.
-- Create `docs/SITE_DATA_AUDIT.md` with the table specified in §21
-  (coordinates verified? / sector verified? / speed limits verified? / live
-  source verified? / soaring height verified? / unresolved notes) for every
-  enabled site.
 - Note any CPS entries that don't match `SITES.md` (new sites, renamed
   sites, removed sites) as findings, not silent edits — adding/removing a
   site from the map is a `SITES.md`-owner decision (§4), not something to
   do automatically.
+- If a CPS page is unreachable or a site's page can't be found, mark it
+  unresolved in the audit and move on — do not guess coordinates.
 
-Definition of done:
-- Every enabled site has a coordinate (verified or explicitly still
-  unresolved with a reason in the audit).
-- `npm run validate:sites` still passes.
-- `docs/SITE_DATA_AUDIT.md` covers all enabled sites.
+### Block 2a — index + m.cps.to + SE South/East region
 
-If CPS pages are unreachable or a site's page can't be found, mark it
-unresolved in the audit and move on — do not guess coordinates.
+Sites: `hammar`, `kaseberga-s`, `rokerierna`, `ales-stenar-sv`, `ravlunda`,
+`vik`, `vitemolla` (7 sites).
+
+Deliverables: fetch the index and m.cps.to once (per above), fetch each
+listed site page, update `SITES.md`, create `docs/SITE_DATA_AUDIT.md` with
+rows for this region plus a note of what the index/m.cps.to fetch found
+(so 2b/2c don't need to re-fetch them).
+
+Definition of done: all 7 sites have a coordinate or a documented
+unresolved reason; `npm run validate:sites` passes; audit rows exist for
+all 7.
+
+### Block 2b — Öresund/West + Bjäre regions
+
+Sites: `lernacken`, `brofastet`, `barseback`, `alabodarna`, `larod`,
+`hoganas`, `molle`, `hovs-hallar-n`, `hovs-hallar-nv` (9 sites).
+
+Deliverables/DoD: same shape as 2a, appended to the existing
+`docs/SITE_DATA_AUDIT.md`. Do not re-fetch the index or m.cps.to; reuse
+2a's findings.
+
+### Block 2c — Ven + Denmark regions
+
+Sites: `ven-n`, `ven-so`, `ven-sv`, `ven-v`, `dk-gilbjerg-hoved`,
+`dk-strandbjerggard`, `dk-lokken`, `dk-dokkedal` (8 sites).
+
+Deliverables/DoD: same shape as 2a, appended to the existing
+`docs/SITE_DATA_AUDIT.md`. This sub-block completes Block 2 as a whole —
+confirm all 24 enabled sites have audit rows before marking Block 2 done
+in `PROGRESS.md`.
 
 ---
 

@@ -30,6 +30,25 @@ boundaries** — that rule still governs behavior *within* a block.
   immediately, commit whatever is coherent, and report the blocker instead
   of skipping ahead to a later block.
 
+### End-of-block report
+
+Every time a block (or sub-block, e.g. `2a`) finishes — whether done or
+blocked — post this report as the final chat message of the session, and
+append the same content as a new entry under `PROGRESS.md`'s `## Log`:
+
+```
+## Block <N> complete: <name>
+- Status: done | blocked
+- Definition of Done: [x] item  [x] item  [ ] item (unmet — see notes)
+- Commit: <short hash> "<subject line>"
+- Files changed: <N files, +X/-Y>
+- Deferred / unresolved: <notes, or "none">
+- Next: Block <N+1> <name>
+```
+
+This is the single place the human checks to know a block finished — do
+not rely on the user reading `PROGRESS.md`'s status column alone.
+
 ## Work mode
 
 Continue autonomously until a real blocker is reached.
