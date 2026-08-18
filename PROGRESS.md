@@ -8,7 +8,7 @@ the block's work.
 |-------|-----------------------------------------------|-------------|-------|
 | 1     | Repo scaffold + SITES.md schema/parser        | done        | commit e337274; CI green |
 | 2a    | CPS data: index + m.cps.to + SE South/East    | done        | commit 31e65fb; CI green |
-| 2b    | CPS data: Öresund/West + Bjäre                | not_started |       |
+| 2b    | CPS data: Öresund/West + Bjäre                | done        | commit 70b5355; CI green |
 | 2c    | CPS data: Ven + Denmark                       | not_started |       |
 | 3     | Wind rose SVG component                       | not_started |       |
 | 4     | Map integration                               | not_started |       |
@@ -54,3 +54,18 @@ Status values: `not_started`, `in_progress`, `blocked`, `done`.
   could not be re-verified against m.cps.to (JS-rendered widgets, plain
   fetch only sees the static station-name list).
 - Next: Block 2b — Öresund/West + Bjäre region sites
+
+## Block 2b complete: CPS data, Öresund/West + Bjäre
+- Status: done
+- Definition of Done: [x] all 9 sites have coordinate or documented
+  unresolved reason  [x] npm run validate:sites passes  [x]
+  docs/SITE_DATA_AUDIT.md covers all 9  [x] CI green
+- Commit: 70b5355 "Block 2b: CPS site data check - Oresund/West + Bjare"
+- Files changed: 2 files, +43/-1 (SITES.md, docs/SITE_DATA_AUDIT.md)
+- Deferred / unresolved: none of these 9 sites have coordinates on CPS
+  pages — all still unresolved, same as 2a's 5. Added 4 new
+  restrictions/notes sourced directly from CPS text (Lernacken nature
+  reserve hazards, Barsebäck's 8 m/s minimum, Ålabodarna seasonal field
+  access, Mölle nature-reserve/drowning risk, Hovs Hallar NV local
+  rules).
+- Next: Block 2c — Ven + Denmark region sites
