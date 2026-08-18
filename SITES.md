@@ -595,9 +595,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
-      verified: false
+      lat: 55.927778
+      lon: 12.690278
+      verified: true
+      source: CPS
     source_direction_label: N
     ridge_height_m: 15
     rose:
@@ -613,7 +614,7 @@ sites:
       agl_m: 100
       verified: false
     live_sources: []
-    description: "North side of Ven. CPS page has a malformed wind field; north orientation comes from the page title and must be verified."
+    description: "North side of Ven. CPS page's wind field is still blank/malformed (just \"Vind: 15m\" with no direction), but the page text confirms this is Ven's north shore, corroborating the N label; exact sector boundaries remain unverified."
     cps_url: "https://www.cps.to/flygstallen/n-ven/"
 
   - id: ven-so
@@ -651,9 +652,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
-      verified: false
+      lat: 55.902778
+      lon: 12.694444
+      verified: true
+      source: CPS
     source_direction_label: SV (235°)
     ridge_height_m: 35
     rose:
@@ -679,9 +681,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
-      verified: false
+      lat: 55.916667
+      lon: 12.670833
+      verified: true
+      source: CPS
     source_direction_label: V
     ridge_height_m: 15
     rose:
@@ -786,6 +789,11 @@ sites:
       verified: false
     live_sources: []
     description: "Long Danish west-coast ridge system; CPS gives W–NW and roughly 15–25 m ridge height."
+    restrictions:
+      - type: local_rule
+        severity: warning
+        message: "CPS: avoid top-landing due to rotor at the ridge crest; be careful not to drift backward over Rubjerg Knude (a 90 m cliff at the site's edge)."
+        status_provider: null
     cps_url: "https://www.cps.to/flygstallen/danmark-lokken-vnv/"
 
   - id: dk-dokkedal
@@ -814,6 +822,11 @@ sites:
       verified: false
     live_sources: []
     description: "48 m east-facing Danish site; CPS notes it can be thermic."
+    restrictions:
+      - type: seasonal_closure
+        severity: warning
+        message: "CPS: flying is not permitted on the small practice slope (skolbacken) roughly May through September. The area to the right of the road is fenced off due to livestock."
+        status_provider: null
     cps_url: "https://www.cps.to/flygstallen/danmark-dokkedal-o/"
 
   # -----------------------
