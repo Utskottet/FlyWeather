@@ -3,6 +3,10 @@ dist
 dist-ssr
 *.local
 *.tsbuildinfo
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # generated data is rebuilt by scripts/parse-sites.ts and CI
 public/generated/

@@ -38,3 +38,49 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   `maybe_min_ms`, `maybe_max_ms`** to be present (§31: "verified speed
   config missing required values -> build fails"). `hard_max_gust_ms`
   stays optional — not every site has a documented hard gust limit.
+
+## Block 3
+
+- **Rose geometry**: a fixed 100x100 SVG `viewBox` with `width`/`height`
+  set from the `size` prop. This means the internal path/coordinate math
+  is completely size-independent — a 48px marker and a 160px expanded
+  rose use byte-identical `d`/coordinate values, only the outer pixel
+  dimensions differ. This directly satisfies §2.4's "map marker and
+  expanded rose must use the same underlying component/geometry logic"
+  and is asserted directly in `tests/unit/WindRose.test.tsx`.
+- **Sector rendering**: sectors are drawn as a donut/ring band (inner and
+  outer radius) rather than pie slices to the center, so the center stays
+  free for the speed number per §2.1.3. An "unfavorable direction" base
+  ring is drawn first in a neutral red-family tint, then orange sectors,
+  then green sectors on top — so any direction not explicitly configured
+  green/orange visually reads as the same family as the red overall-state
+  color, without a separate "explicit red sector" concept.
+- **Overall state (§2.1.5)** is expressed only via the outer ring stroke
+  color and a light center-fill tint — it never repaints the sector ring
+  itself, so green/orange sector geometry stays visible under every
+  state (tested explicitly for all four states).
+- **WindRose scope**: the component owns only the visual gauge (sectors,
+  arrow, speed, history dots, state ring) — not source/age/status-reason
+  text, which §2.4's expanded view also asks for. Those belong to a
+  future `SiteSheet` component (Block 4/6+) that wraps `WindRose` rather
+  than being folded into it, keeping the rose itself a pure, reusable
+  gauge.
+- **Visual verification**: added a minimal Playwright setup
+  (`playwright.config.ts`, `tests/e2e/rose-gallery.spec.ts`) plus a
+  dev-only fixture harness (`gallery.html` / `src/dev/RoseGallery.tsx`,
+  a second Vite build entry point) rendering the seven named cases
+  MASTER_SPEC.md §29 asks for Playwright screenshots of. This satisfies
+  Block 3's "component reviewed visually" requirement now and gets a
+  head start on §29's formal acceptance tests. **Not yet wired into CI**
+  — Playwright's browser install is a real per-run cost, and §30's
+  mandatory E2E tests need the map and time slider, which don't exist
+  until Block 4/5. Deferring CI integration until there's a fuller page
+  to test keeps this block's CI change minimal; screenshots for now are
+  a local/manual check (`npx playwright test`, then read the PNGs under
+  `test-results/rose-gallery/`, gitignored).
+- **Test environment**: `vitest`'s environment is now `jsdom` globally
+  (needed for the new component tests) and its `include` is scoped to
+  `tests/unit/**` so it never picks up Playwright's `tests/e2e/**`
+  `.spec.ts` files (both tools default to matching `*.spec.*`, which
+  collided before this was added). Added `@testing-library/react` for
+  rendering components in tests and `jsdom` for the DOM environment.
