@@ -10,7 +10,7 @@ the block's work.
 | 2a    | CPS data: index + m.cps.to + SE South/East    | done        | commit 31e65fb; CI green |
 | 2b    | CPS data: Öresund/West + Bjäre                | done        | commit 70b5355; CI green |
 | 2c    | CPS data: Ven + Denmark                       | done        | commit 533dc43; CI green; Block 2 complete |
-| 3     | Wind rose SVG component                       | not_started |       |
+| 3     | Wind rose SVG component                       | done        | commit eb457f4; CI green |
 | 4     | Map integration                               | not_started |       |
 | 5     | Forecast provider + time slider               | not_started |       |
 | 6     | Live wind adapters                            | not_started |       |
@@ -87,3 +87,20 @@ Status values: `not_started`, `in_progress`, `blocked`, `done`.
   Block 4's map can place them. Holfuy station IDs still unverified
   against m.cps.to (JS-rendered, out of reach of plain fetch).
 - Next: Block 3 — Wind rose SVG component
+
+## Block 3 complete: wind rose SVG component
+- Status: done
+- Definition of Done: [x] all §29 unit tests pass (32 tests: 17
+  geometry + 15 component)  [x] rose renders correctly at 48px, 64px,
+  and expanded (160px) sizes  [x] component reviewed visually via
+  Playwright screenshots for SW/S/E/N-wraparound/red/orange/gray cases
+  [x] CI green
+- Commit: eb457f4 "Block 3: wind rose SVG component"
+- Files changed: 16 files, +1826/-3
+- Deferred / unresolved: Playwright installed and used locally but not
+  wired into CI yet (deferred until Block 4/5 gives it a fuller page —
+  map + time slider — to test meaningfully; see docs/DECISIONS.md).
+  WindRose deliberately doesn't own source/age/status-reason text (§2.4
+  expanded-view fields) — that's future SiteSheet territory wrapping
+  this component, not folded into it.
+- Next: Block 4 — Map integration
