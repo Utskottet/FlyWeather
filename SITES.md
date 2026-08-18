@@ -306,6 +306,11 @@ sites:
       verified: false
     live_sources: []
     description: "South-facing Malmö/Lernacken ridge with orientation-dependent low-ridge behavior."
+    restrictions:
+      - type: nature_reserve
+        severity: warning
+        message: "Site sits within a nature reserve; CPS warns of hidden hazards in the reed beds below the ridge (old scrap/debris), electric fencing in lower landing areas, and advises avoiding the eastern Stenören section and bird nesting areas."
+        status_provider: null
     cps_url: "https://www.cps.to/flygstallen/s-lernacken/"
 
   - id: brofastet
@@ -357,6 +362,7 @@ sites:
         - { from_deg: 337.5, to_deg: 348.75 }
     wind_speed:
       verified: false
+      notes: "CPS: \"no point coming here unless it blows at least 8 m/s\" - strong-wind site requiring fast gliders and very good launch technique; treat as a hard practical minimum, not a full verified speed band."
     soaring_height:
       agl_m: 100
       verified: false
@@ -399,6 +405,11 @@ sites:
         priority: 1
         verified: true
     description: "15 m west-to-southwest-facing coastal ridge near Glumslöv."
+    restrictions:
+      - type: local_rule
+        severity: warning
+        message: "CPS: do not use the adjacent field for launch/landing during the agricultural growing season; use the beach/cliff edge instead."
+        status_provider: null
     cps_url: "https://www.cps.to/flygstallen/v-sv-alabodarna/"
 
   - id: larod
@@ -492,6 +503,11 @@ sites:
         priority: 1
         verified: true
     description: "Advanced Kullaberg/Mölle ridge; CPS gives SSW–WSW orientation and about 80 m site height."
+    restrictions:
+      - type: nature_reserve
+        severity: warning
+        message: "Landing area is on private land within a nature reserve; respect posted signs and reserve personnel instructions. CPS warns of strong currents near the landing beach with a history of drowning incidents - pilots typically fly out over water to lose altitude before final approach."
+        status_provider: null
     cps_url: "https://www.cps.to/flygstallen/172-2/"
 
   # -----------------------
@@ -561,6 +577,11 @@ sites:
         priority: 1
         verified: true
     description: "NW–NNW Hovs Hallar coastal ridge; CPS lists intermediate/advanced use."
+    restrictions:
+      - type: local_rule
+        severity: warning
+        message: "CPS: bring pruning shears (pilots have gotten entangled in bushes); do not launch to the right of the inn; do not land on the field above launch (risk of dislodging stones from the boundary wall) - land on the beach instead."
+        status_provider: null
     cps_url: "https://www.cps.to/flygstallen/nv-hovshallar/"
 
   # -----------------------
