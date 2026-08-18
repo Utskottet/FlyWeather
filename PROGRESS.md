@@ -11,7 +11,7 @@ the block's work.
 | 2b    | CPS data: Öresund/West + Bjäre                | done        | commit 70b5355; CI green |
 | 2c    | CPS data: Ven + Denmark                       | done        | commit 533dc43; CI green; Block 2 complete |
 | 3     | Wind rose SVG component                       | done        | commit eb457f4; CI green |
-| 4     | Map integration                               | not_started |       |
+| 4     | Map integration                               | done        | commit e0be471; CI green |
 | 5     | Forecast provider + time slider               | not_started |       |
 | 6     | Live wind adapters                            | not_started |       |
 | 7     | Height mode                                   | not_started |       |
@@ -104,3 +104,21 @@ Status values: `not_started`, `in_progress`, `blocked`, `done`.
   expanded-view fields) — that's future SiteSheet territory wrapping
   this component, not folded into it.
 - Next: Block 4 — Map integration
+
+## Block 4 complete: map integration
+- Status: done
+- Definition of Done: [x] build + local preview shows all located
+  enabled sites correctly bounded  [x] sites without coordinates are
+  absent, not crashing  [x] mobile widths 360/390/430px checked  [x] CI
+  green
+- Commit: e0be471 "Block 4: map integration"
+- Files changed: 15 files, +496/-8
+- Deferred / unresolved: only 5 of 24 enabled sites currently have
+  coordinates (hammar, ravlunda, ven-n, ven-sv, ven-v) — real limitation
+  carried over from Block 2, not something to fix in this block. Rose
+  markers use `renderToStaticMarkup` (not React portals into divIcon);
+  revisit if/when Block 5's time slider needs markers to update
+  reactively without recreating the Leaflet icon. No fake wind data
+  anywhere on the live map — every marker is honestly gray/unknown until
+  Block 5/6 wire up real data.
+- Next: Block 5 — Forecast provider + time slider
