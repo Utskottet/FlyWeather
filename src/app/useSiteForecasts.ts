@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { findNowIndex } from "../domain/timeAxis.ts";
 import { openMeteoForecastProvider } from "../providers/forecast/openMeteoProvider.ts";
+import { MODEL_HEIGHTS_M } from "../domain/types.ts";
 import type { LocatedSite } from "../domain/sites.ts";
 import type { SiteForecast } from "../domain/types.ts";
 
@@ -56,11 +57,17 @@ export function useSiteForecasts(sites: LocatedSite[]): SiteForecastsState {
         for (const f of forecasts) {
           const nowIdx = findNowIndex(f.hours, now);
           const end = nowIdx + SLIDER_STEPS + 1;
+          const heights = {} as SiteForecast["heights"];
+          for (const h of MODEL_HEIGHTS_M) {
+            heights[h] = {
+              windDirectionDeg: f.heights[h].windDirectionDeg.slice(nowIdx, end),
+              windSpeedMs: f.heights[h].windSpeedMs.slice(nowIdx, end),
+            };
+          }
           const windowed: SiteForecast = {
             ...f,
             hours: f.hours.slice(nowIdx, end),
-            windDirectionDeg: f.windDirectionDeg.slice(nowIdx, end),
-            windSpeedMs: f.windSpeedMs.slice(nowIdx, end),
+            heights,
             windGustMs: f.windGustMs.slice(nowIdx, end),
             weatherKind: f.weatherKind.slice(nowIdx, end),
           };

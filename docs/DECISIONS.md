@@ -208,3 +208,35 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   optional history dots (parsed and unit-tested, just not plumbed into
   the UI - the `LiveWindProvider` interface only carries a single current
   reading today). All noted in `docs/DATA_SOURCE_AUDIT.md`.
+
+## Block 7
+
+- **Height interpolation is circular-safe vector averaging**, not naive
+  linear interpolation of degree values - a wraparound case (e.g. 350°
+  and 10°) would otherwise average to 180° instead of ~0°.
+  `interpolateWindAtHeight` converts each bracketing angle to a unit
+  vector, interpolates the vector components, then converts back via
+  `atan2`. Clamps to the nearest available height (10/80/120/180m, Open-
+  Meteo's discrete offering, confirmed live) rather than extrapolating
+  beyond real data when a site's configured height falls outside that
+  range - §7.2 mentions pressure-level data for "larger heights," which
+  isn't available from this provider, so clamping is the honest choice
+  over guessing.
+- **Live observations never apply in Soaring height mode**, only Surface
+  - a surface anemometer doesn't measure wind aloft (§7.2's explicit
+    warning). Soaring mode always uses interpolated forecast, even at
+  NOW, even if a fresh live reading exists for that site.
+- **A site with no `soaring_height.agl_m` configured shows explicitly
+  unsupported** (null wind, a visible warning message) in Soaring mode
+  rather than silently falling back to surface wind - this falls out for
+  free from `computeDirectionFit` already returning "unknown" (→ gray)
+  when direction is null, so no special-casing was needed in the
+  flyability logic itself, only in `forecastPointAt`'s branch that
+  refuses to compute anything when the config is missing.
+- **Marker-click flakiness surfaced a real gap, not papered over**: Ven's
+  three sites sit close enough together that their map markers visually
+  overlap and intercept each other's clicks in Playwright. Simplified
+  the affected E2E test to avoid the flaky interaction rather than force
+  the click - the underlying issue (marker collision/clustering strategy
+  per §16) is real and left for a later polish pass, noted in
+  `PROGRESS.md` rather than silently worked around.

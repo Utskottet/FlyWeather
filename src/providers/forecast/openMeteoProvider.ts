@@ -10,6 +10,12 @@ export interface OpenMeteoHourly {
   time: string[];
   wind_speed_10m: (number | null)[];
   wind_direction_10m: (number | null)[];
+  wind_speed_80m: (number | null)[];
+  wind_direction_80m: (number | null)[];
+  wind_speed_120m: (number | null)[];
+  wind_direction_120m: (number | null)[];
+  wind_speed_180m: (number | null)[];
+  wind_direction_180m: (number | null)[];
   wind_gusts_10m: (number | null)[];
   weather_code: (number | null)[];
 }
@@ -18,11 +24,24 @@ export interface OpenMeteoResponse {
   hourly: OpenMeteoHourly;
 }
 
+const HOURLY_VARS = [
+  "wind_speed_10m",
+  "wind_direction_10m",
+  "wind_speed_80m",
+  "wind_direction_80m",
+  "wind_speed_120m",
+  "wind_direction_120m",
+  "wind_speed_180m",
+  "wind_direction_180m",
+  "wind_gusts_10m",
+  "weather_code",
+];
+
 export function buildOpenMeteoUrl(lat: number, lon: number): string {
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
-    hourly: "wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code",
+    hourly: HOURLY_VARS.join(","),
     wind_speed_unit: "ms",
     timezone: "UTC",
     forecast_days: String(FORECAST_DAYS),
@@ -33,12 +52,17 @@ export function buildOpenMeteoUrl(lat: number, lon: number): string {
 /** Normalizes a raw Open-Meteo response into our internal SiteForecast shape. Pure - no network. */
 export function normalizeOpenMeteoResponse(siteId: string, raw: OpenMeteoResponse): SiteForecast {
   const { hourly } = raw;
+  const heights: SiteForecast["heights"] = {
+    10: { windDirectionDeg: hourly.wind_direction_10m, windSpeedMs: hourly.wind_speed_10m },
+    80: { windDirectionDeg: hourly.wind_direction_80m, windSpeedMs: hourly.wind_speed_80m },
+    120: { windDirectionDeg: hourly.wind_direction_120m, windSpeedMs: hourly.wind_speed_120m },
+    180: { windDirectionDeg: hourly.wind_direction_180m, windSpeedMs: hourly.wind_speed_180m },
+  };
   return {
     siteId,
     sourceId: "open-meteo",
     hours: hourly.time,
-    windDirectionDeg: hourly.wind_direction_10m,
-    windSpeedMs: hourly.wind_speed_10m,
+    heights,
     windGustMs: hourly.wind_gusts_10m,
     weatherKind: hourly.weather_code.map(openMeteoCodeToWeatherKind),
   };

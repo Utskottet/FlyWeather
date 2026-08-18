@@ -3,6 +3,7 @@ import { evaluateFlyability } from "../../domain/flyability.ts";
 import { degreesToCompass16 } from "../../domain/direction.ts";
 import { WindRose } from "../WindRose/index.ts";
 import { WeatherGlyph } from "../WeatherGlyph/index.ts";
+import type { HeightMode } from "../HeightModeToggle/HeightModeToggle.tsx";
 import type { WeatherKind } from "../../domain/weather.ts";
 import type { Freshness } from "../../domain/freshness.ts";
 
@@ -20,6 +21,10 @@ export interface SiteSheetSample {
 export interface SiteSheetProps {
   site: LocatedSite;
   sample: SiteSheetSample;
+  heightMode: HeightMode;
+  /** Height (m AGL) the shown sample actually reflects - null when unsupported. */
+  effectiveHeightM: number | null;
+  heightSupported: boolean;
   /** ISO-8601 UTC timestamp of the currently-selected slider time. */
   selectedTimestamp: string | null;
   onClose: () => void;
@@ -41,7 +46,15 @@ function sourceLabel(sample: SiteSheetSample): string {
   return "Open-Meteo forecast (10 m surface wind)";
 }
 
-export function SiteSheet({ site, sample, selectedTimestamp, onClose }: SiteSheetProps) {
+export function SiteSheet({
+  site,
+  sample,
+  heightMode,
+  effectiveHeightM,
+  heightSupported,
+  selectedTimestamp,
+  onClose,
+}: SiteSheetProps) {
   const greenSectors = site.rose.green.map((s) => ({ fromDeg: s.from_deg, toDeg: s.to_deg }));
   const orangeSectors = site.rose.orange.map((s) => ({ fromDeg: s.from_deg, toDeg: s.to_deg }));
   const { state, reasons } = evaluateFlyability(
@@ -85,6 +98,12 @@ export function SiteSheet({ site, sample, selectedTimestamp, onClose }: SiteShee
       <p className="site-sheet-source-badge" data-testid="site-sheet-source">
         {sample.sourceKind === "observation" ? "LIVE" : "FORECAST"} — {sourceLabel(sample)}
       </p>
+      {!heightSupported && (
+        <p className="site-sheet-height-warning" data-testid="site-sheet-height-warning">
+          Soaring height not configured for this site - wind aloft is unsupported here, not silently shown as
+          surface wind.
+        </p>
+      )}
       <ul className="site-sheet-reasons">
         {reasons.map((r, i) => (
           <li key={i}>{r}</li>
@@ -101,6 +120,11 @@ export function SiteSheet({ site, sample, selectedTimestamp, onClose }: SiteShee
         <dd>
           {sample.windSpeedMs !== null ? `${sample.windSpeedMs.toFixed(1)} m/s` : "no data"}
           {sample.windGustMs !== null ? ` / ${sample.windGustMs.toFixed(1)} m/s` : ""}
+        </dd>
+        <dt>Height</dt>
+        <dd data-testid="site-sheet-height">
+          {heightMode === "surface" ? "Surface" : "Soaring height"}
+          {effectiveHeightM !== null ? ` — ${effectiveHeightM.toFixed(0)} m AGL` : " — unsupported"}
         </dd>
       </dl>
       <p>{site.description}</p>

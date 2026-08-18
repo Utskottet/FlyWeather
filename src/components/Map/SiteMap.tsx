@@ -6,11 +6,14 @@ import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LocatedSite } from "../../domain/sites.ts";
 import type { SiteForecast, WindSample } from "../../domain/types.ts";
+import { MODEL_HEIGHTS_M } from "../../domain/types.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { selectEffectiveSample, type EffectiveSample } from "../../domain/effectiveSample.ts";
+import { interpolateWindAtHeight } from "../../domain/heightInterpolation.ts";
 import { WindRose } from "../WindRose/index.ts";
 import { WeatherGlyph } from "../WeatherGlyph/index.ts";
 import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
+import { HeightModeToggle, type HeightMode } from "../HeightModeToggle/HeightModeToggle.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { computeSiteBounds } from "./mapBounds.ts";
 import { useSiteForecasts } from "../../app/useSiteForecasts.ts";
@@ -18,16 +21,78 @@ import { useLiveData } from "../../app/useLiveData.ts";
 
 const MARKER_SIZE = 48;
 const SELECTED_MARKER_SIZE = 60;
+const SURFACE_HEIGHT_M = 10;
 
-function forecastPointAt(forecast: SiteForecast | undefined, index: number) {
+interface ForecastPoint {
+  windDirectionDeg: number | null;
+  windSpeedMs: number | null;
+  windGustMs: number | null;
+  weatherKind: SiteForecast["weatherKind"][number];
+  effectiveHeightM: number | null;
+  heightSupported: boolean;
+}
+
+/**
+ * Surface mode always reads the 10m series. Soaring mode interpolates
+ * across the discrete model heights to the site's configured
+ * soaring_height.agl_m (§7.2); a site with no configured height shows
+ * unsupported (null data), never silently falling back to surface (§7.2,
+ * Block 7 DoD).
+ */
+function forecastPointAt(
+  forecast: SiteForecast | undefined,
+  index: number,
+  mode: HeightMode,
+  soaringHeightAglM: number | null,
+): ForecastPoint {
+  const weatherKind = forecast?.weatherKind[index] ?? "unknown";
+
   if (!forecast || index < 0 || index >= forecast.hours.length) {
-    return { windDirectionDeg: null, windSpeedMs: null, windGustMs: null, weatherKind: "unknown" as const };
+    return {
+      windDirectionDeg: null,
+      windSpeedMs: null,
+      windGustMs: null,
+      weatherKind,
+      effectiveHeightM: null,
+      heightSupported: mode === "surface",
+    };
   }
+
+  if (mode === "surface") {
+    return {
+      windDirectionDeg: forecast.heights[SURFACE_HEIGHT_M].windDirectionDeg[index] ?? null,
+      windSpeedMs: forecast.heights[SURFACE_HEIGHT_M].windSpeedMs[index] ?? null,
+      windGustMs: forecast.windGustMs[index] ?? null,
+      weatherKind,
+      effectiveHeightM: SURFACE_HEIGHT_M,
+      heightSupported: true,
+    };
+  }
+
+  if (soaringHeightAglM === null) {
+    return {
+      windDirectionDeg: null,
+      windSpeedMs: null,
+      windGustMs: null,
+      weatherKind,
+      effectiveHeightM: null,
+      heightSupported: false,
+    };
+  }
+
+  const samples = MODEL_HEIGHTS_M.map((h) => ({
+    heightM: h,
+    windDirectionDeg: forecast.heights[h].windDirectionDeg[index] ?? null,
+    windSpeedMs: forecast.heights[h].windSpeedMs[index] ?? null,
+  }));
+  const interpolated = interpolateWindAtHeight(soaringHeightAglM, samples);
   return {
-    windDirectionDeg: forecast.windDirectionDeg[index] ?? null,
-    windSpeedMs: forecast.windSpeedMs[index] ?? null,
-    windGustMs: forecast.windGustMs[index] ?? null,
-    weatherKind: forecast.weatherKind[index] ?? "unknown",
+    windDirectionDeg: interpolated.windDirectionDeg,
+    windSpeedMs: interpolated.windSpeedMs,
+    windGustMs: null, // gust isn't modeled at height, only at surface
+    weatherKind,
+    effectiveHeightM: interpolated.effectiveHeightM,
+    heightSupported: true,
   };
 }
 
@@ -35,7 +100,7 @@ function buildRoseIcon(
   site: LocatedSite,
   selected: boolean,
   sample: EffectiveSample,
-  weatherKind: SiteForecast["weatherKind"][number] | "unknown",
+  weatherKind: SiteForecast["weatherKind"][number],
 ): L.DivIcon {
   const size = selected ? SELECTED_MARKER_SIZE : MARKER_SIZE;
   const greenSectors = site.rose.green.map((s) => ({ fromDeg: s.from_deg, toDeg: s.to_deg }));
@@ -60,7 +125,7 @@ function buildRoseIcon(
         state={state}
       />
       <div style={{ marginTop: -6 }}>
-        <WeatherGlyph kind={weatherKind === "unknown" ? "unknown" : weatherKind} size={16} />
+        <WeatherGlyph kind={weatherKind} size={16} />
       </div>
     </div>,
   );
@@ -81,6 +146,7 @@ export interface SiteMapProps {
 export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sliderIndex, setSliderIndex] = useState(0);
+  const [heightMode, setHeightMode] = useState<HeightMode>("surface");
   const bounds = useMemo(() => computeSiteBounds(sites), [sites]);
   const selectedSite = sites.find((s) => s.id === selectedId) ?? null;
   const { forecastsBySiteId, hours } = useSiteForecasts(sites);
@@ -96,18 +162,25 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
     [bounds.maxLat, bounds.maxLon],
   ];
 
-  function effectiveSampleFor(siteId: string) {
-    const point = forecastPointAt(forecastsBySiteId[siteId], sliderIndex);
-    const liveEntry = liveData?.sites[siteId];
-    const liveSample: WindSample | null = liveEntry?.status === "ok" ? liveEntry.sample : null;
+  function effectiveSampleFor(site: LocatedSite) {
+    const point = forecastPointAt(forecastsBySiteId[site.id], sliderIndex, heightMode, site.soaring_height.agl_m);
+    const liveEntry = liveData?.sites[site.id];
+    // A surface anemometer never stands in for wind aloft (§7.2) - live
+    // observations only apply in Surface mode.
+    const liveSample: WindSample | null =
+      heightMode === "surface" && liveEntry?.status === "ok" ? liveEntry.sample : null;
     const sample = selectEffectiveSample(isNow, liveSample, point, new Date(), freshMinutes, staleMinutes);
-    return { sample, weatherKind: point.weatherKind };
+    const effectiveHeightM = sample.sourceKind === "observation" ? SURFACE_HEIGHT_M : point.effectiveHeightM;
+    return { sample, weatherKind: point.weatherKind, effectiveHeightM, heightSupported: point.heightSupported };
   }
 
-  const selectedResult = selectedSite ? effectiveSampleFor(selectedSite.id) : null;
+  const selectedResult = selectedSite ? effectiveSampleFor(selectedSite) : null;
 
   return (
     <div className="site-map-container" data-testid="site-map">
+      <div className="top-controls">
+        <HeightModeToggle mode={heightMode} onChange={setHeightMode} />
+      </div>
       <MapContainer
         bounds={leafletBounds}
         boundsOptions={{ padding: [40, 40], maxZoom: 12 }}
@@ -118,7 +191,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {sites.map((site) => {
-          const { sample, weatherKind } = effectiveSampleFor(site.id);
+          const { sample, weatherKind } = effectiveSampleFor(site);
           return (
             <Marker
               key={site.id}
@@ -134,6 +207,9 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         <SiteSheet
           site={selectedSite}
           sample={{ ...selectedResult.sample, weatherKind: selectedResult.weatherKind }}
+          heightMode={heightMode}
+          effectiveHeightM={selectedResult.effectiveHeightM}
+          heightSupported={selectedResult.heightSupported}
           selectedTimestamp={hours[sliderIndex] ?? null}
           onClose={() => setSelectedId(null)}
         />

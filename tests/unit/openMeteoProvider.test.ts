@@ -6,7 +6,7 @@ import {
 } from "../../src/providers/forecast/openMeteoProvider.ts";
 
 describe("buildOpenMeteoUrl", () => {
-  it("requests m/s wind speed, UTC timestamps, and 5 forecast days", () => {
+  it("requests m/s wind speed, UTC timestamps, 5 forecast days, and every model height", () => {
     const url = buildOpenMeteoUrl(55.4, 14.0);
     expect(url).toContain("latitude=55.4");
     expect(url).toContain("longitude=14");
@@ -14,6 +14,9 @@ describe("buildOpenMeteoUrl", () => {
     expect(url).toContain("timezone=UTC");
     expect(url).toContain("forecast_days=5");
     expect(url).toContain("wind_direction_10m");
+    expect(url).toContain("wind_speed_80m");
+    expect(url).toContain("wind_direction_120m");
+    expect(url).toContain("wind_speed_180m");
     expect(url).toContain("weather_code");
   });
 });
@@ -22,8 +25,14 @@ describe("normalizeOpenMeteoResponse", () => {
   const fixture: OpenMeteoResponse = {
     hourly: {
       time: ["2026-08-18T00:00", "2026-08-18T01:00", "2026-08-18T02:00"],
-      wind_speed_10m: [5.2, 4.8, null],
-      wind_direction_10m: [225, 230, null],
+      wind_speed_10m: [3.4, 4.8, null],
+      wind_direction_10m: [268, 230, null],
+      wind_speed_80m: [8.0, 7.5, null],
+      wind_direction_80m: [303, 300, null],
+      wind_speed_120m: [8.4, 7.9, null],
+      wind_direction_120m: [303, 301, null],
+      wind_speed_180m: [10.3, 9.8, null],
+      wind_direction_180m: [306, 302, null],
       wind_gusts_10m: [7.1, 6.5, null],
       weather_code: [0, 61, 9999],
     },
@@ -34,9 +43,16 @@ describe("normalizeOpenMeteoResponse", () => {
     expect(forecast.siteId).toBe("hammar");
     expect(forecast.sourceId).toBe("open-meteo");
     expect(forecast.hours).toEqual(fixture.hourly.time);
-    expect(forecast.windSpeedMs).toEqual([5.2, 4.8, null]);
-    expect(forecast.windDirectionDeg).toEqual([225, 230, null]);
     expect(forecast.windGustMs).toEqual([7.1, 6.5, null]);
+  });
+
+  it("maps each discrete model height into its own series", () => {
+    const forecast = normalizeOpenMeteoResponse("hammar", fixture);
+    expect(forecast.heights[10].windSpeedMs).toEqual([3.4, 4.8, null]);
+    expect(forecast.heights[10].windDirectionDeg).toEqual([268, 230, null]);
+    expect(forecast.heights[80].windSpeedMs).toEqual([8.0, 7.5, null]);
+    expect(forecast.heights[120].windDirectionDeg).toEqual([303, 301, null]);
+    expect(forecast.heights[180].windSpeedMs).toEqual([10.3, 9.8, null]);
   });
 
   it("maps weather codes through the internal WeatherKind enum, including unknown", () => {
