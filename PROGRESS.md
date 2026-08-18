@@ -9,7 +9,7 @@ the block's work.
 | 1     | Repo scaffold + SITES.md schema/parser        | done        | commit e337274; CI green |
 | 2a    | CPS data: index + m.cps.to + SE South/East    | done        | commit 31e65fb; CI green |
 | 2b    | CPS data: Öresund/West + Bjäre                | done        | commit 70b5355; CI green |
-| 2c    | CPS data: Ven + Denmark                       | not_started |       |
+| 2c    | CPS data: Ven + Denmark                       | done        | commit 533dc43; CI green; Block 2 complete |
 | 3     | Wind rose SVG component                       | not_started |       |
 | 4     | Map integration                               | not_started |       |
 | 5     | Forecast provider + time slider               | not_started |       |
@@ -69,3 +69,21 @@ Status values: `not_started`, `in_progress`, `blocked`, `done`.
   access, Mölle nature-reserve/drowning risk, Hovs Hallar NV local
   rules).
 - Next: Block 2c — Ven + Denmark region sites
+
+## Block 2c complete: CPS data, Ven + Denmark (Block 2 finished)
+- Status: done
+- Definition of Done: [x] all 8 sites have coordinate or documented
+  unresolved reason  [x] npm run validate:sites passes  [x]
+  docs/SITE_DATA_AUDIT.md covers all 8 (and all 24 enabled sites overall)
+  [x] CI green
+- Commit: 533dc43 "Block 2c: CPS site data check - Ven + Denmark (Block 2
+  complete)"
+- Files changed: 2 files, +61/-11 (SITES.md, docs/SITE_DATA_AUDIT.md)
+- Deferred / unresolved: Block 2 overall closes with 6/24 enabled sites
+  coordinate-verified (hammar, ravlunda, ven-n, ven-sv, ven-v — the last
+  3 newly found this sub-block via DMS coordinates on their CPS pages —
+  plus none others). 18/24 sites still have no coordinates anywhere on
+  CPS and need a non-CPS source (on-site GPS, OSM, club contact) before
+  Block 4's map can place them. Holfuy station IDs still unverified
+  against m.cps.to (JS-rendered, out of reach of plain fetch).
+- Next: Block 3 — Wind rose SVG component
