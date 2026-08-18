@@ -4,12 +4,17 @@ import { degreesToCompass16 } from "../../domain/direction.ts";
 import { WindRose } from "../WindRose/index.ts";
 import { WeatherGlyph } from "../WeatherGlyph/index.ts";
 import type { WeatherKind } from "../../domain/weather.ts";
+import type { Freshness } from "../../domain/freshness.ts";
 
 export interface SiteSheetSample {
   windDirectionDeg: number | null;
   windSpeedMs: number | null;
   windGustMs: number | null;
   weatherKind: WeatherKind;
+  sourceKind: "observation" | "forecast";
+  sourceId: string | null;
+  freshness: Freshness | null;
+  ageMinutes: number | null;
 }
 
 export interface SiteSheetProps {
@@ -26,6 +31,15 @@ const STATE_LABEL: Record<"green" | "orange" | "red" | "gray", string> = {
   red: "BAD",
   gray: "UNKNOWN",
 };
+
+function sourceLabel(sample: SiteSheetSample): string {
+  if (sample.sourceKind === "observation") {
+    const age = sample.ageMinutes !== null ? `${Math.round(sample.ageMinutes)} min ago` : "";
+    const source = sample.sourceId === "holfuy" ? "Holfuy live" : (sample.sourceId ?? "live");
+    return `${source} (${sample.freshness}, ${age})`;
+  }
+  return "Open-Meteo forecast (10 m surface wind)";
+}
 
 export function SiteSheet({ site, sample, selectedTimestamp, onClose }: SiteSheetProps) {
   const greenSectors = site.rose.green.map((s) => ({ fromDeg: s.from_deg, toDeg: s.to_deg }));
@@ -68,6 +82,9 @@ export function SiteSheet({ site, sample, selectedTimestamp, onClose }: SiteShee
       <p className="site-sheet-status" data-testid="site-sheet-status">
         {STATE_LABEL[state]} at {timeLabel}
       </p>
+      <p className="site-sheet-source-badge" data-testid="site-sheet-source">
+        {sample.sourceKind === "observation" ? "LIVE" : "FORECAST"} — {sourceLabel(sample)}
+      </p>
       <ul className="site-sheet-reasons">
         {reasons.map((r, i) => (
           <li key={i}>{r}</li>
@@ -85,8 +102,6 @@ export function SiteSheet({ site, sample, selectedTimestamp, onClose }: SiteShee
           {sample.windSpeedMs !== null ? `${sample.windSpeedMs.toFixed(1)} m/s` : "no data"}
           {sample.windGustMs !== null ? ` / ${sample.windGustMs.toFixed(1)} m/s` : ""}
         </dd>
-        <dt>Source</dt>
-        <dd>Open-Meteo forecast (10 m surface wind)</dd>
       </dl>
       <p>{site.description}</p>
       {site.restrictions && site.restrictions.length > 0 && (

@@ -127,6 +127,17 @@
   color: #555;
 }
 
+.site-sheet-source-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  background: #f0f0f0;
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin: 4px 0 8px;
+}
+
 .site-sheet-restrictions {
   background: #fff8e1;
   border-left: 4px solid #f9a825;

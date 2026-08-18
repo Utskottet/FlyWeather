@@ -167,3 +167,44 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   conversion tests" and "compass/degrees conversion tests" requirements,
   and are now used for real in the site sheet's direction readout (e.g.
   "WSW (238°)").
+
+## Block 6
+
+- **Live source: `widget.holfuy.com`, not `api.holfuy.com`.** The
+  official API is password-gated and capped at 3 stations for
+  non-owners (confirmed by fetching `api.holfuy.com`'s own docs) - a
+  real credential blocker per AGENTS.md, not worked around. Instead,
+  `m.cps.to`'s own public page embeds each station via an unauthenticated
+  `widget.holfuy.com` iframe (no password parameter) - the same
+  mechanism any visitor's browser already uses. See
+  `docs/DATA_SOURCE_AUDIT.md` for the full investigation, including two
+  previously-undocumented station IDs (215, 217) found while confirming
+  this.
+- **The widget has no parseable JSON, no clean timestamp.** Its HTML
+  embeds the live reading directly in inline JS
+  (`newWind(dir,speed,gust,?,'HH:MM')`), which `holfuyWidgetProvider.ts`
+  regex-parses defensively (returns `null`, not a throw, on an
+  unexpected format). Since `'HH:MM'` carries no date or timezone, the
+  adapter uses its own fetch time as the observation timestamp rather
+  than guess a timezone and risk misreporting freshness - bounded to
+  ~5 min of real staleness by the widget's own `<meta refresh=300>`.
+- **Live collection happens in `npm run dev`/`build`** (a new
+  `collect:live` script, alongside the existing `validate:sites`), not
+  client-side in the browser - matches §13's architecture (server-side
+  collection, static site serves the generated bundle) and sidesteps
+  browser CORS restrictions a client-side fetch to `widget.holfuy.com`
+  would likely hit. `public/generated/live.json` is gitignored, same
+  treatment as `sites.json`.
+- **NOW prefers a fresh/aging live observation; anything else (including
+  a stale live reading) falls back to forecast**, implemented as a pure
+  `selectEffectiveSample` function per §6.1/§11.2 - a stale observation
+  is deliberately not shown as "current," it's replaced by a clearly
+  labeled forecast value instead. Verified end-to-end against live data:
+  Hammar's rose currently shows a real 273°/8.0 m/s/13.9 m/s-gust reading
+  labeled "LIVE — Holfuy live (fresh, 0 min ago)."
+- **Not implemented this block, documented rather than dropped**: ViVa
+  (barsebäck's configured source has no known station ID yet), FindWind,
+  and wiring the widget's `owind` recent-sample history into the rose's
+  optional history dots (parsed and unit-tested, just not plumbed into
+  the UI - the `LiveWindProvider` interface only carries a single current
+  reading today). All noted in `docs/DATA_SOURCE_AUDIT.md`.

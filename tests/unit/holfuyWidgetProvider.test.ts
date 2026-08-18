@@ -1,0 +1,61 @@
+import { describe, expect, it } from "vitest";
+import { buildHolfuyWidgetUrl, parseHolfuyWidgetHtml } from "../../src/providers/live/holfuyWidgetProvider.ts";
+
+// Trimmed fixture captured from a real widget.holfuy.com response (station 126,
+// Ravlunda) - see docs/DATA_SOURCE_AUDIT.md for the full investigation.
+const REAL_FIXTURE_HTML = `
+<html><head>
+<script>
+var stattr = {"id":126,"short_name":"Ravlu","country":"SE","o_s":65,"o_e":110,"o2_s":0,"o2_e":0,"w_s":50,"w_e":125,"w2_s":0,"w2_e":0,"style":"W"};var units =JSON.parse('{"speed":"m\\/s","temp":"C","height":"m"}');
+</script>
+</head>
+<body>
+<script>
+	var owind=[[2.5,253],[3.1,246],[3.1,251],[3.1,252]];
+</script>
+<script>
+var wind_dir_sensor=1;
+  			kokInit(true);
+			newWind(254,7,13.3,10,'23:23');
+</script>
+</body></html>
+`;
+
+describe("buildHolfuyWidgetUrl", () => {
+  it("uses the public widget.holfuy.com embed endpoint, no password param", () => {
+    const url = buildHolfuyWidgetUrl("126");
+    expect(url).toContain("https://widget.holfuy.com/?");
+    expect(url).toContain("station=126");
+    expect(url).toContain("su=m%2Fs");
+    expect(url).not.toContain("pw=");
+    expect(url).not.toContain("password");
+  });
+});
+
+describe("parseHolfuyWidgetHtml", () => {
+  it("extracts direction, speed, and gust from the embedded newWind() call", () => {
+    const parsed = parseHolfuyWidgetHtml(REAL_FIXTURE_HTML);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.windDirectionDeg).toBe(254);
+    expect(parsed?.windSpeedMs).toBe(7);
+    expect(parsed?.windGustMs).toBe(13.3);
+  });
+
+  it("extracts the recent-samples history from the owind array", () => {
+    const parsed = parseHolfuyWidgetHtml(REAL_FIXTURE_HTML);
+    expect(parsed?.recentSamples).toEqual([
+      { windSpeedMs: 2.5, directionDeg: 253 },
+      { windSpeedMs: 3.1, directionDeg: 246 },
+      { windSpeedMs: 3.1, directionDeg: 251 },
+      { windSpeedMs: 3.1, directionDeg: 252 },
+    ]);
+  });
+
+  it("returns null (not a throw) when the expected pattern is absent", () => {
+    expect(parseHolfuyWidgetHtml("<html><body>unexpected format</body></html>")).toBeNull();
+  });
+
+  it("returns null on malformed numeric data rather than NaN", () => {
+    expect(parseHolfuyWidgetHtml("newWind(abc,7,13.3,10,'23:23');")).toBeNull();
+  });
+});

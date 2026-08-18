@@ -5,8 +5,9 @@ export interface WindSample {
   sourceId: string;
   sourceKind: "observation" | "forecast";
   stationId?: string;
-  lat: number;
-  lon: number;
+  /** Station coordinates, when the source actually provides them - not every widget/API does. */
+  lat?: number;
+  lon?: number;
   timestamp: string; // ISO-8601 UTC
   windDirectionDeg: number | null;
   windSpeedMs: number | null;
@@ -38,4 +39,15 @@ export interface ForecastSiteRequest {
 
 export interface ForecastProvider {
   fetchSiteForecast(site: ForecastSiteRequest): Promise<SiteForecast>;
+}
+
+/** Shape of public/generated/live.json as written by scripts/collect-live.ts. */
+export interface GeneratedLiveFile {
+  generatedAt: string;
+  liveCollector: {
+    status: "ok" | "partial" | "failed";
+    sourcesOk: number;
+    sourcesFailed: number;
+  };
+  sites: Record<string, { status: "ok" | "unavailable" | "failed"; sample: WindSample | null }>;
 }

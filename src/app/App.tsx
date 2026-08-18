@@ -12,7 +12,13 @@ function App() {
 
   const sites = locatedEnabledSites(data.sites);
 
-  return <SiteMap sites={sites} />;
+  return (
+    <SiteMap
+      sites={sites}
+      freshMinutes={data.defaults.live_fresh_minutes}
+      staleMinutes={data.defaults.live_stale_minutes}
+    />
+  );
 }
 
 export default App;
