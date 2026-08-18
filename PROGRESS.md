@@ -13,7 +13,7 @@ the block's work.
 | 3     | Wind rose SVG component                       | done        | commit eb457f4; CI green |
 | 4     | Map integration                               | done        | commit e0be471; CI green |
 | 5     | Forecast provider + time slider               | done        | commit e9d7b8f; CI green |
-| 6     | Live wind adapters                            | not_started |       |
+| 6     | Live wind adapters                            | done        | commit e102b33; CI green |
 | 7     | Height mode                                   | not_started |       |
 | 8     | Autonomous deployment (Actions + Pages)       | not_started |       |
 | 9     | Polish                                        | not_started |       |
@@ -141,3 +141,23 @@ Status values: `not_started`, `in_progress`, `blocked`, `done`.
   sector, not green).
 - Next: Block 6 — Live wind adapters (continuing per user request to run
   5/6/7 back to back without stopping for review)
+
+## Block 6 complete: live wind adapters
+- Status: done
+- Definition of Done: [x] NOW shows live data where a source works,
+  clearly labeled observation vs. forecast fallback  [x]
+  docs/DATA_SOURCE_AUDIT.md records every source considered, including
+  blocked ones  [x] no credential bypass  [x] CI green (confirms GitHub
+  Actions runners can reach widget.holfuy.com too)
+- Commit: e102b33 "Block 6: live wind adapters"
+- Files changed: 20 files, +830/-26
+- Deferred / unresolved: ViVa (barsebäck's source, no station ID known)
+  and FindWind not implemented - documented, not silently dropped. The
+  Holfuy widget's `owind` recent-sample history is parsed and tested but
+  not yet wired into the rose's optional history dots (needs extending
+  LiveWindProvider beyond a single current reading). Found 2 new Holfuy
+  station IDs (215, 217) with no matching SITES.md entry - left as a
+  note, not acted on (never auto-create sites). End-to-end confirmed
+  live: Hammar showed a real 273°/8.0 m/s/13.9 m/s-gust reading,
+  correctly BAD since 273° is outside its sectors.
+- Next: Block 7 — Height mode (continuing per user request)
