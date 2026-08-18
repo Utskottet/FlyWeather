@@ -268,6 +268,11 @@ sites:
       verified: false
     live_sources: []
     description: "ENE-facing 25 m site; CPS describes mixed hang/back-gliding use and notes advanced/novice context."
+    restrictions:
+      - type: seasonal_closure
+        severity: hard
+        message: "Länsstyrelsen prohibits flying at Vitemölla backar 1 April through 31 July to protect sensitive vegetation and bird habitats (in effect from 2024)."
+        status_provider: null
     cps_url: "https://www.cps.to/flygstallen/ono-vitemolla/"
 
   # -----------------------
