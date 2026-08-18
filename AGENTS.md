@@ -8,6 +8,28 @@ Build and deploy the South Sweden Paragliding Weather Map with minimal human sup
 
 The Holfuy-style site rose is the product's central visual language. Do not replace it with generic pins.
 
+## Block discipline (token/session budget)
+
+Work is split into checkpointed blocks defined in `BLOCKS.md`. This section
+overrides "continue autonomously until a real blocker" below **at block
+boundaries** — that rule still governs behavior *within* a block.
+
+- Before starting work, read `PROGRESS.md` to find the current block.
+- Work exactly one block per session. Do not start the next block in the
+  same run, even if token budget remains — the stop is for human
+  verification, not just to conserve tokens.
+- Within a block, follow the normal autonomy rules below (don't ask about
+  libraries, CSS, file layout, etc).
+- At the end of a block: run its Definition of Done checks, update
+  `PROGRESS.md`, commit, and stop.
+- If a block is too large to finish cleanly in one session, stop at a clear
+  sub-point, split it in `PROGRESS.md` (e.g. "Block 4a done, 4b next"),
+  commit, and report — do not push through with degraded quality or leave
+  work uncommitted.
+- If genuinely blocked mid-block (see "Questions to user" below), stop
+  immediately, commit whatever is coherent, and report the blocker instead
+  of skipping ahead to a later block.
+
 ## Work mode
 
 Continue autonomously until a real blocker is reached.
