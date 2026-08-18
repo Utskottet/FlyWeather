@@ -7,7 +7,7 @@ the block's work.
 | Block | Description                                  | Status      | Notes |
 |-------|-----------------------------------------------|-------------|-------|
 | 1     | Repo scaffold + SITES.md schema/parser        | done        | commit e337274; CI green |
-| 2a    | CPS data: index + m.cps.to + SE South/East    | not_started |       |
+| 2a    | CPS data: index + m.cps.to + SE South/East    | done        | commit 31e65fb; CI green |
 | 2b    | CPS data: Öresund/West + Bjäre                | not_started |       |
 | 2c    | CPS data: Ven + Denmark                       | not_started |       |
 | 3     | Wind rose SVG component                       | not_started |       |
@@ -39,3 +39,18 @@ Status values: `not_started`, `in_progress`, `blocked`, `done`.
   decided yet — deferred to Block 4 per docs/DECISIONS.md. No Playwright
   yet (not needed until a block has UI to test).
 - Next: Block 2a — CPS index + m.cps.to + SE South/East region sites
+
+## Block 2a complete: CPS data, index + m.cps.to + SE South/East
+- Status: done
+- Definition of Done: [x] all 7 sites have coordinate or documented
+  unresolved reason  [x] npm run validate:sites passes  [x]
+  docs/SITE_DATA_AUDIT.md covers all 7  [x] CI green
+- Commit: 31e65fb "Block 2a: CPS site data check - index, m.cps.to, SE
+  South/East"
+- Files changed: 2 files, +48 (SITES.md, docs/SITE_DATA_AUDIT.md)
+- Deferred / unresolved: 5 of 7 sites (kaseberga-s, rokerierna,
+  ales-stenar-sv, vik, vitemolla) still have no coordinates — CPS pages
+  don't list any; needs a non-CPS source later. Holfuy station IDs
+  could not be re-verified against m.cps.to (JS-rendered widgets, plain
+  fetch only sees the static station-name list).
+- Next: Block 2b — Öresund/West + Bjäre region sites
