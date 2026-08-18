@@ -12,7 +12,7 @@ the block's work.
 | 2c    | CPS data: Ven + Denmark                       | done        | commit 533dc43; CI green; Block 2 complete |
 | 3     | Wind rose SVG component                       | done        | commit eb457f4; CI green |
 | 4     | Map integration                               | done        | commit e0be471; CI green |
-| 5     | Forecast provider + time slider               | not_started |       |
+| 5     | Forecast provider + time slider               | done        | commit e9d7b8f; CI green |
 | 6     | Live wind adapters                            | not_started |       |
 | 7     | Height mode                                   | not_started |       |
 | 8     | Autonomous deployment (Actions + Pages)       | not_started |       |
@@ -122,3 +122,22 @@ Status values: `not_started`, `in_progress`, `blocked`, `done`.
   anywhere on the live map — every marker is honestly gray/unknown until
   Block 5/6 wire up real data.
 - Next: Block 5 — Forecast provider + time slider
+
+## Block 5 complete: forecast provider + time slider
+- Status: done
+- Definition of Done: [x] E2E: NOW->+6h->+24h updates label without map
+  jump (verified via Leaflet pane transform)  [x] no API call per slider
+  tick (verified via network request count)  [x] unit tests for wind
+  unit and compass/degree conversions  [x] CI green
+- Commit: e9d7b8f "Block 5: forecast provider + time slider"
+- Files changed: 24 files, +1313/-38
+- Deferred / unresolved: pulled forward a minimal direction+speed
+  flyability slice (not its own block) since real forecast data now
+  exists to evaluate - GREEN state is unreachable today since no site has
+  verified wind_speed yet (Block 2), by design not a bug. Full flyability
+  (hard rules, restrictions-override-weather) stays out of scope. End-to-
+  end confirmed live against real Open-Meteo data: Hammar at +12h showed
+  WSW 238°/4.9 m/s/9.0 m/s gust, correctly MAYBE (238° is in the orange
+  sector, not green).
+- Next: Block 6 — Live wind adapters (continuing per user request to run
+  5/6/7 back to back without stopping for review)
