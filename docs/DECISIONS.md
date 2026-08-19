@@ -542,3 +542,25 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   is substantially larger than Leaflet's DOM-based renderer. This is the
   direct cost of the terrain rendering the user explicitly asked for;
   not treated as a regression to chase down in this block.
+- **Bug found post-deploy: MapLibre's worker 404s in the actual
+  production build, not just dev.** CI was green and the local build
+  succeeded, but visually verifying the live GitHub Pages URL after
+  deploy (not just trusting CI) showed markers present but the canvas
+  rendering flat with no tiles or hillshade at all. Root cause: MapLibre
+  computes its worker script's URL relative to its own module's
+  `import.meta.url` at runtime; once Rollup inlines `maplibre-gl` into
+  our own bundle, that computed URL points at a file that was never
+  copied into `dist/` (the `optimizeDeps.exclude` fix from earlier in
+  this block only fixes Vite's *dev* pre-bundler, a separate code path
+  from the production Rollup build). Fixed by importing the worker file
+  explicitly with Vite's `?url` suffix
+  (`maplibre-gl/dist/maplibre-gl-worker.mjs?url`), which makes Vite copy
+  it into `dist/assets/` under a hashed name, and calling MapLibre's own
+  `setWorkerUrl()` with that real URL before any `Map` is constructed.
+  Confirmed by inspecting the built bundle directly: it now embeds the
+  literal string `/FlyWeather/assets/maplibre-gl-worker-<hash>.mjs`
+  (correctly base-prefixed) and the worker file exists at that path in
+  `dist/`. This is the second time in this block that a bug only showed
+  up by actually checking the deployed artifact rather than trusting a
+  green CI run - reinforces AGENTS.md's "verify against production, not
+  just build success" practice.

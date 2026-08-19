@@ -383,8 +383,17 @@ implementation started yet - purely a planning update.
   cost of WebGL terrain rendering, accepted not chased down.
 - Deferred / unresolved: TOPO/MAP modes are stubs, filled in next in
   14b/14c. Marker-clustering gap (Block 13) unchanged - out of this
-  block's scope, still tracked. One local E2E run of time-slider.spec.ts
-  hit Open-Meteo's hourly rate limit from repeated test/dev-server runs
-  this session (confirmed via direct curl: `"Hourly API request limit
-  exceeded"`) - not a code regression; CI runs on a different IP so is
-  unaffected, verified separately before calling this block done.
+  block's scope, still tracked. Local E2E runs of time-slider.spec.ts and
+  live-data.spec.ts hit Open-Meteo's hourly rate limit from repeated
+  test/dev-server runs this session (confirmed via direct curl:
+  `"Hourly API request limit exceeded"`) - not a code regression; CI runs
+  on a different IP so is unaffected.
+- **Post-deploy fix**: visually checking the live production URL after
+  the first deploy (not just trusting green CI) found the map rendering
+  markers but no tiles/hillshade at all - a third bug beyond the two
+  found during local dev (MapLibre's worker script 404s in the actual
+  Rollup production build, a separate code path from the dev-only
+  `optimizeDeps.exclude` fix). Fixed via Vite's `?url` import +
+  MapLibre's `setWorkerUrl()`, verified by inspecting the built bundle
+  directly for the correct base-prefixed worker URL. Full details in
+  docs/DECISIONS.md. Re-deploying and re-verifying live now.

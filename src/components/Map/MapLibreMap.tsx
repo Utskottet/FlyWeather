@@ -2,11 +2,23 @@ import { useEffect, useRef, useState } from "react";
 import {
   Map as MapLibreGLMap,
   NavigationControl,
+  setWorkerUrl,
   type LngLatBoundsLike,
   type PaddingOptions,
   type StyleSpecification,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+// MapLibre resolves its worker script's URL relative to its own bundled
+// module's import.meta.url at runtime, which breaks once Rollup inlines
+// maplibre-gl into our own bundle (the worker file itself never gets
+// copied into dist/, so the computed URL 404s - confirmed on the live
+// GitHub Pages deploy: canvas rendered with markers but no tiles/
+// hillshade at all). Importing the worker with Vite's `?url` suffix
+// makes Vite copy it into the build output under its own hashed name
+// and gives us that real URL to hand to MapLibre explicitly.
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
+
+setWorkerUrl(maplibreWorkerUrl);
 
 export interface MapLibreMapProps {
   style: StyleSpecification;
