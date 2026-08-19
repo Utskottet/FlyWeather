@@ -887,3 +887,77 @@ color changed to gray (#8c94a1).
   to already read as grayish in their positron style anyway, so no
   visible inconsistency resulted, but this is coincidental, not
   something this change actually controls.
+
+## Production regression: rate-limit breakage + a real pre-existing data bug
+
+User report right after the round-2 deploy: "arrows are gone so is many
+sites and time slider not working and wind speed on site are off."
+Root-caused via a live diagnostic (Playwright against production,
+capturing every network request/response and console error) into two
+genuinely separate issues.
+
+### Regression 1: tripling the grid to 676 points broke live traffic
+
+Diagnostic confirmed all 4 `api.open-meteo.com` requests on a real page
+load returned `429`. Wind arrows (need the grid response) and the time
+slider (its `max` attribute stays `0` until forecast data loads) both
+depend on Open-Meteo succeeding, so both broke together - "many sites
+missing" was almost certainly the wind-arrow markers (the user's
+mental model of "sites" likely includes the newly-much-denser field of
+small dots), not the 24 named site pins, which the diagnostic confirmed
+were still all present.
+
+The 676-point/3-parallel-request design (previous entry above) passed
+CI and worked in every verification *I* ran, but CI and my own checks
+don't reproduce sustained real-user traffic volume. Tripling density
+turned 1 Open-Meteo call per page load into 3 for the grid alone (on
+top of the pre-existing per-site-forecast call), and if Open-Meteo's
+free/keyless tier enforces something like a daily call-count budget
+(consistent with today's `"Daily API request limit exceeded"` message,
+which persisted for hours, not a short burst window), request COUNT
+matters independently of how large any single request is.
+
+**Fix**: reduced `GRID_RESOLUTION` from 26 (676 points, 3 requests) to
+18 (324 points, fits in exactly 1 request under
+`MAX_POINTS_PER_REQUEST`). Still ~9x the original 36-point grid -
+meaningfully denser than where this started, just not the full "triple
+again" - prioritizing "works for real visitors" over maximum density
+given today's direct evidence of the tradeoff. The batching code from
+the previous round is kept (not removed) as a safety net, in case
+density needs to grow past a single request again with more headroom
+for caution.
+
+### Regression 2 (unrelated, pre-existing): Holfuy speed/gust were wrong since Block 6
+
+Independently, `generated/live.json` showed 9 of 11 live sites with
+sustained wind speed *greater* than gust - physically backwards.
+Root-caused by fetching Holfuy's own widget source directly
+(`widget.holfuy.com/js/wind_kok.js`), which defines
+`function newWind(wind_dir, wind_speed, temp, gust, time)` - not
+`(dir, speed, gust, temp, time)` as `holfuyWidgetProvider.ts` assumed
+since Block 6. Cross-checked against 6 independent live stations'
+official `holfuy.com/en/weather/{id}` dashboards (which label speed/
+gust explicitly) before touching the parser, including two low-wind
+stations where the corrected numbers matched exactly - not just a
+single-station coincidence.
+
+A second, compounding bug: `wind_speed`/`gust` in that call are always
+km/h regardless of this app's `su=m/s` widget query param - confirmed
+via `main.js`'s `speedToUnit()`, which only divides by 3.6 for the
+widget's own *display*, not for the raw `newWind()` arguments. The old
+code took the raw (wrong-position, km/h) numbers directly as m/s with
+zero conversion - explaining why a station showing a real ~7 m/s wind
+displayed as "28 m/s" (its km/h-magnitude speed value, additionally
+mislabeled from the temperature field in some readings). This bug
+predates this session (Block 6) and had nothing to do with today's
+density work - it surfaced only because the user was looking closely
+at the site right after the density change, not because either change
+caused the other.
+
+**Fix**: swapped the parser to the confirmed correct argument order and
+added a km/h->m/s conversion (`KMH_TO_MS = 1/3.6`). `owind`'s
+recent-sample history array is unaffected - independently confirmed
+already in the requested display unit, not km/h. Verified end-to-end by
+re-running `collect-live.ts` locally and confirming all 11 sites now
+show physically sane speed <= gust with realistic magnitudes (e.g.
+hammar: 7.22 m/s / 7.78 m/s gust, not 28/15.6).

@@ -33,12 +33,19 @@ describe("buildHolfuyWidgetUrl", () => {
 });
 
 describe("parseHolfuyWidgetHtml", () => {
-  it("extracts direction, speed, and gust from the embedded newWind() call", () => {
+  it("extracts direction, speed, and gust from the embedded newWind() call, converting km/h to m/s", () => {
+    // newWind(dir, speed, temp, gust, time) per Holfuy's own widget
+    // source (widget.holfuy.com/js/wind_kok.js) - NOT (dir, speed,
+    // gust, temp, time), and speed/gust are always km/h regardless of
+    // the su=m/s query param (that only affects the widget's own
+    // on-canvas display conversion). This fixture's raw values are
+    // speed=7 km/h, temp=13.3 (discarded), gust=10 km/h.
     const parsed = parseHolfuyWidgetHtml(REAL_FIXTURE_HTML);
     expect(parsed).not.toBeNull();
     expect(parsed?.windDirectionDeg).toBe(254);
-    expect(parsed?.windSpeedMs).toBe(7);
-    expect(parsed?.windGustMs).toBe(13.3);
+    expect(parsed?.windSpeedMs).toBeCloseTo(7 / 3.6, 5);
+    expect(parsed?.windGustMs).toBeCloseTo(10 / 3.6, 5);
+    expect(parsed!.windGustMs).toBeGreaterThan(parsed!.windSpeedMs); // gust >= sustained speed, sanity check for the bug this fixes
   });
 
   it("extracts the recent-samples history from the owind array", () => {

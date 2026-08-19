@@ -710,3 +710,57 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   same 429). Sea color WAS verified live via pixel sampling; density/
   size/arrow-shape together need a check once the quota resets or from
   a different network.
+
+## Production regression fix: rate-limit breakage + Holfuy speed/gust bug
+- Status: done
+- User report: "Sea looks great unfortinatly arrows are gone so is many
+  sites and time slider not working and wind speed on site are off"
+- Root-caused via a live Playwright diagnostic against production
+  (full network/console capture) rather than guessing - found two
+  unrelated issues:
+  1. **This session's own regression**: tripling the wind grid to 676
+     points (3 parallel Open-Meteo requests per page load) tripped
+     Open-Meteo's real rate limit under actual traffic - confirmed via
+     4/4 requests returning 429 on a live page load. Arrows and the
+     time slider both depend on Open-Meteo succeeding, so both broke
+     together; "many sites missing" was very likely the dense wind-
+     arrow field (0 of the expected 324/676 shown), not the 24 named
+     site pins, which the diagnostic confirmed were all still present.
+  2. **Pre-existing bug, unrelated to today's work**: 9 of 11 live
+     sites showed sustained wind speed greater than gust (physically
+     backwards). Root-caused by fetching Holfuy's own widget JavaScript
+     source directly - `wind_kok.js` defines
+     `newWind(wind_dir, wind_speed, temp, gust, time)`, not
+     `(dir, speed, gust, temp, time)` as assumed since Block 6, and
+     `main.js` confirmed the raw speed/gust values are always km/h
+     regardless of the `su=m/s` query param (only affects the widget's
+     own display). The old code used the wrong field as gust AND never
+     converted units - explaining displayed speeds like "28 m/s" for a
+     real ~7 m/s wind. Cross-checked against 6 independent live
+     stations' official dashboards before touching the parser.
+- Definition of Done: [x] fixed argument order + km/h->m/s conversion
+  in `holfuyWidgetProvider.ts`, verified by re-running
+  `collect-live.ts` locally - all 11 sites now show physically sane
+  speed <= gust with realistic magnitudes  [x] `GRID_RESOLUTION`
+  reduced 26->18 (676->324 points), fitting in exactly 1 Open-Meteo
+  request instead of 3, verified via a temporary diagnostic E2E spec
+  confirming a single request at the new size  [x] unit tests updated
+  for both fixes (holfuyWidgetProvider.test.ts, windGrid.test.ts)
+  [x] CI green
+- Files changed: src/providers/live/holfuyWidgetProvider.ts (parser fix
+  + unit conversion); tests/unit/holfuyWidgetProvider.test.ts;
+  src/app/useWindGrid.ts (GRID_RESOLUTION 26->18);
+  src/providers/forecast/openMeteoGridProvider.ts
+  (MAX_POINTS_PER_REQUEST 300->350); tests/unit/windGrid.test.ts
+- Density is now ~9x the original grid (up from the ~6x round that
+  worked, short of the ~19x "triple again" that broke production) -
+  explicitly prioritizing real-world reliability over maximum density
+  once there was direct evidence of the tradeoff. Batching code from
+  the previous round is kept as a safety net, not removed.
+- Deferred / unresolved: could not do a full live visual re-verification
+  post-fix - Open-Meteo's daily quota was still exhausted in this
+  sandbox at fix time (same persistent 429 all session). The Holfuy fix
+  WAS verified against live data (re-ran the real collector, all 11
+  sites sane). The density fix's request-count reduction was verified
+  structurally (single request, correct point count, safe URL length)
+  but not yet against a fully recovered Open-Meteo quota.

@@ -55,9 +55,16 @@ export function normalizeGridResponse(points: GridPoint[], raw: OpenMeteoCurrent
 // simpler probe look far safer than reality): 400 points (~8.0KB URL)
 // still gets a normal response, 450 points (~9.0KB) gets a hard
 // "414 Request-URI Too Large" - consistent with nginx's common 8KB
-// default header/request-line limit. 300 leaves real margin below that
-// boundary rather than sitting right at the edge.
-const MAX_POINTS_PER_REQUEST = 300;
+// default header/request-line limit. 350 leaves real margin below that
+// boundary. Kept comfortably above useWindGrid's actual grid size (see
+// its own comment) so a normal page load makes exactly one grid
+// request, not several - after the 676-point/3-request version turned
+// out to trip Open-Meteo's real-world rate limit for live users (not
+// just this URL-length ceiling), reducing request COUNT mattered more
+// than maximizing points per load. This batching code is kept (rather
+// than removed) as a safety net for if the grid ever needs to grow
+// past a single request again.
+const MAX_POINTS_PER_REQUEST = 350;
 
 async function fetchGridBatch(points: GridPoint[]): Promise<GridWindPoint[]> {
   const res = await fetch(buildGridUrl(points));
