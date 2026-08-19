@@ -240,3 +240,45 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   the click - the underlying issue (marker collision/clustering strategy
   per §16) is real and left for a later polish pass, noted in
   `PROGRESS.md` rather than silently worked around.
+
+## Block 8
+
+- **Forecast data stays client-fetched, not server-collected**, despite
+  §13's architecture diagram listing "refresh forecast when stale" as a
+  GitHub Actions step. Open-Meteo is a free, keyless, CORS-open API
+  explicitly meant for direct browser use, so every page load already
+  gets a genuinely fresh forecast for free - server-staging it would add
+  complexity (a cache-freshness policy, another generated file) without
+  a real freshness benefit, and Block 5 already satisfies §26's "no API
+  call per slider tick" (one fetch per page load, not per tick). Only
+  Holfuy's live data is server-collected, because its widget endpoint
+  can't safely be called cross-origin from a browser (no CORS headers
+  expected for an iframe-embed product) - that's the actual reason a
+  server-side collector exists at all. This means `weather-refresh.yml`
+  only needs to re-run `npm run build` (which already regenerates
+  `live.json` fresh via `collect:live`), not a separate forecast-cache
+  step.
+- **Two separate workflow files** (`pages.yml` triggered by push to
+  `main` + manual dispatch; `weather-refresh.yml` triggered by a 5-minute
+  cron + manual dispatch), each with its own concurrency group rather
+  than sharing one - a push-triggered deploy should never be cancelled
+  mid-build by an unrelated scheduled refresh, but overlapping refresh
+  runs *should* cancel each other (§32) since only the freshest one's
+  output matters. GitHub's own Pages deployment environment additionally
+  serializes the actual publish step regardless, so this isn't the only
+  safety net.
+- **`actions/configure-pages@v5` enables the Pages site itself**, using
+  the workflow's own scoped `GITHUB_TOKEN` (via the `pages: write`
+  permission) - no personal access token was available in this
+  environment to hit the Pages API by hand, and none was needed; this is
+  the standard supported mechanism precisely for that case.
+- **No git commit per refresh** falls out of using the modern Actions-
+  based Pages deployment (`upload-pages-artifact` + `deploy-pages`)
+  rather than the older pattern of pushing built output to a `gh-pages`
+  branch - the artifact is uploaded and published directly, never
+  touching git history, satisfying §32's "avoid repository-history
+  spam" without needing to design around it.
+- **`weather-refresh.yml` skips lint/typecheck/unit-test steps** that
+  `pages.yml` runs - the application code isn't changing between
+  refresh runs, only the collected live data, so re-verifying it every
+  5 minutes would be pure waste (§13.1: "keep the collector fast").

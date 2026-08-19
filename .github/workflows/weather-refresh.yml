@@ -1,0 +1,59 @@
+name: Weather Refresh
+
+# Near-live data refresh (§13): rebuilds and redeploys on a schedule so
+# public/generated/live.json stays current, without a commit per run -
+# GitHub Actions' own scheduling has no strict-timing guarantee and can
+# be delayed under load, so this is "near-live," not guaranteed
+# telemetry (§13).
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only the freshest refresh matters - if one run is still building when
+# the next one starts, cancel the older one rather than let both finish
+# (§32: "use concurrency so old overlapping refresh jobs are cancelled").
+concurrency:
+  group: weather-refresh
+  cancel-in-progress: true
+
+jobs:
+  refresh-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # No separate lint/typecheck/test steps here - the code isn't
+      # changing between refresh runs, only the collected live data.
+      # `npm run build` already re-runs validate:sites + collect:live
+      # (§13.1: "keep the collector fast," avoid unnecessary work).
+      - name: Build (validates SITES.md, collects fresh live data, builds app)
+        run: npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
