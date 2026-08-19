@@ -20,7 +20,7 @@ the block's work.
 | 10    | Regional wind arrow field                     | done        | commit c1ddb71; CI green; live |
 | 11    | Rose overall-state visibility                 | done        | commit 55f2605; CI green; live |
 | 12    | Time slider day/hour graduations              | done        | commit 1b89e2a; CI green; live |
-| 13    | Site coordinate coverage expansion            | not_started |       |
+| 13    | Site coordinate coverage expansion            | done        | commit 3829bd6; CI green; live |
 | 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | not_started |       |
 | 14b   | MapLibre + Mapterhorn: TOPO                   | not_started |       |
 | 14c   | MapLibre + Mapterhorn: MAP                    | not_started |       |
@@ -333,3 +333,24 @@ implementation started yet - purely a planning update.
   root-caused via a diagnostic spec rather than blindly upping a
   timeout - see docs/DECISIONS.md.
 - Deferred / unresolved: none - self-contained.
+
+## Block 13 complete: site coordinate coverage expansion
+- Status: done
+- Definition of Done: [x] more than 5 of 24 enabled sites placed on map
+  - all 24/24 now, via OSM Nominatim  [x] every new coordinate's audit
+  row states source and precision honestly
+- Commit: 3829bd6 "Block 13: site coordinate coverage expansion (24/24 sites)"
+- Files changed: 10 files, +230/-72
+- Bonus fixes found and resolved while verifying: (1) 24 individual
+  Open-Meteo requests per page load was real overhead, not just a test
+  problem - batched into 1 request (fetchSitesForecastBatch), also
+  improves real production performance; (2) several E2E tests used an
+  ambiguous ".leaflet-marker-icon" selector that also matched wind
+  arrows since Block 10, previously passing only by timing coincidence -
+  scoped to ".rose-marker-icon".
+- Deferred / unresolved: marker clustering (several sites now share or
+  nearly share coordinates - Kåseberga's three, Hovs Hallar's two) went
+  from a minor Ven-only issue to clearly visible across the map. Not
+  fixed here (out of scope), elevated as a priority note for Block 14's
+  MapLibre rewrite. Four E2E tests now use force-clicks to work around
+  it in the meantime.
