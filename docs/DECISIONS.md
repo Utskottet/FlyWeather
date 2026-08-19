@@ -997,3 +997,78 @@ directly (fetched real responses, not just docs) before answering.
   connections"), and it lets us keep Open-Meteo, the only source
   covering both batching and the height-level data this app needs.
   Proposed to the user; awaiting their decision before implementing.
+
+## Forecast/wind-grid fetching moved server-side (implemented)
+
+User's decision after the research above: keep Open-Meteo, fix the
+architecture instead of switching providers. Exact scope as specified:
+move fetching server-side via the existing weather-refresh cron, fetch
+once per update rather than once per visitor, publish static files
+(`forecast-sites.json`, `forecast-wind-grid.json`), browser only reads
+those, keep last-good data on a failed update, expose `generatedAt` so
+staleness can be flagged.
+
+- **New script `scripts/collect-forecasts.ts`**, same pattern as the
+  existing `collect-live.ts`/`collect-airspaces.ts`: reads `SITES.md`,
+  fetches every located site's forecast (`fetchSitesForecastBatch`,
+  unchanged, already batching-capable) and the wind grid
+  (`fetchWindGrid`, unchanged), writes both to `public/generated/`
+  (gitignored, regenerated every build - same treatment as `live.json`,
+  since this data needs the same ~5-minute freshness, unlike
+  `airspaces.json`'s weekly/committed treatment).
+- **Both client-side hooks (`useSiteForecasts.ts`, `useWindGrid.ts`)
+  now `fetch()` the static JSON file instead of calling Open-Meteo
+  directly.** `useSiteForecasts` still does the NOW-index windowing
+  client-side, against the browser's own clock rather than the
+  collector's run time - the static file carries Open-Meteo's full
+  un-windowed multi-day hourly data, so "NOW" stays accurate to the
+  visitor's actual view time; only the underlying hourly *values*'
+  freshness is bounded by the collector's ~5-minute cadence, not which
+  index counts as "now." `useWindGrid` no longer takes a `bounds`
+  argument - the published grid already covers the full site-bounds
+  area regardless of the current viewport, so there's nothing per-
+  visitor left to vary.
+- **"Keep last good" implemented via a live-URL fallback, not a git
+  commit.** If a fresh Open-Meteo fetch fails, the collector fetches
+  the CURRENTLY DEPLOYED file from the production Pages URL
+  (`https://utskottet.github.io/FlyWeather/generated/...`) and
+  re-publishes that (with its ORIGINAL `generatedAt`, not "now") rather
+  than overwriting good data with an empty state. Chose this over
+  committing the files to git (the `airspaces.json` pattern) because
+  forecast data needs a ~5-minute refresh cadence, not weekly - a git-
+  commit-per-refresh approach would clutter history badly at that
+  frequency, whereas GitHub Pages itself already durably holds "the
+  last thing that was successfully deployed," which is exactly what
+  "last good" means here. If BOTH the fresh fetch and the fallback fail
+  (only realistically possible on the very first deploy, before
+  anything has ever been published), the collector writes an honest
+  empty state (`{sites: {}}` / `{points: []}`) rather than crashing the
+  build - verified this doesn't break the frontend: markers, marker
+  clicks, and the time slider all still render cleanly with empty
+  forecast data, showing honest gray/unknown states, no fake numbers.
+- **`generatedAt` exposed and used for a staleness banner.** Both hooks
+  return `generatedAt` from their respective file; `SiteMap.tsx` takes
+  the OLDER of the two and classifies it with the existing
+  `classifyFreshness` helper (already used for live-observation
+  staleness) at new thresholds (fresh <=15min, stale >60min - looser
+  than live data's defaults, since these datasets refresh every 5min
+  but the point is catching "the cron itself stopped," not flagging
+  normal cadence jitter). Shows a small non-blocking banner only when
+  stale.
+- **Never crashes the build on a total Open-Meteo outage** - errors are
+  logged loudly (`console.warn`/`console.error`) but `collect-
+  forecasts.ts`'s `main()` catches its own top-level failure rather
+  than letting it propagate, so an Open-Meteo outage doesn't block
+  unrelated deploys (code-only commits, other content changes) the way
+  a hard build failure would.
+- **No workflow file changes needed** - `weather-refresh.yml` and
+  `pages.yml` both already run `npm run build`, which now includes
+  `collect:forecasts` in the same chain as `collect:live` - only a
+  package.json script-list change plus a documentation comment update.
+- **Consolidated `GridWindPoint`/`WindGridPoint` naming** while touching
+  this code: the type was duplicated in intent between
+  `openMeteoGridProvider.ts` and the new `GeneratedWindGridFile` shape
+  in `domain/types.ts` - moved the canonical definition to
+  `domain/types.ts` (where the other generated-file shapes already
+  live) and renamed the 3 call sites, rather than keeping two names for
+  the same shape.

@@ -2,9 +2,10 @@ import { useMemo, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { LngLatBoundsLike } from "maplibre-gl";
 import type { LocatedSite } from "../../domain/sites.ts";
-import type { SiteForecast, WindSample } from "../../domain/types.ts";
+import type { SiteForecast, WindGridPoint, WindSample } from "../../domain/types.ts";
 import { MODEL_HEIGHTS_M } from "../../domain/types.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
+import { classifyFreshness } from "../../domain/freshness.ts";
 import { selectEffectiveSample, type EffectiveSample } from "../../domain/effectiveSample.ts";
 import { interpolateWindAtHeight } from "../../domain/heightInterpolation.ts";
 import { WindRose } from "../WindRose/index.ts";
@@ -23,15 +24,22 @@ import { buildStyleForMode, type MapMode } from "./mapStyles.ts";
 import { useSiteForecasts } from "../../app/useSiteForecasts.ts";
 import { useLiveData } from "../../app/useLiveData.ts";
 import { useWindGrid } from "../../app/useWindGrid.ts";
-import type { GridWindPoint } from "../../providers/forecast/openMeteoGridProvider.ts";
 
 const MARKER_SIZE = 48;
 const SELECTED_MARKER_SIZE = 60;
 const SURFACE_HEIGHT_M = 10;
 const ARROW_SIZE = 39; // 1.5x the original 26px, per user feedback
 
+// Forecast/wind-grid data is now published every ~5 minutes by
+// scripts/collect-forecasts.ts (server-side), not fetched live per
+// visitor - these thresholds flag when the publish cron itself seems
+// to have stopped working (way beyond normal cadence jitter), not
+// every visitor's exact page-load timing relative to the last run.
+const FORECAST_FRESH_MINUTES = 15;
+const FORECAST_STALE_MINUTES = 60;
+
 /** Non-interactive - never intercepts clicks meant for site markers or the map itself. */
-function buildWindArrowHtml(point: GridWindPoint): string | null {
+function buildWindArrowHtml(point: WindGridPoint): string | null {
   if (point.windDirectionDeg === null || point.windSpeedMs === null) return null;
   return renderToStaticMarkup(
     <div style={{ pointerEvents: "none" }}>
@@ -177,10 +185,18 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   // the other siteMode's marker set doesn't leave a stale sheet open
   // for a site no longer shown on the map.
   const selectedSite = visibleSites.find((s) => s.id === selectedId) ?? null;
-  const { forecastsBySiteId, hours } = useSiteForecasts(sites);
+  const { forecastsBySiteId, hours, generatedAt: forecastGeneratedAt } = useSiteForecasts(sites);
   const { data: liveData } = useLiveData();
-  const { points: windGridPoints } = useWindGrid(bounds);
+  const { points: windGridPoints, generatedAt: gridGeneratedAt } = useWindGrid();
   const isNow = sliderIndex === 0;
+
+  // Flag using whichever of the two publish timestamps is OLDER - if
+  // either dataset's refresh cron has stalled, that's worth surfacing
+  // even if the other one is current.
+  const oldestGeneratedAt = [forecastGeneratedAt, gridGeneratedAt].filter((v): v is string => v !== null).sort()[0] ?? null;
+  const isForecastDataStale =
+    oldestGeneratedAt !== null &&
+    classifyFreshness(oldestGeneratedAt, new Date(), FORECAST_FRESH_MINUTES, FORECAST_STALE_MINUTES) === "stale";
 
   if (!bounds) {
     return <div className="app-status">No sites with known coordinates yet.</div>;
@@ -217,6 +233,11 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
       {visibleSites.length === 0 && (
         <div className="site-mode-empty-notice">
           No winch sites with a verified location yet - see docs/SITE_DATA_AUDIT.md.
+        </div>
+      )}
+      {isForecastDataStale && (
+        <div className="data-staleness-notice" data-testid="data-staleness-notice">
+          Forecast data hasn't updated in over an hour - may be stale.
         </div>
       )}
       <MapLibreMap

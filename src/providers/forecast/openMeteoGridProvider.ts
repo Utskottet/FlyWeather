@@ -1,11 +1,7 @@
 import type { GridPoint } from "../../domain/windGrid.ts";
+import type { WindGridPoint } from "../../domain/types.ts";
 
 const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
-
-export interface GridWindPoint extends GridPoint {
-  windDirectionDeg: number | null;
-  windSpeedMs: number | null;
-}
 
 interface OpenMeteoCurrentEntry {
   latitude: number;
@@ -33,7 +29,7 @@ export function buildGridUrl(points: GridPoint[]): string {
  * originally-requested points (by index - the response preserves
  * request order). Pure - no network.
  */
-export function normalizeGridResponse(points: GridPoint[], raw: OpenMeteoCurrentEntry[]): GridWindPoint[] {
+export function normalizeGridResponse(points: GridPoint[], raw: OpenMeteoCurrentEntry[]): WindGridPoint[] {
   return points.map((point, i) => {
     const entry = raw[i];
     return {
@@ -66,7 +62,7 @@ export function normalizeGridResponse(points: GridPoint[], raw: OpenMeteoCurrent
 // past a single request again.
 const MAX_POINTS_PER_REQUEST = 350;
 
-async function fetchGridBatch(points: GridPoint[]): Promise<GridWindPoint[]> {
+async function fetchGridBatch(points: GridPoint[]): Promise<WindGridPoint[]> {
   const res = await fetch(buildGridUrl(points));
   if (!res.ok) {
     throw new Error(`Open-Meteo grid request failed (HTTP ${res.status})`);
@@ -87,7 +83,7 @@ async function fetchGridBatch(points: GridPoint[]): Promise<GridWindPoint[]> {
  * concatenated in the same order), which matters since
  * normalizeGridResponse matches results back to points by index.
  */
-export async function fetchWindGrid(points: GridPoint[]): Promise<GridWindPoint[]> {
+export async function fetchWindGrid(points: GridPoint[]): Promise<WindGridPoint[]> {
   if (points.length === 0) return [];
   const batches: GridPoint[][] = [];
   for (let i = 0; i < points.length; i += MAX_POINTS_PER_REQUEST) {

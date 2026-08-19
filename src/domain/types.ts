@@ -61,3 +61,32 @@ export interface GeneratedLiveFile {
   };
   sites: Record<string, { status: "ok" | "unavailable" | "failed"; sample: WindSample | null }>;
 }
+
+/**
+ * Shape of public/generated/forecast-sites.json, written by
+ * scripts/collect-forecasts.ts (server-side, on the weather-refresh
+ * cron) rather than fetched per-visitor - the architecture fix after
+ * every-visitor client-side fetching tripped Open-Meteo's real rate
+ * limit under live traffic. `generatedAt` lets the frontend flag stale
+ * data if the refresh cron stops running; the collector falls back to
+ * re-publishing the last successfully fetched data (with its ORIGINAL
+ * generatedAt, not "now") if a given refresh's Open-Meteo call fails,
+ * rather than overwriting good data with nothing.
+ */
+export interface GeneratedForecastSitesFile {
+  generatedAt: string;
+  sites: Record<string, SiteForecast>;
+}
+
+/** Shape of public/generated/forecast-wind-grid.json, written by scripts/collect-forecasts.ts - same "last good, not blank" fallback behavior as GeneratedForecastSitesFile. */
+export interface GeneratedWindGridFile {
+  generatedAt: string;
+  points: WindGridPoint[];
+}
+
+export interface WindGridPoint {
+  lat: number;
+  lon: number;
+  windDirectionDeg: number | null;
+  windSpeedMs: number | null;
+}

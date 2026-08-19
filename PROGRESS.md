@@ -764,3 +764,58 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   sites sane). The density fix's request-count reduction was verified
   structurally (single request, correct point count, safe URL length)
   but not yet against a fully recovered Open-Meteo quota.
+
+## Architecture fix: forecast/wind-grid fetching moved server-side
+- Status: done
+- User's explicit direction after the Yr research and the rate-limit
+  incident: "Right now, don't switch provider. Fix the architecture.
+  Keep Open-Meteo... Move weather fetching server-side / GitHub Action
+  cron. Fetch once per update, not once per visitor. Publish static
+  files such as forecast-sites.json and forecast-wind-grid.json.
+  Browser only reads those files. Keep last good forecast if an update
+  fails and expose generated_at so stale data can be flagged."
+- Definition of Done (all explicit requirements from that message):
+  [x] Open-Meteo kept as the provider  [x] fetching moved server-side
+  via the existing weather-refresh.yml cron (no new workflow needed -
+  it already runs `npm run build`, which now includes the new
+  collector)  [x] fetch once per update, not once per visitor -
+  browsers now `fetch()` a static file instead of calling Open-Meteo
+  [x] publishes `forecast-sites.json` and `forecast-wind-grid.json`
+  exactly as named  [x] browser only reads those files -
+  `useSiteForecasts`/`useWindGrid` no longer import the Open-Meteo
+  provider functions at all  [x] keeps last good forecast on a failed
+  update - falls back to re-fetching the currently-published file from
+  the live Pages URL, preserving its original `generatedAt`, rather
+  than overwriting good data with nothing  [x] exposes `generatedAt` -
+  both hooks return it, `SiteMap.tsx` uses the older of the two to show
+  a staleness banner (>60min old) via the existing `classifyFreshness`
+  helper  [x] CI green
+- Files changed: new scripts/collect-forecasts.ts; rewrote
+  useSiteForecasts.ts and useWindGrid.ts (static-file fetch instead of
+  live Open-Meteo calls); domain/types.ts (new
+  GeneratedForecastSitesFile/GeneratedWindGridFile/WindGridPoint
+  shapes); SiteMap.tsx (staleness banner, useWindGrid() no longer takes
+  bounds); App.css (banner styling); package.json (collect:forecasts
+  added to dev/build); weather-refresh.yml (comment update only, no
+  functional change needed); tests/e2e/time-slider.spec.ts (updated to
+  check the static-file request instead of a now-nonexistent
+  browser-side Open-Meteo call)
+- **Verified the resilience path directly, not just the happy path**:
+  since Open-Meteo was still rate-limited in this sandbox all session,
+  every local test of this exercised the actual failure path (fresh
+  fetch fails -> fallback to published also fails on this brand-new
+  feature's first run -> honest empty state written). Confirmed via a
+  Playwright resilience check against the built app: 24 site markers
+  still render, marker clicks still open the site sheet cleanly with
+  honest gray/unknown states (not fake data), the time slider doesn't
+  crash with `max="0"`, zero console/page errors. This is a stronger
+  verification than testing only the success path would have been -
+  the failure path is exactly what real users hit today.
+- Consolidated `GridWindPoint`/`WindGridPoint` into one canonical type
+  in `domain/types.ts` while touching this code (was duplicated in
+  spirit across the provider file and the new generated-file shape).
+- Deferred / unresolved: the actual "fresh fetch succeeds" path is
+  still unverified locally (this sandbox's Open-Meteo quota never
+  recovered this session) - will confirm once deployed, since CI/
+  GitHub Actions runs on different infrastructure and should be
+  unaffected by this sandbox's exhausted quota.

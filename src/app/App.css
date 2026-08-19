@@ -84,6 +84,22 @@
   pointer-events: none;
 }
 
+.data-staleness-notice {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 500;
+  background: rgba(255, 244, 229, 0.97);
+  border: 1px solid #ffb74d;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  padding: 8px 12px;
+  max-width: 240px;
+  font-size: 13px;
+  color: #7a4a00;
+  pointer-events: none;
+}
+
 .site-sheet-height-warning {
   background: #f0f0f0;
   border-radius: 4px;

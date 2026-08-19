@@ -1,10 +1,14 @@
 name: Weather Refresh
 
 # Near-live data refresh (§13): rebuilds and redeploys on a schedule so
-# public/generated/live.json stays current, without a commit per run -
+# public/generated/live.json, forecast-sites.json, and
+# forecast-wind-grid.json all stay current, without a commit per run -
 # GitHub Actions' own scheduling has no strict-timing guarantee and can
 # be delayed under load, so this is "near-live," not guaranteed
-# telemetry (§13).
+# telemetry (§13). Forecast/wind-grid data used to be fetched directly
+# from every visitor's browser; that's what runs here now instead,
+# since per-visitor fetching tripped Open-Meteo's real rate limit under
+# live traffic (see docs/DECISIONS.md's "production regression" entry).
 on:
   schedule:
     - cron: "*/5 * * * *"
