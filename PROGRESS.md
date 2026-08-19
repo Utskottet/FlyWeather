@@ -814,8 +814,13 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
 - Consolidated `GridWindPoint`/`WindGridPoint` into one canonical type
   in `domain/types.ts` while touching this code (was duplicated in
   spirit across the provider file and the new generated-file shape).
-- Deferred / unresolved: the actual "fresh fetch succeeds" path is
-  still unverified locally (this sandbox's Open-Meteo quota never
-  recovered this session) - will confirm once deployed, since CI/
-  GitHub Actions runs on different infrastructure and should be
-  unaffected by this sandbox's exhausted quota.
+- **Confirmed live** (commit 1713472): GitHub Actions' IP was not
+  rate-limited - `forecast-sites.json` has real hourly data for all 24
+  sites, `forecast-wind-grid.json` has all 324 points. End-to-end
+  Playwright check against production confirmed: 24 site markers, 324
+  wind arrows rendering, time slider `max=72` (was stuck at 0), moving
+  the slider updates correctly, a site sheet shows real forecast wind/
+  gust/status data, and - the key architectural check - **zero browser
+  requests to api.open-meteo.com**, only same-origin fetches of the two
+  published JSON files. Both the rate-limit architecture problem and
+  the Holfuy speed/gust bug are now fully resolved and confirmed live.
