@@ -824,3 +824,44 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   requests to api.open-meteo.com**, only same-origin fetches of the two
   published JSON files. Both the rate-limit architecture problem and
   the Holfuy speed/gust bug are now fully resolved and confirmed live.
+
+## Wind grid: tripled density again (961 points) + follows the time slider
+- Status: done
+- User feedback: "issues are we need to tripple the arrow desity.
+  arrows not changing on time slider so no forcasting."
+- Definition of Done: [x] density tripled again - 324 -> 961 points
+  (~3x), now trivially safe since it's fetched once server-side, not
+  per-visitor  [x] wind arrows change with the time slider - wind grid
+  now carries `hourly` (not `current`) wind, windowed NOW..+72h client-
+  side exactly like site forecasts, indexed by the same `sliderIndex`
+  [x] CI green
+- Files changed: scripts/collect-forecasts.ts (GRID_RESOLUTION 18->31,
+  shape-compatibility guard on the fallback path);
+  openMeteoGridProvider.ts (current-> hourly, shared `hours` instead of
+  per-point duplication); useWindGrid.ts (rewritten to window like
+  useSiteForecasts.ts); SiteMap.tsx (arrows indexed by sliderIndex);
+  domain/types.ts (WindGridPoint arrays instead of single values);
+  tests/unit/openMeteoGridProvider.test.ts (rewritten for the new
+  shape)
+- **Real bug caught before shipping**: the wind grid's file shape
+  changed (single values -> per-hour arrays), but the file already live
+  in production has the OLD shape. Without a check, a failed fresh
+  fetch would fall back to that incompatible file and the frontend's
+  array `.slice()` calls would throw. Added a shape-compatibility guard
+  that treats an old-shaped fallback the same as "no fallback" (honest
+  empty state) - confirmed this exact path fires correctly against the
+  real currently-published file, not just reasoned about it.
+- **Verified the actual slider-following behavior, not just that it
+  builds**: Open-Meteo stayed rate-limited in this sandbox all session,
+  so generated synthetic grid data (144 points, direction/speed varying
+  smoothly over 80 hours), served a real build of the app locally, and
+  confirmed via Playwright that a marker's rendered SVG arrow path
+  genuinely changes (different rotation, different speed-color) after
+  moving the time slider forward 48 hours - not just that "NOW" still
+  works.
+- Deferred / unresolved: the actual density/slider-following behavior
+  against *real* Open-Meteo data is unverified in this sandbox (still
+  rate-limited); will confirm live post-deploy as usual. File-size
+  impact of hourly grid data at 961 points not yet measured against
+  real Open-Meteo data (synthetic test data isn't representative of
+  compressed real-world size).

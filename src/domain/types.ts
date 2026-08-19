@@ -78,15 +78,27 @@ export interface GeneratedForecastSitesFile {
   sites: Record<string, SiteForecast>;
 }
 
-/** Shape of public/generated/forecast-wind-grid.json, written by scripts/collect-forecasts.ts - same "last good, not blank" fallback behavior as GeneratedForecastSitesFile. */
+/**
+ * Shape of public/generated/forecast-wind-grid.json, written by
+ * scripts/collect-forecasts.ts - same "last good, not blank" fallback
+ * behavior as GeneratedForecastSitesFile. `hours` is shared across
+ * every point (one Open-Meteo batch response, so identical timestamps
+ * for all of them) and stored once here rather than duplicated per
+ * point - at hundreds of grid points, repeating a ~120-entry timestamp
+ * array per point would multiply file size for no reason. Each point's
+ * own arrays are aligned to this shared `hours` by index, same pattern
+ * as SiteForecast, so the wind-arrow field can follow the time slider
+ * instead of only ever showing current conditions.
+ */
 export interface GeneratedWindGridFile {
   generatedAt: string;
+  hours: string[]; // ISO-8601 UTC, shared across all points
   points: WindGridPoint[];
 }
 
 export interface WindGridPoint {
   lat: number;
   lon: number;
-  windDirectionDeg: number | null;
-  windSpeedMs: number | null;
+  windDirectionDeg: (number | null)[]; // aligned to GeneratedWindGridFile.hours
+  windSpeedMs: (number | null)[]; // aligned to GeneratedWindGridFile.hours
 }

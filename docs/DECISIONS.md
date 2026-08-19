@@ -1072,3 +1072,54 @@ staleness can be flagged.
   `domain/types.ts` (where the other generated-file shapes already
   live) and renamed the 3 call sites, rather than keeping two names for
   the same shape.
+
+## Wind grid: tripled density again + follows the time slider
+
+User feedback after the server-side architecture fix: triple the arrow
+density again, and make arrows actually change with the time slider
+("arrows not changing on time slider so no forcasting").
+
+- **Density (18->31, 324->961 points, ~3x) is now a non-issue to
+  increase**: the previous round's concern (request COUNT scaling with
+  visitor traffic) no longer applies once fetching moved server-side -
+  a few extra batched requests every 5 minutes from one caller
+  (GitHub Actions) is nothing like the same request tripling per
+  visitor that broke production before. Point count was never really
+  the problem; per-visitor fetching was.
+- **Wind grid now fetches `hourly` (not `current`) wind per point**,
+  same `forecast_days=5` window as site forecasts, so the client can
+  window to NOW..+72h and index by the same `sliderIndex` the site
+  roses already use - `useWindGrid.ts` now mirrors
+  `useSiteForecasts.ts`'s NOW-windowing pattern exactly (against the
+  browser's own clock, not the collector's run time, for the same
+  "NOW stays accurate to view time" reasoning).
+- **`hours` stored once at the file's top level, not per-point**: with
+  hundreds of points each needing ~120 hourly timestamps, repeating
+  that array per point would have been dominated by duplicate
+  timestamp strings for no reason - `GeneratedWindGridFile.hours` is
+  shared, `WindGridPoint`'s own arrays are just aligned to it by index
+  (mirrors how `SiteForecast` already works per-site, just hoisted one
+  level up here since ALL points in one grid share identical
+  timestamps, unlike sites which don't).
+- **Bug caught before shipping: the "keep last good" fallback would
+  have silently served an incompatible file shape.** The wind grid's
+  shape changed from single current-conditions values to per-hour
+  arrays in this same change - the file already live in production
+  (from the previous version of the collector) has the OLD shape. If a
+  fresh Open-Meteo fetch fails and falls back to that stale-shaped
+  file without a check, the frontend's `.slice()` calls on what it
+  expects to be arrays would throw. Added `isCompatibleGridFile()` to
+  `collect-forecasts.ts`, verifying the fallback actually has the
+  array-based shape before trusting it; otherwise treats it the same
+  as "no fallback available" (honest empty state) rather than
+  publishing data the frontend can't consume. Confirmed this exact
+  path fires correctly against the real currently-published (old-
+  shaped) file, not just reasoned about it.
+- **Verified the actual behavior, not just that it builds**: since
+  Open-Meteo remained rate-limited in this sandbox the entire session,
+  generated synthetic grid data (144 points, time-varying direction/
+  speed across 80 hours) and confirmed via Playwright against a real
+  built-and-served app that a marker's rendered SVG path genuinely
+  changes (different rotation, different speed-color) after moving the
+  time slider forward - not just that the code compiles or that "NOW"
+  still works.

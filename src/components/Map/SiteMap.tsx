@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { LngLatBoundsLike } from "maplibre-gl";
 import type { LocatedSite } from "../../domain/sites.ts";
-import type { SiteForecast, WindGridPoint, WindSample } from "../../domain/types.ts";
+import type { SiteForecast, WindSample } from "../../domain/types.ts";
 import { MODEL_HEIGHTS_M } from "../../domain/types.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { classifyFreshness } from "../../domain/freshness.ts";
@@ -38,12 +38,12 @@ const ARROW_SIZE = 39; // 1.5x the original 26px, per user feedback
 const FORECAST_FRESH_MINUTES = 15;
 const FORECAST_STALE_MINUTES = 60;
 
-/** Non-interactive - never intercepts clicks meant for site markers or the map itself. */
-function buildWindArrowHtml(point: WindGridPoint): string | null {
-  if (point.windDirectionDeg === null || point.windSpeedMs === null) return null;
+/** Non-interactive - never intercepts clicks meant for site markers or the map itself. Takes the slider-indexed single value, not the whole point's hourly arrays. */
+function buildWindArrowHtml(windDirectionDeg: number | null, windSpeedMs: number | null): string | null {
+  if (windDirectionDeg === null || windSpeedMs === null) return null;
   return renderToStaticMarkup(
     <div style={{ pointerEvents: "none" }}>
-      <WindArrow windDirectionDeg={point.windDirectionDeg} windSpeedMs={point.windSpeedMs} size={ARROW_SIZE} />
+      <WindArrow windDirectionDeg={windDirectionDeg} windSpeedMs={windSpeedMs} size={ARROW_SIZE} />
     </div>,
   );
 }
@@ -255,7 +255,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         {(map) => (
           <>
             {windGridPoints.map((point, i) => {
-              const html = buildWindArrowHtml(point);
+              const html = buildWindArrowHtml(point.windDirectionDeg[sliderIndex] ?? null, point.windSpeedMs[sliderIndex] ?? null);
               if (!html) return null;
               return (
                 <MapMarker

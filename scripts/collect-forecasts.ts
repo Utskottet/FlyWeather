@@ -10,11 +10,13 @@ import { buildWindGrid } from "../src/domain/windGrid.ts";
 import { computeSiteBounds } from "../src/components/Map/mapBounds.ts";
 import type { GeneratedForecastSitesFile, GeneratedWindGridFile } from "../src/domain/types.ts";
 
-// Same resolution the old client-side useWindGrid.ts used before this
-// architecture fix - see docs/DECISIONS.md's "production regression"
-// entry for why per-visitor fetching (even at this size) had to move
-// server-side rather than just being tuned further.
-const GRID_RESOLUTION = 18;
+// 31x31 = up to 961 points, ~3x the 18x18=324 grid the architecture fix
+// shipped with - safe to triple again now that fetching happens once
+// here (server-side, ~every 5 min) rather than per-visitor, which was
+// the actual constraint that broke production before (see
+// docs/DECISIONS.md's "production regression" entry) - point count
+// itself was never the problem once it moved off the client.
+const GRID_RESOLUTION = 31;
 
 // Every visitor's browser used to call Open-Meteo directly (site
 // forecasts + wind grid), which tripped Open-Meteo's real rate limit
@@ -42,6 +44,26 @@ async function fetchPublished<T>(path: string): Promise<T | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Guards against a shape drift between the currently-published grid
+ * file and what this version of the collector expects - the wind grid
+ * changed from single current-conditions values to per-hour arrays
+ * (this commit), so the file published by the PREVIOUS version of this
+ * script has an incompatible shape (no `hours`, single-number points).
+ * If a fresh fetch fails and falls back to that stale-shaped file
+ * without this check, the frontend's `.slice()` calls on what it
+ * expects to be arrays would throw. Treating a shape mismatch the same
+ * as "no fallback available" (empty state) is safer than serving data
+ * the frontend can't actually consume.
+ */
+function isCompatibleGridFile(data: unknown): data is GeneratedWindGridFile {
+  if (typeof data !== "object" || data === null) return false;
+  const d = data as Partial<GeneratedWindGridFile>;
+  if (!Array.isArray(d.hours) || !Array.isArray(d.points)) return false;
+  const [first] = d.points;
+  return first === undefined || (Array.isArray(first.windDirectionDeg) && Array.isArray(first.windSpeedMs));
 }
 
 async function main() {
@@ -78,18 +100,22 @@ async function main() {
   const bounds = computeSiteBounds(sites);
   try {
     if (!bounds) throw new Error("no located sites to compute grid bounds from");
-    const points = await fetchWindGrid(buildWindGrid(bounds, GRID_RESOLUTION));
-    gridFile = { generatedAt: new Date().toISOString(), points };
-    console.log(`collect-forecasts: fetched fresh wind grid (${points.length} points)`);
+    const { hours, points } = await fetchWindGrid(buildWindGrid(bounds, GRID_RESOLUTION));
+    gridFile = { generatedAt: new Date().toISOString(), hours, points };
+    console.log(`collect-forecasts: fetched fresh wind grid (${points.length} points x ${hours.length} hours)`);
   } catch (err) {
     console.warn(`collect-forecasts: wind-grid fetch failed - ${(err as Error).message}`);
-    const fallback = await fetchPublished<GeneratedWindGridFile>("/generated/forecast-wind-grid.json");
-    if (fallback) {
+    const fallback = await fetchPublished<unknown>("/generated/forecast-wind-grid.json");
+    if (fallback && isCompatibleGridFile(fallback)) {
       gridFile = fallback;
       console.warn(`collect-forecasts: falling back to last published forecast-wind-grid.json (generatedAt=${fallback.generatedAt})`);
     } else {
-      gridFile = { generatedAt: new Date().toISOString(), points: [] };
-      console.warn("collect-forecasts: no previously published forecast-wind-grid.json available either - writing empty");
+      gridFile = { generatedAt: new Date().toISOString(), hours: [], points: [] };
+      console.warn(
+        fallback
+          ? "collect-forecasts: previously published forecast-wind-grid.json has an incompatible (older) shape - writing empty rather than serving data the frontend can't read"
+          : "collect-forecasts: no previously published forecast-wind-grid.json available either - writing empty",
+      );
     }
   }
 
