@@ -193,7 +193,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   return (
     <div className="site-map-container" data-testid="site-map">
       <div className="top-controls">
-        <MapModeToggle mode={mapMode} onChange={setMapMode} />
+        <MapModeToggle mode={mapMode} onChange={setMapMode} availableModes={["relief", "topo"]} />
         <HeightModeToggle mode={heightMode} onChange={setHeightMode} />
       </div>
       <MapLibreMap

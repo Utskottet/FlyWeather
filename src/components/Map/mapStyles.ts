@@ -1,4 +1,6 @@
+import { addProtocol } from "maplibre-gl";
 import type { FilterSpecification, StyleSpecification } from "maplibre-gl";
+import mlcontour from "maplibre-contour";
 
 export type MapMode = "relief" | "topo" | "map";
 
@@ -32,6 +34,22 @@ const mapterhornDemSource = {
   encoding: "terrarium" as const,
   attribution: MAPTERHORN_ATTRIBUTION,
 };
+
+// maplibre-contour computes contour lines client-side from the same
+// Mapterhorn DEM tiles, exposed to MapLibre as a custom-protocol vector
+// source. Registered once at module load (setupMaplibre wires up
+// addProtocol) rather than per style-build, since re-registering the
+// same protocol id on every mode switch would be wasted work.
+const contourDemSource = new mlcontour.DemSource({
+  url: MAPTERHORN_DEM_TILES[0],
+  encoding: "terrarium",
+  maxzoom: 14,
+  worker: true,
+});
+contourDemSource.setupMaplibre({ addProtocol });
+
+const CONTOUR_SOURCE_ID = "contour-source";
+const CONTOUR_LAYER = "contours";
 
 /**
  * RELIEF (default mode, §-per-user-spec): terrain-first, deliberately
@@ -74,14 +92,100 @@ export function buildReliefStyle(): StyleSpecification {
 }
 
 /**
- * TOPO stub (Block 14b builds this out properly: contour lines, major
- * roads, place names). For 14a this is intentionally identical to
- * RELIEF so the mode selector has something non-broken to fall back to
- * if clicked, while staying visibly "not done yet" via the disabled
- * button state in HeightModeToggle's sibling, MapModeToggle.
+ * TOPO: RELIEF's hillshade stays present and visually dominant (per
+ * user spec, this is not a step toward a street map) with contour
+ * lines, major roads, town names, and rivers/lakes layered on top for
+ * navigational context. Thresholds start at 5m minor / 25m major per
+ * the user's explicit starting point, coarsening at lower zooms so
+ * Skåne's flat terrain doesn't produce an illegible line tangle when
+ * zoomed out.
  */
 export function buildTopoStyle(): StyleSpecification {
-  return buildReliefStyle();
+  const relief = buildReliefStyle();
+  return {
+    ...relief,
+    sources: {
+      ...relief.sources,
+      [CONTOUR_SOURCE_ID]: {
+        type: "vector",
+        tiles: [
+          contourDemSource.contourProtocolUrl({
+            multiplier: 1,
+            thresholds: {
+              9: [50, 200],
+              11: [25, 100],
+              13: [5, 25],
+            },
+            elevationKey: "ele",
+            levelKey: "level",
+            contourLayer: CONTOUR_LAYER,
+          }),
+        ],
+        maxzoom: 14,
+      },
+    },
+    layers: [
+      ...relief.layers,
+      {
+        id: "waterway",
+        type: "line",
+        source: "openmaptiles",
+        "source-layer": "waterway",
+        paint: { "line-color": "#7fb3d5", "line-width": 1 },
+      },
+      {
+        id: "contours-minor",
+        type: "line",
+        source: CONTOUR_SOURCE_ID,
+        "source-layer": CONTOUR_LAYER,
+        filter: ["==", ["get", "level"], 0],
+        paint: { "line-color": "#8a7f66", "line-width": 0.5, "line-opacity": 0.6 },
+      },
+      {
+        id: "contours-major",
+        type: "line",
+        source: CONTOUR_SOURCE_ID,
+        "source-layer": CONTOUR_LAYER,
+        filter: ["==", ["get", "level"], 1],
+        paint: { "line-color": "#6b5f45", "line-width": 1, "line-opacity": 0.8 },
+      },
+      {
+        id: "contour-labels",
+        type: "symbol",
+        source: CONTOUR_SOURCE_ID,
+        "source-layer": CONTOUR_LAYER,
+        filter: ["==", ["get", "level"], 1],
+        layout: {
+          "symbol-placement": "line",
+          "text-field": ["concat", ["number-format", ["get", "ele"], {}], " m"],
+          "text-size": 10,
+          "text-font": ["Noto Sans Regular"],
+        },
+        paint: { "text-color": "#6b5f45", "text-halo-color": "#f2efe6", "text-halo-width": 1 },
+      },
+      {
+        id: "roads-major",
+        type: "line",
+        source: "openmaptiles",
+        "source-layer": "transportation",
+        filter: ["in", ["get", "class"], ["literal", ["motorway", "trunk", "primary", "secondary"]]],
+        paint: { "line-color": "#c9a876", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.5, 14, 2.5] },
+      },
+      {
+        id: "place-labels",
+        type: "symbol",
+        source: "openmaptiles",
+        "source-layer": "place",
+        filter: ["in", ["get", "class"], ["literal", ["city", "town", "village"]]],
+        layout: {
+          "text-field": ["get", "name"],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 8, 10, 14, 14],
+        },
+        paint: { "text-color": "#3b352a", "text-halo-color": "#f2efe6", "text-halo-width": 1.2 },
+      },
+    ],
+  };
 }
 
 /** MAP stub (Block 14c builds this out: full OpenFreeMap positron-style layers, reduced hillshade). */

@@ -16,6 +16,7 @@
     "copy:maplibre-worker": "tsx scripts/copy-maplibre-worker.ts"
   },
   "dependencies": {
+    "maplibre-contour": "^0.1.0",
     "maplibre-gl": "^6.4.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

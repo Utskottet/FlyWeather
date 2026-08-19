@@ -590,3 +590,45 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   the worker loads, `window.__flyweatherMapLoaded` flips true, and the
   screenshot shows real hillshade terrain - before touching production
   again.
+
+## Block 14b
+
+- **Contour lines via `maplibre-contour`** (`onthegomap/maplibre-contour`,
+  zero runtime deps, pinned `^0.1.0`): computes contour vector tiles
+  client-side from the same Mapterhorn DEM tiles already used for
+  RELIEF's hillshade, exposed to MapLibre through a custom protocol
+  (`DemSource.setupMaplibre({ addProtocol })`). Chosen over a
+  server-rendered contour tileset because it needs no separate hosted
+  data source - reuses the DEM we already have, keyless like everything
+  else in this project. Its internal worker is built from an in-memory
+  Blob URL rather than a separate fetched file, which sidesteps Block
+  14a's worker-bundling class of bug entirely (confirmed no
+  `optimizeDeps`/`copy-maplibre-worker.ts`-style fix was needed - a
+  build-and-serve-locally check under the real `/FlyWeather/` path
+  turned up nothing worker-related).
+- **Thresholds**: 5m minor / 25m major at the closest zoom band (z13+),
+  coarsening to 25/100m at z9 and 50/200m below that, per the user's
+  explicit "start ~5m minor/25m major, adjust after visually testing"
+  instruction - Skåne's flat terrain would produce an illegible tangle
+  of lines at low zoom without coarsening.
+- **Hillshade stays visually dominant**: TOPO is built by spreading
+  RELIEF's full style (background, water, hillshade) and layering
+  contours/roads/labels on top, not a separate style built from
+  scratch - guarantees the two modes share identical terrain rendering,
+  per the user's explicit "this is not a step toward a street map"
+  instruction.
+- **Roads limited to motorway/trunk/primary/secondary** (OpenFreeMap's
+  `transportation` source-layer, `class` filter) and **place labels to
+  city/town/village** (`place` source-layer) - "major roads only, town/
+  place names" per spec, deliberately excluding minor roads, POIs, and
+  buildings that would compete visually with the terrain.
+- **`MapModeToggle`'s `availableModes` now includes `"topo"`** in
+  `SiteMap.tsx`; MAP stays disabled, still deferred to 14c.
+- **Verification**: same rigor as 14a's post-deploy lesson - built and
+  served the actual `dist/` output locally under the real `/FlyWeather/`
+  base path before considering this done, not just `vite preview` or
+  trusting the dev server. Confirmed via Playwright: contour lines and
+  an elevation label render at Kullaberg, `getStyle()` shows the
+  contour/road/label layers exist only in TOPO (not leaking into
+  RELIEF), switching modes preserves center/zoom exactly, and marker
+  clicks still work.

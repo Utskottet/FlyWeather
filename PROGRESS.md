@@ -22,7 +22,7 @@ the block's work.
 | 12    | Time slider day/hour graduations              | done        | commit 1b89e2a; CI green; live |
 | 13    | Site coordinate coverage expansion            | done        | commit 3829bd6; CI green; live |
 | 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | done        | commits 3206048, f4a6feb, 6aed79e; CI green; live |
-| 14b   | MapLibre + Mapterhorn: TOPO                   | not_started |       |
+| 14b   | MapLibre + Mapterhorn: TOPO                   | done        | commit TBD; CI pending; verified locally |
 | 14c   | MapLibre + Mapterhorn: MAP                    | not_started |       |
 | 15    | Soaring/Winch site-mode switch                | not_started | lower priority per user |
 | 16    | flyxc data source research                    | not_started | lower priority per user |
@@ -409,3 +409,22 @@ implementation started yet - purely a planning update.
   mode toggle shows Relief active / Topo+Map disabled. Commits: 3206048
   (main port), f4a6feb (worker fix attempt 1, incomplete), 6aed79e
   (worker fix attempt 2, confirmed working).
+
+## Block 14b complete: MapLibre + Mapterhorn TOPO
+- Status: done
+- Definition of Done: [x] TOPO visually verified over Skåne - contour
+  lines, an elevation label, roads, hillshade all confirmed rendering
+  via Playwright against a locally-served real `/FlyWeather/`-path build
+  (not just dev server)  [x] switching RELIEF<->TOPO preserves zoom/
+  center/bearing exactly, no map jump  [x] CI green
+- Files changed: mapStyles.ts (buildTopoStyle implemented for real),
+  SiteMap.tsx (`availableModes` now includes "topo"), package.json
+  (added `maplibre-contour` dependency)
+- Learned from Block 14a's post-deploy lesson going in: built and served
+  the actual `dist/` output locally under the real `/FlyWeather/` base
+  path *before* pushing, rather than after - no worker-style 404 surfaced
+  this time (maplibre-contour uses an in-memory Blob-URL worker, not a
+  separate fetched file, sidestepping that whole class of bug).
+- Deferred / unresolved: MAP mode still stubbed, next up in 14c. Roads/
+  place labels only verified visually at the zoom levels checked
+  (8-15) - not exhaustively swept across the full zoom range.
