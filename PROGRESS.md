@@ -24,7 +24,7 @@ the block's work.
 | 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | done        | commits 3206048, f4a6feb, 6aed79e; CI green; live |
 | 14b   | MapLibre + Mapterhorn: TOPO                   | done        | commit f5d4ae0; CI green; live |
 | 14c   | MapLibre + Mapterhorn: MAP                    | done        | commit 6a2090b; CI green; live |
-| 15    | Soaring/Winch site-mode switch                | done        | commit TBD; CI pending; verified locally; lower priority per user |
+| 15    | Soaring/Winch site-mode switch                | done        | commit 4d3f1a4; CI green; live; lower priority per user |
 | 16    | flyxc data source research                    | not_started | lower priority per user |
 | 17    | Airspace layer                                | not_started | depends on Block 16 |
 | 18    | Skyways layer                                 | not_started | depends on Block 16 |
