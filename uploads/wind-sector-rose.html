@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Paragliding Wind Sector Rose</title>
+<style>
+  :root {
+    --rose-size: 180px;
+    --stroke: 3.5;
+    --green: #27c93f;
+    --orange: #ff9800;
+    --red: #f23535;
+    --ink: #111;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #eaf0f3; /* demo only — rose itself is transparent */
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .wind-rose {
+    width: var(--rose-size);
+    aspect-ratio: 1;
+    overflow: visible;
+    display: block;
+  }
+
+  .wind-rose .sector {
+    opacity: .78;
+  }
+
+  .wind-rose .ring,
+  .wind-rose .north-tick {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: var(--stroke);
+    stroke-linecap: round;
+  }
+
+  .wind-rose .north {
+    fill: var(--ink);
+    font-weight: 800;
+    font-size: 16px;
+    text-anchor: middle;
+  }
+
+  .wind-rose .speed {
+    fill: var(--ink);
+    font-weight: 750;
+    font-size: 42px;
+    letter-spacing: -1.5px;
+    text-anchor: middle;
+  }
+
+  .wind-rose .wind-pointer {
+    fill: var(--ink);
+  }
+
+  .weather-icon {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>
+</head>
+<body>
+
+<svg
+  id="windRose"
+  class="wind-rose"
+  viewBox="0 0 240 240"
+  role="img"
+  aria-label="Wind sector, wind direction, weather and wind speed"
+>
+  <!-- Colored flyable sector -->
+  <path id="sector" class="sector" />
+
+  <!-- Main transparent compass ring -->
+  <circle class="ring" cx="120" cy="120" r="90" />
+
+  <!-- Only North marker -->
+  <line class="north-tick" x1="120" y1="30" x2="120" y2="39" />
+  <text class="north" x="120" y="57">N</text>
+
+  <!-- Weather icon -->
+  <g id="weather" transform="translate(120 103)"></g>
+
+  <!-- Wind speed, deliberately no unit -->
+  <text id="speed" class="speed" x="120" y="174">8,0</text>
+
+  <!--
+    Split-tail black wind pointer.
+    It lives mostly OUTSIDE the circle.
+    The tip ends at y=38, so it only protrudes 8 px through the ring at y=30.
+    Rotation is around the rose center.
+  -->
+  <g id="pointer" transform="rotate(310 120 120)">
+    <polygon
+      class="wind-pointer"
+      points="120,38 103,2 120,11 137,2"
+    />
+  </g>
+</svg>
+
+<script>
+(() => {
+  const svg = document.getElementById("windRose");
+  const sectorEl = document.getElementById("sector");
+  const pointerEl = document.getElementById("pointer");
+  const speedEl = document.getElementById("speed");
+  const weatherEl = document.getElementById("weather");
+
+  const COLORS = {
+    green:  "#27c93f",
+    orange: "#ff9800",
+    red:    "#f23535"
+  };
+
+  const CX = 120;
+  const CY = 120;
+  const R  = 90;
+
+  // Bearings use normal compass degrees:
+  // 0=N, 90=E, 180=S, 270=W.
+  function pointOnCircle(bearing, radius = R) {
+    const a = (bearing - 90) * Math.PI / 180;
+    return {
+      x: CX + Math.cos(a) * radius,
+      y: CY + Math.sin(a) * radius
+    };
+  }
+
+  function sectorPath(startBearing, endBearing) {
+    let span = (endBearing - startBearing + 360) % 360;
+    if (span === 0) span = 359.999;
+
+    const start = pointOnCircle(startBearing);
+    const end = pointOnCircle(endBearing);
+    const largeArc = span > 180 ? 1 : 0;
+
+    return [
+      `M ${CX} ${CY}`,
+      `L ${start.x.toFixed(3)} ${start.y.toFixed(3)}`,
+      `A ${R} ${R} 0 ${largeArc} 1 ${end.x.toFixed(3)} ${end.y.toFixed(3)}`,
+      "Z"
+    ].join(" ");
+  }
+
+  function formatSpeed(value) {
+    return Number(value).toFixed(1).replace(".", ",");
+  }
+
+  function weatherSVG(type) {
+    const sun = `
+      <g>
+        <circle cx="-8" cy="-8" r="10" fill="#f8c900"/>
+        <g stroke="#f8c900" stroke-width="3">
+          <line x1="-8" y1="-25" x2="-8" y2="-20"/>
+          <line x1="-8" y1="4" x2="-8" y2="9"/>
+          <line x1="-25" y1="-8" x2="-20" y2="-8"/>
+          <line x1="4" y1="-8" x2="9" y2="-8"/>
+          <line x1="-20" y1="-20" x2="-16" y2="-16"/>
+          <line x1="0" y1="0" x2="4" y2="4"/>
+          <line x1="0" y1="-16" x2="4" y2="-20"/>
+          <line x1="-20" y1="4" x2="-16" y2="0"/>
+        </g>
+      </g>`;
+
+    const cloud = `
+      <path
+        d="M-14 8
+           C-20 8 -23 4 -23 0
+           C-23 -5 -19 -9 -14 -9
+           C-12 -16 -6 -19 0 -17
+           C5 -16 8 -12 9 -8
+           C15 -9 21 -4 21 2
+           C21 7 17 10 12 10
+           H-14 Z"
+        fill="#f7f7f7"
+        stroke="#222"
+        stroke-width="3"
+      />`;
+
+    switch (type) {
+      case "sun":
+        return `<g transform="scale(1.15)">${sun}</g>`;
+
+      case "cloud":
+        return `<g transform="scale(1.08)">${cloud}</g>`;
+
+      case "rain":
+        return `
+          <g transform="translate(0 -2)">
+            ${cloud}
+            <g stroke="#248bd6" stroke-width="3">
+              <line x1="-11" y1="15" x2="-14" y2="22"/>
+              <line x1="0" y1="15" x2="-3" y2="22"/>
+              <line x1="11" y1="15" x2="8" y2="22"/>
+            </g>
+          </g>`;
+
+      case "partlyCloudy":
+      default:
+        return `
+          <g transform="translate(2 0)">
+            <g transform="translate(-5 -5)">${sun}</g>
+            <g transform="translate(5 5)">${cloud}</g>
+          </g>`;
+    }
+  }
+
+  /**
+   * Public control API.
+   *
+   * status: "green" | "orange" | "red"
+   * sectorStart / sectorEnd: flyable sector bearings
+   * windDirection: direction wind COMES FROM
+   * speed: numeric, displayed as xx,x
+   * weather: "sun" | "partlyCloudy" | "cloud" | "rain"
+   */
+  window.setWindRose = function setWindRose({
+    sectorStart = 290,
+    sectorEnd = 335,
+    status = "green",
+    windDirection = 310,
+    speed = 8.0,
+    weather = "partlyCloudy"
+  } = {}) {
+    sectorEl.setAttribute("d", sectorPath(sectorStart, sectorEnd));
+    sectorEl.setAttribute("fill", COLORS[status] || COLORS.green);
+
+    // Pointer 0° = north. It points inward from the outer edge.
+    pointerEl.setAttribute(
+      "transform",
+      `rotate(${windDirection} ${CX} ${CY})`
+    );
+
+    speedEl.textContent = formatSpeed(speed);
+    weatherEl.innerHTML = weatherSVG(weather);
+
+    svg.setAttribute(
+      "aria-label",
+      `${status} flying sector ${sectorStart} to ${sectorEnd} degrees, ` +
+      `wind from ${windDirection} degrees, wind speed ${formatSpeed(speed)}, ${weather}`
+    );
+  };
+
+  // Demo state
+  setWindRose({
+    sectorStart: 290,
+    sectorEnd: 335,
+    status: "green",
+    windDirection: 310,
+    speed: 8.0,
+    weather: "partlyCloudy"
+  });
+})();
+</script>
+
+</body>
+</html>

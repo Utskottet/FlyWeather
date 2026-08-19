@@ -961,3 +961,39 @@ already in the requested display unit, not km/h. Verified end-to-end by
 re-running `collect-live.ts` locally and confirming all 11 sites now
 show physically sane speed <= gust with realistic magnitudes (e.g.
 hammar: 7.22 m/s / 7.78 m/s gust, not 28/15.6).
+
+## Researched: switching the forecast provider to Yr/MET Norway - not viable as a full replacement
+
+After the rate-limit incident above, the user asked whether Yr (which
+was only ever referenced as a *visual* inspiration for the wind arrow
+field's flow-line style, never as a data source) should replace
+Open-Meteo. Investigated MET Norway's public Locationforecast API
+directly (fetched real responses, not just docs) before answering.
+
+- **Rate limit terms are clearer and more generous than Open-Meteo's**:
+  20 requests/second per application (identified via User-Agent), not
+  an opaque total daily cap. Fully keyless, `Access-Control-Allow-
+  Origin: *` (CORS-open, works fine from a browser).
+- **Blocker 1 - no batching**: every location needs its own request
+  (confirmed against their docs and by testing). This app's entire
+  request-volume strategy relies on Open-Meteo's comma-separated
+  multi-location batching (24 sites in 1 call, the wind grid in 1
+  call) - switching would turn 2 requests per page load into ~350.
+- **Blocker 2 - no multi-height wind data, a hard feature blocker not
+  just an inconvenience**: fetched a real `/complete` response and
+  confirmed it has exactly one wind reading per location (surface:
+  `wind_speed`, `wind_from_direction`, `wind_speed_of_gust`) - nothing
+  resembling Open-Meteo's multiple pressure/height levels. The Soaring
+  height mode (height-interpolated wind, `MODEL_HEIGHTS_M`) has no
+  equivalent data available from this API at all. A full switch would
+  mean dropping that feature, not just changing where data comes from.
+- **Conclusion**: the actual fix for the rate-limit risk is
+  architectural, not a provider swap - move forecast fetching
+  server-side (periodic collection -> static published file, same
+  pattern as the existing live-data/airspace collectors) so request
+  volume stops scaling with visitor traffic. This is also exactly what
+  MET Norway's own terms recommend regardless ("high-traffic sites
+  must implement local caching proxies rather than direct API
+  connections"), and it lets us keep Open-Meteo, the only source
+  covering both batching and the height-level data this app needs.
+  Proposed to the user; awaiting their decision before implementing.
