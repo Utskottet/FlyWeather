@@ -26,9 +26,9 @@ the block's work.
 | 14c   | MapLibre + Mapterhorn: MAP                    | done        | commit 6a2090b; CI green; live |
 | 15    | Soaring/Winch site-mode switch                | done        | commit 4d3f1a4; CI green; live; lower priority per user |
 | 16    | flyxc data source research                    | done        | commit TBD; research only, no code changes; lower priority per user |
-| 17    | Airspace layer                                | blocked     | needs a free OpenAIP account/API key - see Block 16 findings |
+| 17    | Airspace layer                                | blocked     | user is creating an OpenAIP account/API key (2026-08-19); resume once provided |
 | 18    | Skyways layer                                 | done        | commit e7aeece; CI green; live; lower priority per user |
-| 19    | Live tracking                                 | blocked     | needs an architecture decision (persistent backend) - see Block 16 findings |
+| 19    | Live tracking                                 | skipped     | user decision 2026-08-19: not worth the persistent-backend architecture change right now |
 
 Status values: `not_started`, `in_progress`, `blocked`, `done`.
 
@@ -564,3 +564,26 @@ implementation started yet - purely a planning update.
   UI needed.
 - Deferred / unresolved: none - self-contained once the TMS bug was
   found and fixed.
+
+## Blocks 17 and 19: user decisions, 2026-08-19
+
+Asked the user directly rather than proceeding autonomously, since both
+are genuine credential-gate/architecture decisions per `AGENTS.md`:
+
+- **Block 17 (Airspace)**: user chose to create a free OpenAIP account
+  and provide an API key. **Blocked pending that key** - do not
+  implement further until it's available. Plan once available: run the
+  fetch server-side only (a new script following the
+  `collect-live.ts`/`parse-sites.ts` pattern, invoked from the existing
+  weather-refresh cron or a slower schedule since airspace boundaries
+  don't change often) that bakes OpenAIP's response into a static
+  generated GeoJSON/vector file - the API key must never end up in the
+  client bundle, since anything shipped to a static frontend is visible
+  to anyone inspecting network requests. The key should be added as a
+  GitHub Actions repository secret (Settings -> Secrets and variables ->
+  Actions), the same manual-UI-step pattern Block 8 already established
+  for Pages.
+- **Block 19 (Live tracking)**: user chose to skip it for now - the
+  persistent-backend architecture change isn't worth it at this time.
+  Marked `skipped`, not `blocked` - this is a settled decision, not
+  something pending external input.
