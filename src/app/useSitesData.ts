@@ -14,7 +14,7 @@ export function useSitesData(): SitesDataState {
   useEffect(() => {
     let cancelled = false;
 
-    fetch("/generated/sites.json")
+    fetch(`${import.meta.env.BASE_URL}generated/sites.json`)
       .then((res) => {
         if (!res.ok) throw new Error(`Failed to load site data (HTTP ${res.status})`);
         return res.json() as Promise<GeneratedSitesFile>;

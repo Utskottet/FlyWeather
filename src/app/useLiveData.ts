@@ -14,7 +14,7 @@ export function useLiveData(): LiveDataState {
   useEffect(() => {
     let cancelled = false;
 
-    fetch("/generated/live.json")
+    fetch(`${import.meta.env.BASE_URL}generated/live.json`)
       .then((res) => {
         if (!res.ok) throw new Error(`Failed to load live data (HTTP ${res.status})`);
         return res.json() as Promise<GeneratedLiveFile>;
