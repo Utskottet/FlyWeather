@@ -19,7 +19,7 @@ the block's work.
 | 9     | Polish                                        | done        | commit e5be055; CI green; V1 live |
 | 10    | Regional wind arrow field                     | done        | commit c1ddb71; CI green; live |
 | 11    | Rose overall-state visibility                 | done        | commit 55f2605; CI green; live |
-| 12    | Time slider day/hour graduations              | not_started |       |
+| 12    | Time slider day/hour graduations              | done        | commit 1b89e2a; CI green; live |
 | 13    | Site coordinate coverage expansion            | not_started |       |
 | 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | not_started |       |
 | 14b   | MapLibre + Mapterhorn: TOPO                   | not_started |       |
@@ -320,3 +320,16 @@ implementation started yet - purely a planning update.
   state from a distance, versus barely visible before.
 - Deferred / unresolved: none - this block's scope was fully self-
   contained.
+
+## Block 12 complete: time slider day/hour graduations
+- Status: done
+- Definition of Done: [x] ticks render correctly across the full 72h
+  range, aligned with hour indices  [x] works at 360/390/430px without
+  crowding (verified visually)
+- Commit: 1b89e2a "Block 12: time slider day/hour graduations"
+- Files changed: 7 files, +154/-7
+- Bonus fix: found and fixed a real E2E flake in time-slider.spec.ts
+  (fixed-sleep timing bug exposed by Block 10's extra network request),
+  root-caused via a diagnostic spec rather than blindly upping a
+  timeout - see docs/DECISIONS.md.
+- Deferred / unresolved: none - self-contained.
