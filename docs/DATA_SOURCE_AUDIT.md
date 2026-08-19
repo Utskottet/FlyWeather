@@ -128,3 +128,115 @@ Scope note: the grid shows **current** wind only, not tied to the time
 slider (which drives per-site forecasts). Extending it to the slider
 would multiply the request volume by ~73x per grid point for no proven
 need yet - noted as a possible future enhancement, not built now.
+
+## flyxc data source research (Block 16, research only — no implementation)
+
+Per the user's flyxc.app-inspired feature requests (live pilot tracking,
+an always-on Skyways layer, a toggleable Airspace layer), investigated
+flyxc's own open-source repository (`github.com/vicb/flyxc`, an Nx
+monorepo) directly via GitHub's raw-content and contents APIs to find
+its actual data sources, rather than guessing from the rendered app.
+Findings for each of the three features below; groundwork for Blocks
+17-19, no code changed in this block.
+
+### Skyways (thermal/soaring-route heatmap) — usable, keyless
+
+flyxc's own `apps/fxc-front/src/app/components/2d/skyways-element.ts`
+and `redux/skyways-slice.ts` point directly at a third-party service,
+**not** flyxc-hosted data: `https://thermal.kk7.ch`, tile URL pattern
+`https://thermal.kk7.ch/tiles/{layer}_{month}_{timeOfDay}/{z}/{x}/{y}.png?src={hostname}`,
+where `layer` is `skyways` or `thermals`, `month` is `all|jan|apr|jul|oct`,
+and `timeOfDay` is `all|04|07|10`. Confirmed live with a direct request
+(`200 OK`, real PNG tile returned).
+
+- **No API key** - the only required parameter is `src=<your hostname>`,
+  used for the maintainer's own traffic tracking, not authentication.
+- **License**: CC BY-NC-SA 4.0 (Creative Commons
+  Attribution-NonCommercial-ShareAlike) per the service's own site -
+  requires visible attribution to `thermal.kk7.ch` with a link to the
+  license. NonCommercial is compatible with this project (a free,
+  non-commercial community tool); ShareAlike would matter if we
+  redistributed a derivative dataset, which a live tile overlay doesn't.
+- **Maintainer**: a single independent developer (M. von Känel),
+  aggregating >3.8M public flight-log records; this is the same
+  well-known service XCTrack and other paragliding tools already embed
+  as "Skyways."
+- **Verdict**: usable as an always-on overlay exactly as the user asked,
+  pending attribution text in the UI (a Block 18 implementation detail,
+  not a blocker).
+
+### Airspace boundaries — usable, but needs a free account + API key
+
+flyxc's `apps/fxc-tiles/src/app/airspaces/download-openaip.ts` confirms
+the raw airspace data comes from **OpenAIP**
+(`https://api.core.openaip.net/api/airspaces`), fetched with
+`apiKey={key}` in the query string, sourced from a
+`SECRETS.OPENAIP_KEY` value - i.e. **not keyless** like every other
+source this project has used so far.
+
+flyxc then pre-processes OpenAIP's response into their own static
+vector tiles (`.pbf`, served from their own Google Cloud Storage bucket
+at `https://airsp.storage.googleapis.com/{z}/{x}/{y}.pbf`). That
+re-hosted bucket is **not** a source we're entitled to consume directly
+- it's flyxc's own internal derived asset for their own app, not a
+documented public API for third parties, so using it would be riding on
+someone else's infrastructure and licensing without permission (the
+same standard this project already holds itself to - see the Holfuy
+entry above).
+
+- **The legitimate path is OpenAIP's own API directly**: requires
+  creating a free OpenAIP account and generating a personal API key
+  (same shape as, e.g., a free-tier weather API key - not a paid/
+  enterprise-only gate). Could not fully verify OpenAIP's current
+  license/attribution/redistribution terms via automated fetch -
+  `openaip.net`'s pages return `403` to non-browser requests (likely
+  bot protection), so this needs a manual account signup and a human
+  read of their terms before any implementation, same as any other
+  credential-gated source per `AGENTS.md`.
+- **Verdict**: not blocked outright, but gated behind a real account/key
+  step that Block 17 (Airspace layer) would need to complete first -
+  flagged here rather than treated as done, since "requires an account"
+  is exactly the kind of step this project stops and asks about before
+  proceeding (per `AGENTS.md`), not something to sign up for
+  autonomously.
+
+### Live pilot tracking — architecturally blocked for this project's current shape
+
+flyxc's README lists the trackers it integrates: InReach, SPOT,
+Skylines, Flyme, Flymaster, OGN, Zoleo (confirmed against
+`apps/fetcher/src/app/trackers/`, which has one file per provider). Two
+fundamentally different patterns exist among them:
+
+- **Per-pilot opt-in trackers** (InReach, SPOT, Flymaster, Flyme,
+  Zoleo, Skylines): each pilot registers their own personal share-link/
+  feed with flyxc, which then polls it on their behalf. This isn't a
+  single data source we could integrate once - it's a federated model
+  requiring a pilot registry (accounts, submitted feed URLs, per-pilot
+  credentials/tokens) and an ongoing polling backend. Meaningful "see
+  where someone is flying" coverage depends entirely on pilots
+  individually opting in, which is a community/product feature, not a
+  data-source question - out of scope for what this research block can
+  answer.
+- **OGN (Open Glider Network)**: the one source that's genuinely public
+  without per-pilot signup - flyxc's `ogn-client.ts` confirms it
+  connects to `aprs.glidernet.org:14580`, the standard public APRS-IS
+  server, via a **raw, long-lived TCP socket** (not HTTP), logging in
+  with a free APRS-IS callsign/passcode (freely self-assignable, not a
+  paid account) and an APRS filter (`t/p` for tracking/paragliding).
+  This is real-time push data, not a periodic HTTP fetch.
+
+**Verdict: architecturally blocked, not licensing-blocked.** This
+project's entire live-data path (Block 6/8) is a 5-minute GitHub
+Actions cron running a short-lived script (`collect-live.ts`) plus a
+fully static GitHub Pages frontend - there is no persistent backend
+process anywhere in this architecture. A raw TCP socket to `aprs.
+glidernet.org` needs exactly that: a long-running connection that stays
+open to receive a continuous position stream, which a browser cannot
+open directly (no raw TCP from client-side JS) and a 5-minute batch cron
+cannot meaningfully approximate (it would connect, likely receive
+little or nothing useful in a short window, and disconnect,
+repeatedly). Building this properly would mean standing up a persistent
+server process - a genuine architecture change, not a data-source
+integration - which is why this is flagged as a decision point for
+Block 19 rather than something this research block can resolve on its
+own.

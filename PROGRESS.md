@@ -25,7 +25,7 @@ the block's work.
 | 14b   | MapLibre + Mapterhorn: TOPO                   | done        | commit f5d4ae0; CI green; live |
 | 14c   | MapLibre + Mapterhorn: MAP                    | done        | commit 6a2090b; CI green; live |
 | 15    | Soaring/Winch site-mode switch                | done        | commit 4d3f1a4; CI green; live; lower priority per user |
-| 16    | flyxc data source research                    | not_started | lower priority per user |
+| 16    | flyxc data source research                    | done        | commit TBD; research only, no code changes; lower priority per user |
 | 17    | Airspace layer                                | not_started | depends on Block 16 |
 | 18    | Skyways layer                                 | not_started | depends on Block 16 |
 | 19    | Live tracking                                 | not_started | depends on Block 16 |
@@ -493,3 +493,38 @@ implementation started yet - purely a planning update.
   missing feature. Will "just work" the moment either site gets a
   verified coordinate (direct GPS reading or club-supplied), no further
   code changes needed.
+
+## Block 16 complete: flyxc data source research (research only)
+- Status: done
+- Definition of Done: [x] docs/DATA_SOURCE_AUDIT.md has a clear entry
+  for each of the three features (Skyways, Airspace, Live tracking)
+  stating what's usable, what's blocked, and why
+- No code changed - pure research block per BLOCKS.md's scope. Read
+  flyxc's actual source (`github.com/vicb/flyxc`) rather than guessing
+  from the rendered app - traced each feature to its real implementation
+  file.
+- **Skyways: usable, keyless.** flyxc points directly at a third-party
+  service, `thermal.kk7.ch` (not flyxc-hosted) - confirmed live
+  (`200 OK`, real tile). No API key, just a `src=<hostname>` tracking
+  param. CC BY-NC-SA 4.0 licensed; NonCommercial is fine for this
+  project. Ready for Block 18.
+- **Airspace: usable, but needs a real account first.** Traced to
+  OpenAIP's API (`api.core.openaip.net`), which needs a free account +
+  API key - not keyless like everything else this project has
+  integrated. flyxc's own re-hosted tile bucket is explicitly NOT a
+  legitimate substitute (their own derived asset, not a documented
+  public API for third parties - same standard as the Holfuy investi-
+  gation). OpenAIP's terms pages 403 non-browser requests, so exact
+  license/attribution terms need a manual read after signup. Flagged as
+  a credential-gate decision point for whoever picks up Block 17, per
+  AGENTS.md - not something to sign up for autonomously.
+- **Live tracking: architecturally blocked, not licensing-blocked.**
+  Per-pilot trackers (InReach/SPOT/Flymaster/etc.) need a federated
+  opt-in registry, out of scope for a data-source question. OGN (Open
+  Glider Network) is genuinely public/keyless, but requires a raw,
+  long-lived TCP socket to `aprs.glidernet.org:14580` for a continuous
+  position stream - incompatible with this project's fully static
+  frontend + 5-minute batch cron architecture (no persistent backend
+  process anywhere). Real support would need a genuine architecture
+  change, flagged for Block 19 as a decision point rather than resolved
+  here.
