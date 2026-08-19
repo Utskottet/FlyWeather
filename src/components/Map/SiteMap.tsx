@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import L from "leaflet";
-import type { LatLngBoundsExpression } from "leaflet";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import type { LngLatBoundsLike } from "maplibre-gl";
 import type { LocatedSite } from "../../domain/sites.ts";
 import type { SiteForecast, WindSample } from "../../domain/types.ts";
 import { MODEL_HEIGHTS_M } from "../../domain/types.ts";
@@ -17,6 +14,10 @@ import { HeightModeToggle, type HeightMode } from "../HeightModeToggle/HeightMod
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
+import { MapLibreMap } from "./MapLibreMap.tsx";
+import { MapMarker } from "./MapMarker.tsx";
+import { MapModeToggle } from "./MapModeToggle.tsx";
+import { buildStyleForMode, type MapMode } from "./mapStyles.ts";
 import { useSiteForecasts } from "../../app/useSiteForecasts.ts";
 import { useLiveData } from "../../app/useLiveData.ts";
 import { useWindGrid } from "../../app/useWindGrid.ts";
@@ -28,19 +29,13 @@ const SURFACE_HEIGHT_M = 10;
 const ARROW_SIZE = 26;
 
 /** Non-interactive - never intercepts clicks meant for site markers or the map itself. */
-function buildWindArrowIcon(point: GridWindPoint): L.DivIcon | null {
+function buildWindArrowHtml(point: GridWindPoint): string | null {
   if (point.windDirectionDeg === null || point.windSpeedMs === null) return null;
-  const html = renderToStaticMarkup(
+  return renderToStaticMarkup(
     <div style={{ pointerEvents: "none" }}>
       <WindArrow windDirectionDeg={point.windDirectionDeg} windSpeedMs={point.windSpeedMs} size={ARROW_SIZE} />
     </div>,
   );
-  return L.divIcon({
-    html,
-    className: "wind-arrow-icon",
-    iconSize: [ARROW_SIZE, ARROW_SIZE],
-    iconAnchor: [ARROW_SIZE / 2, ARROW_SIZE / 2],
-  });
 }
 
 interface ForecastPoint {
@@ -116,12 +111,12 @@ function forecastPointAt(
   };
 }
 
-function buildRoseIcon(
+function buildRoseHtml(
   site: LocatedSite,
   selected: boolean,
   sample: EffectiveSample,
   weatherKind: SiteForecast["weatherKind"][number],
-): L.DivIcon {
+): { html: string; size: number } {
   const size = selected ? SELECTED_MARKER_SIZE : MARKER_SIZE;
   const greenSectors = site.rose.green.map((s) => ({ fromDeg: s.from_deg, toDeg: s.to_deg }));
   const orangeSectors = site.rose.orange.map((s) => ({ fromDeg: s.from_deg, toDeg: s.to_deg }));
@@ -149,12 +144,7 @@ function buildRoseIcon(
       </div>
     </div>,
   );
-  return L.divIcon({
-    html,
-    className: "rose-marker-icon",
-    iconSize: [size, size + 16],
-    iconAnchor: [size / 2, size / 2],
-  });
+  return { html, size };
 }
 
 export interface SiteMapProps {
@@ -167,7 +157,9 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sliderIndex, setSliderIndex] = useState(0);
   const [heightMode, setHeightMode] = useState<HeightMode>("surface");
+  const [mapMode, setMapMode] = useState<MapMode>("relief");
   const bounds = useMemo(() => computeSiteBounds(sites), [sites]);
+  const mapStyle = useMemo(() => buildStyleForMode(mapMode), [mapMode]);
   const selectedSite = sites.find((s) => s.id === selectedId) ?? null;
   const { forecastsBySiteId, hours } = useSiteForecasts(sites);
   const { data: liveData } = useLiveData();
@@ -178,9 +170,10 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
     return <div className="app-status">No sites with known coordinates yet.</div>;
   }
 
-  const leafletBounds: LatLngBoundsExpression = [
-    [bounds.minLat, bounds.minLon],
-    [bounds.maxLat, bounds.maxLon],
+  // MapLibre uses [lng, lat] order - the opposite of Leaflet's [lat, lng].
+  const maplibreBounds: LngLatBoundsLike = [
+    [bounds.minLon, bounds.minLat],
+    [bounds.maxLon, bounds.maxLat],
   ];
 
   function effectiveSampleFor(site: LocatedSite) {
@@ -200,43 +193,58 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   return (
     <div className="site-map-container" data-testid="site-map">
       <div className="top-controls">
+        <MapModeToggle mode={mapMode} onChange={setMapMode} />
         <HeightModeToggle mode={heightMode} onChange={setHeightMode} />
       </div>
-      <MapContainer
-        bounds={leafletBounds}
-        boundsOptions={{ padding: [40, 40], maxZoom: 12 }}
+      <MapLibreMap
+        style={mapStyle}
+        bounds={maplibreBounds}
+        // Bottom padding keeps fitted markers clear of the persistent
+        // 112px time-slider bar (App.css's .time-slider height) so they
+        // never land unclickable behind it - found via an E2E diagnostic
+        // during the MapLibre port, not just a cosmetic choice.
+        boundsPadding={{ top: 40, bottom: 152, left: 40, right: 40 }}
+        maxZoom={12}
         className="site-map"
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {windGridPoints.map((point, i) => {
-          const icon = buildWindArrowIcon(point);
-          if (!icon) return null;
-          return (
-            <Marker
-              key={`wind-arrow-${i}`}
-              position={[point.lat, point.lon]}
-              icon={icon}
-              interactive={false}
-              zIndexOffset={-10000}
-            />
-          );
-        })}
-        {sites.map((site) => {
-          const { sample, weatherKind } = effectiveSampleFor(site);
-          return (
-            <Marker
-              key={site.id}
-              position={[site.coordinates.lat, site.coordinates.lon]}
-              icon={buildRoseIcon(site, site.id === selectedId, sample, weatherKind)}
-              zIndexOffset={site.id === selectedId ? 1000 : 0}
-              eventHandlers={{ click: () => setSelectedId(site.id) }}
-            />
-          );
-        })}
-      </MapContainer>
+        {(map) => (
+          <>
+            {windGridPoints.map((point, i) => {
+              const html = buildWindArrowHtml(point);
+              if (!html) return null;
+              return (
+                <MapMarker
+                  key={`wind-arrow-${i}`}
+                  map={map}
+                  lng={point.lon}
+                  lat={point.lat}
+                  html={html}
+                  className="wind-arrow-icon"
+                  interactive={false}
+                  zIndex={0}
+                />
+              );
+            })}
+            {sites.map((site) => {
+              const { sample, weatherKind } = effectiveSampleFor(site);
+              const selected = site.id === selectedId;
+              const { html } = buildRoseHtml(site, selected, sample, weatherKind);
+              return (
+                <MapMarker
+                  key={site.id}
+                  map={map}
+                  lng={site.coordinates.lon}
+                  lat={site.coordinates.lat}
+                  html={html}
+                  className="rose-marker-icon"
+                  zIndex={selected ? 1000 : 10}
+                  onClick={() => setSelectedId(site.id)}
+                />
+              );
+            })}
+          </>
+        )}
+      </MapLibreMap>
       {selectedSite && selectedResult && (
         <SiteSheet
           site={selectedSite}

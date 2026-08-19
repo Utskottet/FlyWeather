@@ -7,8 +7,13 @@ test.describe("Height mode", () => {
     await markers.first().waitFor();
     await page.waitForTimeout(1500);
 
-    const pane = page.locator(".leaflet-map-pane");
-    const transformBefore = await pane.evaluate((el) => getComputedStyle(el).transform);
+    // MapLibre renders via WebGL, not CSS-transformed DOM tiles - read
+    // the map's actual camera state via the debug hook MapLibreMap
+    // exposes instead of the old Leaflet-pane-transform trick.
+    const viewBefore = await page.evaluate(() => {
+      const m = window.__flyweatherMap!;
+      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
+    });
 
     // hammar is first among located sites and has soaring_height.agl_m
     // configured (150m) - see SITES.md. force: true since some sites now
@@ -23,8 +28,11 @@ test.describe("Height mode", () => {
     await expect(heightFact).toContainText("Soaring height");
     await expect(heightFact).not.toContainText("Surface —");
 
-    const transformAfter = await pane.evaluate((el) => getComputedStyle(el).transform);
-    expect(transformAfter).toBe(transformBefore);
+    const viewAfter = await page.evaluate(() => {
+      const m = window.__flyweatherMap!;
+      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
+    });
+    expect(viewAfter).toEqual(viewBefore);
 
     // switching back to Surface should restore the 10m reading
     await page.getByTestId("height-mode-surface").click();

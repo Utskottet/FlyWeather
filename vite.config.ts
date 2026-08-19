@@ -9,6 +9,16 @@ export default defineConfig(({ command }) => ({
   // working against root-relative paths locally.
   base: command === "build" ? "/FlyWeather/" : "/",
   plugins: [react()],
+  optimizeDeps: {
+    // MapLibre GL ships its own web worker as a separate file
+    // (maplibre-gl-worker.mjs) for off-main-thread tile parsing; Vite's
+    // esbuild-based dep pre-bundler breaks that worker's own import
+    // resolution, causing it to 404 in dev and silently stall map
+    // loading (confirmed via a diagnostic spec - console showed
+    // `net::ERR_FAILED` for maplibre-gl-worker.mjs). Excluding it from
+    // pre-bundling is MapLibre's own documented workaround for Vite.
+    exclude: ["maplibre-gl"],
+  },
   build: {
     rollupOptions: {
       // gallery.html is a dev-only fixture harness for the WindRose

@@ -9,13 +9,13 @@
   height: 100%;
 }
 
-.leaflet-div-icon.rose-marker-icon,
-.leaflet-div-icon.wind-arrow-icon {
+.rose-marker-icon,
+.wind-arrow-icon {
   background: transparent;
   border: none;
 }
 
-.leaflet-div-icon.wind-arrow-icon {
+.wind-arrow-icon {
   pointer-events: none;
 }
 
@@ -24,9 +24,14 @@
   top: 12px;
   right: 12px;
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 }
 
-.height-mode-toggle {
+.height-mode-toggle,
+.map-mode-toggle {
   display: inline-flex;
   background: #fff;
   border-radius: 999px;
@@ -34,7 +39,8 @@
   overflow: hidden;
 }
 
-.height-mode-toggle button {
+.height-mode-toggle button,
+.map-mode-toggle button {
   border: none;
   background: transparent;
   min-height: 44px;
@@ -44,9 +50,15 @@
   color: #444;
 }
 
-.height-mode-toggle button.active {
+.height-mode-toggle button.active,
+.map-mode-toggle button.active {
   background: #1565c0;
   color: #fff;
+}
+
+.map-mode-toggle button:disabled {
+  color: #bbb;
+  cursor: not-allowed;
 }
 
 .site-sheet-height-warning {

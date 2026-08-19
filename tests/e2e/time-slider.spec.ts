@@ -25,8 +25,13 @@ test.describe("Time slider", () => {
     const countAfterLoad = forecastRequestCount;
     expect(countAfterLoad).toBeGreaterThan(0);
 
-    const pane = page.locator(".leaflet-map-pane");
-    const transformBefore = await pane.evaluate((el) => getComputedStyle(el).transform);
+    // MapLibre renders via WebGL, not CSS-transformed DOM tiles - read
+    // the map's actual camera state via the debug hook MapLibreMap
+    // exposes instead of the old Leaflet-pane-transform trick.
+    const viewBefore = await page.evaluate(() => {
+      const m = window.__flyweatherMap!;
+      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
+    });
 
     const label = page.getByTestId("time-slider-label");
     await expect(label).toHaveText("NOW");
@@ -39,8 +44,11 @@ test.describe("Time slider", () => {
     const labelAt24h = await label.textContent();
     expect(labelAt24h).not.toBe(labelAt6h);
 
-    const transformAfter = await pane.evaluate((el) => getComputedStyle(el).transform);
-    expect(transformAfter).toBe(transformBefore);
+    const viewAfter = await page.evaluate(() => {
+      const m = window.__flyweatherMap!;
+      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
+    });
+    expect(viewAfter).toEqual(viewBefore);
 
     // no additional forecast requests should have fired for slider movement alone
     expect(forecastRequestCount).toBe(countAfterLoad);

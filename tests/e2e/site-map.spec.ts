@@ -33,7 +33,9 @@ test.describe("Site map", () => {
       await page.setViewportSize({ width, height: 800 });
       await page.goto("/");
       await expect(page.getByTestId("site-map")).toBeVisible();
-      await page.locator(".leaflet-tile-loaded").first().waitFor({ timeout: 10_000 });
+      // MapLibre's WebGL canvas has no per-tile DOM class to wait on the
+      // way Leaflet's did - wait on the "load" flag MapLibreMap exposes.
+      await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
 
       const { scrollWidth, clientWidth } = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,

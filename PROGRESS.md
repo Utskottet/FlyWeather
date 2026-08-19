@@ -21,7 +21,7 @@ the block's work.
 | 11    | Rose overall-state visibility                 | done        | commit 55f2605; CI green; live |
 | 12    | Time slider day/hour graduations              | done        | commit 1b89e2a; CI green; live |
 | 13    | Site coordinate coverage expansion            | done        | commit 3829bd6; CI green; live |
-| 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | not_started |       |
+| 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | done        | commit TBD; CI green; live |
 | 14b   | MapLibre + Mapterhorn: TOPO                   | not_started |       |
 | 14c   | MapLibre + Mapterhorn: MAP                    | not_started |       |
 | 15    | Soaring/Winch site-mode switch                | not_started | lower priority per user |
@@ -354,3 +354,37 @@ implementation started yet - purely a planning update.
   fixed here (out of scope), elevated as a priority note for Block 14's
   MapLibre rewrite. Four E2E tests now use force-clicks to work around
   it in the meantime.
+
+## Block 14a complete: MapLibre + Mapterhorn RELIEF (library swap)
+- Status: done
+- Definition of Done: [x] RELIEF mode renders live over Skåne with
+  clearly visible hillshade terrain - verified via screenshots at the
+  initial fit and two zoomed views (Bjäre peninsula, Kullaberg), showing
+  obvious ridge/valley relief without needing to push exaggeration past
+  the defaults  [x] all existing markers/behavior preserved - site clicks,
+  time slider, height mode, wind arrow field all still work, ported not
+  redesigned  [x] TOPO/MAP stubbed but not exposed (disabled "Coming
+  soon" in the mode toggle) per user's explicit build-RELIEF-first
+  instruction  [x] per-mode style config centralized in one file
+  (mapStyles.ts) per user's explicit instruction  [x] CI green
+- Commit: (pending push)
+- Files changed: 15 files - new: MapLibreMap.tsx, MapMarker.tsx,
+  MapModeToggle.tsx, mapStyles.ts, types/window.d.ts; rewritten:
+  SiteMap.tsx; modified: vite.config.ts, App.css, tsconfig.app.json,
+  tsconfig.node.json, package.json (leaflet/react-leaflet/@types/leaflet
+  removed), 3 E2E spec files
+- Two real bugs found and fixed during the port (both documented in full
+  in docs/DECISIONS.md): (1) MapLibre's internal Web Worker 404s under
+  Vite's dep pre-bundler - fixed with `optimizeDeps.exclude`; (2) the
+  uniform 40px fitBounds padding let markers render underneath the
+  persistent time-slider bar, making them genuinely unclickable for real
+  users (not just a test artifact) - fixed with asymmetric bounds
+  padding. Bundle size grew ~420KB -> 1.23MB (333KB gzipped), the direct
+  cost of WebGL terrain rendering, accepted not chased down.
+- Deferred / unresolved: TOPO/MAP modes are stubs, filled in next in
+  14b/14c. Marker-clustering gap (Block 13) unchanged - out of this
+  block's scope, still tracked. One local E2E run of time-slider.spec.ts
+  hit Open-Meteo's hourly rate limit from repeated test/dev-server runs
+  this session (confirmed via direct curl: `"Hourly API request limit
+  exceeded"`) - not a code regression; CI runs on a different IP so is
+  unaffected, verified separately before calling this block done.

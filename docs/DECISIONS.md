@@ -474,3 +474,71 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   raises the priority of real marker-clustering/collision handling for
   whenever map polish work happens (Block 14's MapLibre rewrite is a
   natural place to build it in properly).
+
+## Block 14a
+
+- **Leaflet → MapLibre GL JS swap, RELIEF mode only this block**: per the
+  user's explicit spec, replaced the raster/DOM-tile Leaflet map with
+  MapLibre GL's WebGL vector-tile renderer so Mapterhorn's hillshade DEM
+  can be composited live. TOPO and MAP modes are stubbed
+  (`buildTopoStyle`/`buildMapModeStyle` in `mapStyles.ts` currently just
+  return the RELIEF style) and deferred to 14b/14c per the user's explicit
+  "build RELIEF first and verify before TOPO/MAP" instruction -
+  `MapModeToggle`'s `availableModes` prop defaults to `["relief"]` only,
+  so Topo/Map show as disabled "Coming soon" rather than silently
+  rendering RELIEF under a different label.
+- **Data sources, both keyless**: Mapterhorn's `raster-dem` terrain source
+  (terrarium encoding) for hillshade, OpenFreeMap's `planet` vector tiles
+  (OpenMapTiles schema) for the water fill. Neither requires an API key or
+  account, consistent with every other provider choice so far in this
+  project.
+- **Per-mode style builders centralized in one file**
+  (`src/components/Map/mapStyles.ts`), per the user's explicit "one config
+  per mode" instruction, with a single `buildStyleForMode(mode)`
+  dispatcher - 14b/14c fill in their builders in the same file rather than
+  scattering style logic across components.
+- **Marker rendering switched from Leaflet's `L.DivIcon` to plain HTML
+  strings** (`buildRoseHtml`/`buildWindArrowHtml`, still built via
+  `renderToStaticMarkup`) passed to a new imperative `MapMarker` wrapper
+  around MapLibre's `Marker` class - MapLibre has no divIcon equivalent,
+  and this keeps the existing WindRose/WeatherGlyph/WindArrow React
+  components as the single source of truth for marker visuals.
+- **Bug found: MapLibre's worker breaks under Vite's dep pre-bundler.**
+  MapLibre GL ships its own Web Worker (`maplibre-gl-worker.mjs`) for
+  off-main-thread tile parsing; Vite's esbuild pre-bundler mangles that
+  worker's own import resolution, so it 404'd in dev
+  (`net::ERR_FAILED`) and the map silently never fired its `load` event.
+  Root-caused via a diagnostic spec logging console/network events, not
+  guesswork. Fixed with `optimizeDeps: { exclude: ["maplibre-gl"] }` in
+  `vite.config.ts` - MapLibre's own documented Vite workaround - plus
+  clearing the stale `node_modules/.vite` cache. Load time went from
+  never-completing to 711ms.
+- **Bug found: markers unclickable behind the time slider.** Diagnosing
+  4 failing E2E marker-click tests found the click was actually landing
+  on the time-slider `<input>`, not the marker - the map's uniform 40px
+  `fitBounds` padding let markers render underneath the persistent 112px
+  time-slider bar (`z-index: 900`), so a real user's tap would genuinely
+  hit the slider too, not just Playwright's stricter interception check.
+  Fixed by making `MapLibreMap`'s `boundsPadding` prop accept
+  `number | PaddingOptions` and passing asymmetric padding
+  (`{ top: 40, bottom: 152, left: 40, right: 40 }`) from `SiteMap.tsx` so
+  fitted markers always clear the slider. The pre-existing marker-
+  clustering `force: true` workarounds (Block 13) are unrelated and still
+  needed - this fix only addresses the slider-occlusion case.
+- **Visual verification**: captured screenshots at the initial auto-fit
+  view and two zoomed-in views over the Bjäre peninsula and Kullaberg
+  (the most dramatic terrain in the Skåne region, chosen deliberately as
+  the hardest test of the hillshade settings). The default exaggeration
+  (1), 315° illumination, and dark-shadow/light-highlight colors produced
+  clearly visible ridge/valley relief at both zoom levels without needing
+  to push the settings further - no adjustment was needed against the
+  user's "if too weak, make it more aggressive" instruction.
+- **Leaflet/react-leaflet/@types/leaflet removed from package.json** only
+  after the full local E2E suite passed against the MapLibre port and the
+  production build succeeded - kept them until then in case a rollback
+  was needed mid-port.
+- **Bundle size tradeoff, accepted not fixed**: production bundle grew
+  from ~420KB to ~1.23MB (333KB gzipped) because MapLibre's WebGL engine
+  is substantially larger than Leaflet's DOM-based renderer. This is the
+  direct cost of the terrain rendering the user explicitly asked for;
+  not treated as a regression to chase down in this block.
