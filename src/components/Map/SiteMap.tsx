@@ -15,13 +15,33 @@ import { WeatherGlyph } from "../WeatherGlyph/index.ts";
 import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
 import { HeightModeToggle, type HeightMode } from "../HeightModeToggle/HeightModeToggle.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
+import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
 import { useSiteForecasts } from "../../app/useSiteForecasts.ts";
 import { useLiveData } from "../../app/useLiveData.ts";
+import { useWindGrid } from "../../app/useWindGrid.ts";
+import type { GridWindPoint } from "../../providers/forecast/openMeteoGridProvider.ts";
 
 const MARKER_SIZE = 48;
 const SELECTED_MARKER_SIZE = 60;
 const SURFACE_HEIGHT_M = 10;
+const ARROW_SIZE = 26;
+
+/** Non-interactive - never intercepts clicks meant for site markers or the map itself. */
+function buildWindArrowIcon(point: GridWindPoint): L.DivIcon | null {
+  if (point.windDirectionDeg === null || point.windSpeedMs === null) return null;
+  const html = renderToStaticMarkup(
+    <div style={{ pointerEvents: "none" }}>
+      <WindArrow windDirectionDeg={point.windDirectionDeg} windSpeedMs={point.windSpeedMs} size={ARROW_SIZE} />
+    </div>,
+  );
+  return L.divIcon({
+    html,
+    className: "wind-arrow-icon",
+    iconSize: [ARROW_SIZE, ARROW_SIZE],
+    iconAnchor: [ARROW_SIZE / 2, ARROW_SIZE / 2],
+  });
+}
 
 interface ForecastPoint {
   windDirectionDeg: number | null;
@@ -151,6 +171,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const selectedSite = sites.find((s) => s.id === selectedId) ?? null;
   const { forecastsBySiteId, hours } = useSiteForecasts(sites);
   const { data: liveData } = useLiveData();
+  const { points: windGridPoints } = useWindGrid(bounds);
   const isNow = sliderIndex === 0;
 
   if (!bounds) {
@@ -190,6 +211,19 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        {windGridPoints.map((point, i) => {
+          const icon = buildWindArrowIcon(point);
+          if (!icon) return null;
+          return (
+            <Marker
+              key={`wind-arrow-${i}`}
+              position={[point.lat, point.lon]}
+              icon={icon}
+              interactive={false}
+              zIndexOffset={-10000}
+            />
+          );
+        })}
         {sites.map((site) => {
           const { sample, weatherKind } = effectiveSampleFor(site);
           return (

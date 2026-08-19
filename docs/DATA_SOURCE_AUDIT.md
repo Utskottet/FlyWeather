@@ -113,3 +113,18 @@ Not investigated this block — no `SITES.md` entry currently names
 | `widget.holfuy.com` (public embed) | **In use** | No password required; same mechanism CPS's own public page uses. 11/12 configured stations resolve successfully. |
 | ViVa | Not implemented | `barseback`'s configured source; no station ID known yet. Degrades gracefully. |
 | FindWind | Not investigated | No `SITES.md` entry references it yet. |
+
+## Open-Meteo regional wind grid (Block 10)
+
+Reuses the already-integrated Open-Meteo forecast API (no new source) -
+verified live that it accepts comma-separated multi-location requests
+(`latitude=55.4,55.9,56.2&longitude=...`), returning one entry per point
+in request order. This lets the regional wind-arrow field (§9) work as a
+genuinely live grid of current-wind samples rather than needing a
+separate GRIB pipeline, which the user had explicitly offered as an
+acceptable fallback if a live version proved too hard - it didn't.
+
+Scope note: the grid shows **current** wind only, not tied to the time
+slider (which drives per-site forecasts). Extending it to the slider
+would multiply the request volume by ~73x per grid point for no proven
+need yet - noted as a possible future enhancement, not built now.

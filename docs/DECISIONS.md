@@ -349,3 +349,38 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
 - **§38 V1 definition-of-done swept against the actual live URL**
   (`https://utskottet.github.io/FlyWeather/`), not just local dev - see
   `PROGRESS.md`'s Block 9 report for the item-by-item result.
+
+## Block 10
+
+- **No new data source needed.** Open-Meteo's forecast API (already
+  integrated since Block 5) accepts comma-separated multi-location
+  requests, verified live before building anything - this made the
+  live version of the wind field straightforward rather than needing
+  the static-GRIB fallback the user had explicitly offered as
+  acceptable. Shipped the better, live option since it was actually
+  feasible.
+- **Flow-direction convention, deliberately different from WindRose's.**
+  `WindRose`'s site arrow points to the compass direction wind is
+  coming FROM (§29.3's station/vane convention, already correct and
+  tested). The regional field's arrows instead point in the direction
+  wind is blowing TOWARD (`windDirectionDeg + 180`), matching how
+  flow/streamline wind maps (Yr's included) conventionally read. Two
+  different, individually-correct conventions in the same app is a
+  real risk of future confusion, so this is called out explicitly in
+  code comments on both components, not left implicit.
+- **Grid shows current conditions only, not tied to the time slider.**
+  Extending it to the 72h slider would multiply the request volume by
+  roughly 73x per grid point for a feature whose value at each
+  intermediate hour hasn't been validated yet - deferred as a documented
+  future enhancement rather than over-building this pass.
+- **Grid is fixed to the sites' fitted bounds, not the live viewport.**
+  Panning/zooming away from the initial view won't extend the arrow
+  field to wherever the user scrolls - that needs a map-move listener
+  and refetch-on-pan, a meaningfully bigger lift than this block's
+  scope. Noted as a known simplification.
+- **Arrows are non-interactive** (`interactive={false}` on the Leaflet
+  markers, plus `pointer-events: none` in CSS as a belt-and-suspenders
+  measure) and pushed to `zIndexOffset: -10000` so they never intercept
+  clicks meant for site markers or the map itself, and always render
+  beneath the rose markers - confirmed by clicking a site marker through
+  the arrow layer in a live E2E check.
