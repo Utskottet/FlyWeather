@@ -18,7 +18,7 @@ the block's work.
 | 8     | Autonomous deployment (Actions + Pages)       | done        | commits ebdcc2b, d458303; live at https://utskottet.github.io/FlyWeather/ |
 | 9     | Polish                                        | done        | commit e5be055; CI green; V1 live |
 | 10    | Regional wind arrow field                     | done        | commit c1ddb71; CI green; live |
-| 11    | Rose overall-state visibility                 | not_started |       |
+| 11    | Rose overall-state visibility                 | done        | commit 55f2605; CI green; live |
 | 12    | Time slider day/hour graduations              | not_started |       |
 | 13    | Site coordinate coverage expansion            | not_started |       |
 | 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | not_started |       |
@@ -306,3 +306,17 @@ implementation started yet - purely a planning update.
 - Deferred / unresolved (documented, not oversights): grid shows only
   current conditions, not tied to the 72h time slider; grid is fixed to
   the sites' fitted bounds, doesn't extend as the user pans the map.
+
+## Block 11 complete: rose overall-state visibility
+- Status: done
+- Definition of Done: [x] visual comparison shows a clearly more
+  prominent state indicator (widened ring + saturated center fill,
+  confirmed at both gallery and 48px marker scale)  [x] existing
+  WindRose state-styling tests pass unchanged (19/19, sector geometry
+  stays visible under every state)
+- Commit: 55f2605 "Block 11: rose overall-state visibility"
+- Files changed: 2 files, +37/-5
+- Confirmed live on production - map markers now clearly show red/bad
+  state from a distance, versus barely visible before.
+- Deferred / unresolved: none - this block's scope was fully self-
+  contained.
