@@ -384,3 +384,28 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   clicks meant for site markers or the map itself, and always render
   beneath the rose markers - confirmed by clicking a site marker through
   the arrow layer in a live E2E check.
+
+## Block 11
+
+- **Did both options the user offered, not either/or.** Widened
+  `STATE_RING_WIDTH` from 5 to 8, and moved the center fill from a
+  near-white tint (e.g. green's old `#e6f4ea`) to a genuinely saturated
+  mid-tone (`#a5d6a7`) - the combination reads far more clearly at
+  marker scale than either change alone would have (confirmed visually
+  at 48px).
+- **Checked text contrast before picking the new fill colors**, not
+  after: `#111827` (the speed-number text) against every new fill stays
+  well above WCAG AA's 4.5:1 minimum, so the number stays clearly
+  readable per §28 even though the background is now much louder than
+  before.
+- **Sector-wedge and existing accessibility work both survive
+  unchanged**: green/orange sector colors weren't touched (only overall-
+  state colors were), and the Block 9 dashed-red-ring cue automatically
+  scales with the new ring width (`STATE_RING_WIDTH * 1.6`) since it
+  already referenced the constant rather than a hardcoded number.
+- **Geometry shrank the center circle by ~3px** (radius 25→22 in the
+  100-unit viewBox) to make room for the wider ring without changing
+  the rose's overall size - a minor, visually unnoticeable tradeoff
+  confirmed by re-running the full existing WindRose test suite
+  unchanged (no test needed updating, since none hardcoded the old
+  radius values).

@@ -29,7 +29,8 @@ export interface WindRoseProps {
 const VIEWBOX = 100;
 const CENTER = VIEWBOX / 2;
 const OUTER_R = 46;
-const STATE_RING_WIDTH = 5;
+// Widened from 5 (user feedback: overall state wasn't visible enough).
+const STATE_RING_WIDTH = 8;
 const SECTOR_OUTER_R = OUTER_R - STATE_RING_WIDTH - 2;
 const SECTOR_WIDTH = 12;
 const SECTOR_INNER_R = SECTOR_OUTER_R - SECTOR_WIDTH;
@@ -41,11 +42,17 @@ const ARROW_SHAFT_R = ARROW_HEAD_R - 6;
 const ARROW_HALF_WIDTH_DEG = 7;
 const HISTORY_R = OUTER_R + 4;
 
+// Center fill moved from a near-white tint to a genuinely saturated
+// mid-tone per user feedback ("the whole center... should be the color
+// indicator"). Checked against #111827 (the speed-number text color):
+// every fill below stays well above WCAG AA's 4.5:1 contrast minimum
+// for text, so the number stays clearly readable (§28) even though the
+// background is now much more visually prominent than before.
 const STATE_COLORS: Record<RoseState, { ring: string; fill: string }> = {
-  green: { ring: "#2e7d32", fill: "#e6f4ea" },
-  orange: { ring: "#e65100", fill: "#fdece0" },
-  red: { ring: "#c62828", fill: "#fbe4e4" },
-  gray: { ring: "#757575", fill: "#eeeeee" },
+  green: { ring: "#2e7d32", fill: "#a5d6a7" },
+  orange: { ring: "#e65100", fill: "#ffcc80" },
+  red: { ring: "#c62828", fill: "#ef9a9a" },
+  gray: { ring: "#757575", fill: "#cfd8dc" },
 };
 
 const SECTOR_BASE_COLOR = "#f3d4d4";
