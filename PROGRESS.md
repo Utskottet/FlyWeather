@@ -26,7 +26,7 @@ the block's work.
 | 14c   | MapLibre + Mapterhorn: MAP                    | done        | commit 6a2090b; CI green; live |
 | 15    | Soaring/Winch site-mode switch                | done        | commit 4d3f1a4; CI green; live; lower priority per user |
 | 16    | flyxc data source research                    | done        | commit TBD; research only, no code changes; lower priority per user |
-| 17    | Airspace layer                                | done        | commit TBD; verified locally; needs OPENAIP_KEY GitHub secret for future weekly refreshes |
+| 17    | Airspace layer                                | done        | commit 683b777; CI green; live; needs OPENAIP_KEY GitHub secret for future weekly refreshes |
 | 18    | Skyways layer                                 | done        | commit e7aeece; CI green; live; lower priority per user |
 | 19    | Live tracking                                 | skipped     | user decision 2026-08-19: not worth the persistent-backend architecture change right now |
 
