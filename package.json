@@ -4,15 +4,16 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "npm run validate:sites && npm run collect:live && vite",
-    "build": "npm run validate:sites && npm run collect:live && tsc -b && vite build",
+    "dev": "npm run validate:sites && npm run collect:live && npm run copy:maplibre-worker && vite",
+    "build": "npm run validate:sites && npm run collect:live && npm run copy:maplibre-worker && tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "validate:sites": "tsx scripts/parse-sites.ts",
-    "collect:live": "tsx scripts/collect-live.ts"
+    "collect:live": "tsx scripts/collect-live.ts",
+    "copy:maplibre-worker": "tsx scripts/copy-maplibre-worker.ts"
   },
   "dependencies": {
     "maplibre-gl": "^6.4.1",

@@ -13,12 +13,15 @@ import "maplibre-gl/dist/maplibre-gl.css";
 // maplibre-gl into our own bundle (the worker file itself never gets
 // copied into dist/, so the computed URL 404s - confirmed on the live
 // GitHub Pages deploy: canvas rendered with markers but no tiles/
-// hillshade at all). Importing the worker with Vite's `?url` suffix
-// makes Vite copy it into the build output under its own hashed name
-// and gives us that real URL to hand to MapLibre explicitly.
-import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
-
-setWorkerUrl(maplibreWorkerUrl);
+// hillshade at all). The worker script also does its own static
+// relative import of a sibling maplibre-gl-shared.mjs, so a plain
+// Vite `?url` copy of just the worker file isn't enough - that sibling
+// import still 404s under a hashed filename. Both files are copied
+// verbatim into public/vendor/maplibre-gl/ by
+// scripts/copy-maplibre-worker.ts (run before dev/build) so the
+// worker's relative import keeps resolving, and we point MapLibre at
+// that fixed path instead.
+setWorkerUrl(`${import.meta.env.BASE_URL}vendor/maplibre-gl/maplibre-gl-worker.mjs`);
 
 export interface MapLibreMapProps {
   style: StyleSpecification;

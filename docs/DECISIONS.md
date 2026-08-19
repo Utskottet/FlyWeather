@@ -564,3 +564,29 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   up by actually checking the deployed artifact rather than trusting a
   green CI run - reinforces AGENTS.md's "verify against production, not
   just build success" practice.
+- **Follow-up: the `?url` fix above was itself incomplete.** Re-checking
+  the live deploy after that fix found the worker script now loaded
+  (200) but the map still rendered flat with no terrain - the worker
+  file itself does a *static relative import* of a sibling
+  `maplibre-gl-shared.mjs` from its own package. A `?url` import treats
+  the worker as an opaque raw asset and copies only that one file under
+  a new hashed name, so the browser's attempt to resolve the worker's
+  own `./maplibre-gl-shared.mjs` import 404s next - same class of bug,
+  one file deeper. Fixed properly this time by adding
+  `scripts/copy-maplibre-worker.ts` (same pattern as the existing
+  `validate:sites`/`collect:live` prebuild scripts) that copies both
+  `maplibre-gl-worker.mjs` and `maplibre-gl-shared.mjs` verbatim, under
+  their original unhashed names, into `public/vendor/maplibre-gl/` -
+  since they're copied together into the same directory, the worker's
+  relative import keeps resolving correctly regardless of Vite's
+  hashing. `setWorkerUrl()` now points at that fixed path
+  (`${BASE_URL}vendor/maplibre-gl/maplibre-gl-worker.mjs`) instead of a
+  Vite-generated URL. `public/vendor/` is gitignored, same treatement as
+  `public/generated/` - it's copied fresh from the pinned `maplibre-gl`
+  version on every dev/build, not committed. Verified this time by
+  serving the actual `dist/` output locally under the real `/FlyWeather/`
+  path (matching GitHub Pages exactly, not just `vite preview`, which
+  doesn't apply the build base path) and confirming via Playwright that
+  the worker loads, `window.__flyweatherMapLoaded` flips true, and the
+  screenshot shows real hillshade terrain - before touching production
+  again.

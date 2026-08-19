@@ -11,5 +11,8 @@ playwright/.cache/
 # generated data is rebuilt by scripts/parse-sites.ts and CI
 public/generated/
 
+# copied fresh from node_modules/maplibre-gl by scripts/copy-maplibre-worker.ts
+public/vendor/
+
 .DS_Store
 *.log
