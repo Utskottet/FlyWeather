@@ -1,0 +1,48 @@
+name: Airspace Refresh
+
+# Airspace boundaries change rarely (unlike live wind data, refreshed
+# every 5 minutes by weather-refresh.yml) - a weekly cadence keeps
+# public/static/airspaces.json current without hammering OpenAIP's
+# free-tier API key (Block 16/17) on every deploy. Unlike the other two
+# workflows, this one commits its output back to the repo rather than
+# just building an ephemeral deploy artifact, since the file needs to
+# exist in every future build's dist/ output without re-fetching it
+# every time.
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Monday 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch airspace data from OpenAIP
+        run: npx tsx scripts/collect-airspaces.ts
+        env:
+          OPENAIP_KEY: ${{ secrets.OPENAIP_KEY }}
+
+      - name: Commit updated airspaces.json if changed
+        run: |
+          if git diff --quiet -- public/static/airspaces.json; then
+            echo "No airspace data changes - nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/static/airspaces.json
+          git commit -m "Refresh airspace data from OpenAIP"
+          git push

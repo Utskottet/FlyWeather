@@ -32,7 +32,8 @@
 
 .height-mode-toggle,
 .map-mode-toggle,
-.site-mode-toggle {
+.site-mode-toggle,
+.airspace-toggle {
   display: inline-flex;
   background: #fff;
   border-radius: 999px;
@@ -42,7 +43,8 @@
 
 .height-mode-toggle button,
 .map-mode-toggle button,
-.site-mode-toggle button {
+.site-mode-toggle button,
+.airspace-toggle button {
   border: none;
   background: transparent;
   min-height: 44px;
@@ -54,7 +56,8 @@
 
 .height-mode-toggle button.active,
 .map-mode-toggle button.active,
-.site-mode-toggle button.active {
+.site-mode-toggle button.active,
+.airspace-toggle button.active {
   background: #1565c0;
   color: #fff;
 }

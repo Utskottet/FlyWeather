@@ -12,6 +12,7 @@ import { WeatherGlyph } from "../WeatherGlyph/index.ts";
 import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
 import { HeightModeToggle, type HeightMode } from "../HeightModeToggle/HeightModeToggle.tsx";
 import { SiteModeToggle, type SiteMode } from "../SiteModeToggle/SiteModeToggle.tsx";
+import { AirspaceToggle } from "../AirspaceToggle/AirspaceToggle.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
@@ -160,6 +161,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const [heightMode, setHeightMode] = useState<HeightMode>("surface");
   const [mapMode, setMapMode] = useState<MapMode>("relief");
   const [siteMode, setSiteMode] = useState<SiteMode>("soaring");
+  const [showAirspace, setShowAirspace] = useState(false);
   // Bounds/fit are computed from the full located set regardless of
   // siteMode, same "no map jump" principle as heightMode/mapMode -
   // switching to Winch never recenters the map just because that set is
@@ -210,6 +212,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         <MapModeToggle mode={mapMode} onChange={setMapMode} availableModes={["relief", "topo", "map"]} />
         <HeightModeToggle mode={heightMode} onChange={setHeightMode} />
         <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
+        <AirspaceToggle show={showAirspace} onChange={setShowAirspace} />
       </div>
       {visibleSites.length === 0 && (
         <div className="site-mode-empty-notice">
@@ -225,6 +228,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         // during the MapLibre port, not just a cosmetic choice.
         boundsPadding={{ top: 40, bottom: 152, left: 40, right: 40 }}
         maxZoom={12}
+        showAirspace={showAirspace}
         className="site-map"
       >
         {(map) => (

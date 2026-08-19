@@ -26,7 +26,7 @@ the block's work.
 | 14c   | MapLibre + Mapterhorn: MAP                    | done        | commit 6a2090b; CI green; live |
 | 15    | Soaring/Winch site-mode switch                | done        | commit 4d3f1a4; CI green; live; lower priority per user |
 | 16    | flyxc data source research                    | done        | commit TBD; research only, no code changes; lower priority per user |
-| 17    | Airspace layer                                | blocked     | user is creating an OpenAIP account/API key (2026-08-19); resume once provided |
+| 17    | Airspace layer                                | done        | commit TBD; verified locally; needs OPENAIP_KEY GitHub secret for future weekly refreshes |
 | 18    | Skyways layer                                 | done        | commit e7aeece; CI green; live; lower priority per user |
 | 19    | Live tracking                                 | skipped     | user decision 2026-08-19: not worth the persistent-backend architecture change right now |
 
@@ -587,3 +587,57 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   persistent-backend architecture change isn't worth it at this time.
   Marked `skipped`, not `blocked` - this is a settled decision, not
   something pending external input.
+
+## Block 17 complete: Airspace layer
+- Status: done
+- Definition of Done: [x] layer toggles on/off without a map jump -
+  verified center/zoom identical across on/off/on  [x] airspace
+  boundaries render correctly over Skåne/Denmark against a known
+  reference - cross-checked Malmö Airport's (Sturup, ESMS) CTR: the
+  rendered layer returned exactly "STURUP CTR", Class C, "0 ft GND -
+  2000 ft MSL", matching the real published CTR, via both a
+  programmatic query and an actual simulated click producing the info
+  popup  [x] CI green
+- Files changed: new src/domain/airspaceTypes.ts (OpenAIP's numeric
+  enum -> labels, sourced from their own published schema, not
+  guessed); new scripts/collect-airspaces.ts; new
+  src/components/Map/airspaceLayer.ts; new
+  src/components/AirspaceToggle/; MapLibreMap.tsx (showAirspace prop,
+  add/remove wired through the same style.load pattern Block 18
+  established); SiteMap.tsx; new
+  .github/workflows/airspace-refresh.yml; new
+  public/static/airspaces.json (663 features, SE+DK, committed - see
+  below); 5 new unit tests, 1 new E2E test
+- **Real research, not guesswork**: OpenAIP's REST API returns only
+  numeric type/class codes with zero embedded labels. Found the
+  authoritative mapping by tracing the Swagger docs page's actual
+  spec-fetch URL (browser-rendered JS, not visible to a plain HTML
+  fetch) and reading the `/airspaces` endpoint's own parameter
+  descriptions in that spec - not inferred from third-party sources.
+  Confirmed against the exact sample airspace pulled during Block 16's
+  research (`type: 21` = "Gliding sector", directly relevant to
+  paragliding).
+- **Architecture decision: committed static file on a weekly cadence,
+  not fetched per-build.** Unlike every other generated JSON in this
+  project, `public/static/airspaces.json` is intentionally committed to
+  git (not gitignored) and only refreshed by a new dedicated weekly
+  workflow, not the existing 5-minute weather-refresh cron - airspace
+  data barely changes, and this avoids hammering a free-tier API key
+  for no benefit while also keeping that key scoped to exactly one
+  job, never reaching the client bundle. Full reasoning in
+  docs/DECISIONS.md.
+- **Credential handling note**: the user pasted their OpenAIP API key
+  directly in chat despite being told not to (and initially pasted
+  their account password by mistake, which they were told to rotate
+  immediately). The key was used exactly once, locally, to research the
+  API and generate the initial airspaces.json - never written into any
+  committed file. The durable credential path is the `OPENAIP_KEY`
+  GitHub Actions secret, which still needs to be confirmed/added for
+  the weekly refresh workflow to keep working going forward.
+- Deferred / unresolved: **user still needs to add `OPENAIP_KEY` as a
+  GitHub Actions repository secret** (Settings -> Secrets and variables
+  -> Actions) for `airspace-refresh.yml` to run successfully on its own
+  schedule - the feature works today off the locally-generated
+  snapshot, but won't self-refresh without it. Airspace scoped to
+  SE+DK only (not the full ~31,500 worldwide airspaces), matching this
+  project's coverage area.

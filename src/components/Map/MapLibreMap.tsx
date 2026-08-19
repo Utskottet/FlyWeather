@@ -9,6 +9,9 @@ import {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { addSkywaysLayer } from "./skywaysLayer.ts";
+import { addAirspaceLayer, removeAirspaceLayer } from "./airspaceLayer.ts";
+
+const AIRSPACE_DATA_URL = `${import.meta.env.BASE_URL}static/airspaces.json`;
 // MapLibre resolves its worker script's URL relative to its own bundled
 // module's import.meta.url at runtime, which breaks once Rollup inlines
 // maplibre-gl into our own bundle (the worker file itself never gets
@@ -38,6 +41,8 @@ export interface MapLibreMapProps {
    */
   boundsPadding?: number | PaddingOptions;
   maxZoom?: number;
+  /** User-toggled (Block 17), off by default - unlike Skyways this fetches a ~700KB file, so it's only added when actually shown. */
+  showAirspace?: boolean;
   className?: string;
   children?: (map: MapLibreGLMap | null) => React.ReactNode;
 }
@@ -49,11 +54,25 @@ export interface MapLibreMapProps {
  * this component never recreates the map for those). Exposes the live
  * map instance to children via a render-prop so markers can attach to it.
  */
-export function MapLibreMap({ style, bounds, boundsPadding = 40, maxZoom = 12, className, children }: MapLibreMapProps) {
+export function MapLibreMap({
+  style,
+  bounds,
+  boundsPadding = 40,
+  maxZoom = 12,
+  showAirspace = false,
+  className,
+  children,
+}: MapLibreMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreGLMap | null>(null);
   const styleRef = useRef(style);
   styleRef.current = style;
+  // "style.load" re-fires after every setStyle() (mode switch), which
+  // wipes all custom sources/layers - this ref lets that handler know
+  // whether to re-add airspace without needing to recreate the listener
+  // itself every time the showAirspace prop changes.
+  const showAirspaceRef = useRef(showAirspace);
+  showAirspaceRef.current = showAirspace;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -77,7 +96,10 @@ export function MapLibreMap({ style, bounds, boundsPadding = 40, maxZoom = 12, c
     // call (mode switch) - setStyle() clears sources/layers not part of
     // the new spec, so this must re-run every time to stay always-on
     // across RELIEF/TOPO/MAP per Block 18's "no toggle" requirement.
-    instance.on("style.load", () => addSkywaysLayer(instance));
+    instance.on("style.load", () => {
+      addSkywaysLayer(instance);
+      if (showAirspaceRef.current) addAirspaceLayer(instance, AIRSPACE_DATA_URL);
+    });
 
     return () => {
       instance.remove();
@@ -94,6 +116,19 @@ export function MapLibreMap({ style, bounds, boundsPadding = 40, maxZoom = 12, c
   useEffect(() => {
     map?.setStyle(style);
   }, [map, style]);
+
+  // Toggling airspace while the current style is already loaded (the
+  // common case - no mode switch involved) adds/removes it directly;
+  // surviving an actual mode switch is handled by the "style.load"
+  // listener above via showAirspaceRef.
+  useEffect(() => {
+    if (!map) return;
+    if (showAirspace) {
+      addAirspaceLayer(map, AIRSPACE_DATA_URL);
+    } else {
+      removeAirspaceLayer(map);
+    }
+  }, [map, showAirspace]);
 
   return (
     <div ref={containerRef} className={className} data-testid="site-map-canvas">

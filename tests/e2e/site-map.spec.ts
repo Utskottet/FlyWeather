@@ -64,6 +64,42 @@ test.describe("Site map", () => {
     expect(viewAfter).toEqual(viewBefore);
   });
 
+  test("Airspace toggle adds/removes the layer without a map jump, off by default", async ({ page }) => {
+    await page.goto("/");
+    await page.locator(".rose-marker-icon").first().waitFor();
+    await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
+
+    // off by default (Block 17: opt-in reference info, not default clutter)
+    await expect(page.getByTestId("airspace-off")).toHaveClass(/active/);
+    const hasLayerBefore = await page.evaluate(() => window.__flyweatherMap!.getLayer("airspace-fill") !== undefined);
+    expect(hasLayerBefore).toBe(false);
+
+    const viewBefore = await page.evaluate(() => {
+      const m = window.__flyweatherMap!;
+      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
+    });
+
+    await page.getByTestId("airspace-on").click();
+    await page.waitForFunction(() => window.__flyweatherMap!.getLayer("airspace-fill") !== undefined);
+
+    const viewDuring = await page.evaluate(() => {
+      const m = window.__flyweatherMap!;
+      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
+    });
+    expect(viewDuring).toEqual(viewBefore);
+
+    await page.getByTestId("airspace-off").click();
+    await expect
+      .poll(() => page.evaluate(() => window.__flyweatherMap!.getLayer("airspace-fill") !== undefined))
+      .toBe(false);
+
+    const viewAfter = await page.evaluate(() => {
+      const m = window.__flyweatherMap!;
+      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
+    });
+    expect(viewAfter).toEqual(viewBefore);
+  });
+
   for (const width of [360, 390, 430]) {
     test(`no horizontal overflow at ${width}px width`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });
