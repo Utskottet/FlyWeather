@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildOpenMeteoBatchUrl,
   buildOpenMeteoUrl,
   normalizeOpenMeteoResponse,
   type OpenMeteoResponse,
@@ -18,6 +19,20 @@ describe("buildOpenMeteoUrl", () => {
     expect(url).toContain("wind_direction_120m");
     expect(url).toContain("wind_speed_180m");
     expect(url).toContain("weather_code");
+  });
+});
+
+describe("buildOpenMeteoBatchUrl (Block 13 - one request for every site)", () => {
+  it("comma-joins every site's coordinates in request order, with full hourly variables", () => {
+    const url = buildOpenMeteoBatchUrl([
+      { lat: 55.4, lon: 14.0 },
+      { lat: 55.9, lon: 12.7 },
+    ]);
+    const params = new URL(url).searchParams;
+    expect(params.get("latitude")).toBe("55.400000,55.900000");
+    expect(params.get("longitude")).toBe("14.000000,12.700000");
+    expect(params.get("hourly")).toContain("wind_speed_180m");
+    expect(params.get("forecast_days")).toBe("5");
   });
 });
 

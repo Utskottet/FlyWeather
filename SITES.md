@@ -78,9 +78,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 55.387096
+      lon: 14.065681
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Kåseberga\" hamlet) - village-level approximation, not the exact launch point"
     source_direction_label: S
     ridge_height_m: 50
     rose:
@@ -114,9 +115,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 55.387096
+      lon: 14.065681
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Kåseberga\" hamlet, same as kaseberga-s) - village-level approximation only; this site is a distinct sub-location near the harbor/smokery, not the village center"
     source_direction_label: SO
     ridge_height_m: null
     rose:
@@ -147,9 +149,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 55.382654
+      lon: 14.054412
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Ales stenar\" tourist attraction) - the monument itself is well-mapped, so this is a closer approximation than most in this batch, but still not a pilot-confirmed launch coordinate"
     source_direction_label: SV
     ridge_height_m: 30
     rose:
@@ -217,9 +220,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 55.613949
+      lon: 14.289300
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Vik\" village, Simrishamns kommun - disambiguated by kommun since Vik is a common Swedish place name) - village-level approximation, not the exact launch point"
     source_direction_label: O
     ridge_height_m: null
     rose:
@@ -249,9 +253,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 55.699224
+      lon: 14.205015
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Vitemölla\" village) - village-level approximation, not the exact launch point"
     source_direction_label: ONO
     ridge_height_m: 25
     rose:
@@ -286,9 +291,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 55.565760
+      lon: 12.908040
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Lernacken\", tagged as a railway/site POI near the Öresund bridge's Swedish landfall) - moderate confidence, not a pilot-confirmed launch coordinate"
     source_direction_label: SSO-SSV
     ridge_height_m: 20
     rose:
@@ -320,9 +326,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 55.524132
+      lon: 12.933375
       verified: false
+      source: "OSM Nominatim place-name lookup - \"Brofästet\" itself returned no results; using \"Klagshamn\" (the nearest named locality, also near the Öresund bridge's Swedish side) as a coarse fallback proxy, not a direct match"
     source_direction_label: V
     ridge_height_m: 10
     rose:
@@ -348,9 +355,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 55.771661
+      lon: 12.956366
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Barsebäck\" village, Kävlinge kommun) - village-level approximation, not the exact launch point"
     source_direction_label: VNV-NNV
     ridge_height_m: 10
     rose:
@@ -382,9 +390,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 55.939428
+      lon: 12.773736
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Hamnkiosken på Ålabodarna\", a kiosk directly at Ålabodstranden beach) - closer than most in this batch since it's at the beach itself, but still not a pilot-confirmed launch coordinate"
     source_direction_label: V-SV
     ridge_height_m: 15
     rose:
@@ -419,9 +428,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 56.092192
+      lon: 12.655801
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Laröd\" village, Helsingborgs kommun) - village-level approximation, not the exact launch point"
     source_direction_label: SV
     ridge_height_m: 35
     rose:
@@ -447,9 +457,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 56.200857
+      lon: 12.551585
       verified: false
+      source: "OSM Nominatim place-name lookup - \"Höganäs Strandbaden\" returned no results; using \"Höganäs\" (the town center) as a coarser fallback, since the site is a specific beach within the town, not the town center itself"
     source_direction_label: VNV
     ridge_height_m: null
     rose:
@@ -480,9 +491,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 56.282747
+      lon: 12.498323
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Mölle\" village, Höganäs kommun) - village-level approximation, not the exact launch point on Kullaberg"
     source_direction_label: SSV-VSV
     ridge_height_m: 80
     rose:
@@ -521,9 +533,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 56.463790
+      lon: 12.708630
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Hovs Hallar\" nature reserve) - shared with hovs-hallar-nv since both are launch points at/near the same nature reserve; imprecise, does not distinguish the two"
     source_direction_label: N
     ridge_height_m: 150
     rose:
@@ -554,9 +567,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 56.463790
+      lon: 12.708630
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Hovs Hallar\" nature reserve) - shared with hovs-hallar-n since both are launch points at/near the same nature reserve; imprecise, does not distinguish the two"
     source_direction_label: NV-NNV
     ridge_height_m: 25
     rose:
@@ -624,9 +638,10 @@ sites:
     country: SE
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 55.905804
+      lon: 12.702710
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Ven\" island, general) - island-level approximation only; unlike ven-n/ven-sv/ven-v this site has no CPS-stated coordinates, so this is coarser than its siblings and does not target the southeast side specifically"
     source_direction_label: SO-O
     ridge_height_m: null
     rose:
@@ -714,9 +729,10 @@ sites:
     country: DK
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 56.124417
+      lon: 12.312449
       verified: false
+      source: "OSM Nominatim place-name lookup - \"Gilbjerg Hoved\" itself returned no results; using \"Gilleleje\" (the nearby town the site is described as being between Gilleleje and Smidstrup) as a coarse fallback"
     source_direction_label: NNV
     ridge_height_m: 33
     rose:
@@ -742,9 +758,10 @@ sites:
     country: DK
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 56.099210
+      lon: 12.165719
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Rågeleje\" village) - village-level approximation, not the exact launch point"
     source_direction_label: NV
     ridge_height_m: 40
     rose:
@@ -770,9 +787,10 @@ sites:
     country: DK
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 57.370486
+      lon: 9.711250
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Løkken\" village, Hjørring Kommune - disambiguated from a same-named hamlet in Syddjurs Kommune) - village-level approximation, not the exact launch point"
     source_direction_label: VNV (V-NV)
     ridge_height_m: 25
     rose:
@@ -803,9 +821,10 @@ sites:
     country: DK
     type: hang
     coordinates:
-      lat: null
-      lon: null
+      lat: 56.903551
+      lon: 10.253543
       verified: false
+      source: "OSM Nominatim place-name lookup (\"Dokkedal\" village, Aalborg Kommune) - village-level approximation, not the exact launch point"
     source_direction_label: O
     ridge_height_m: 48
     rose:

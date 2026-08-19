@@ -8,10 +8,13 @@ test.describe("Live data at NOW", () => {
     // hammar is first in SITES.md order among located sites, and has a
     // configured (and currently working, per docs/DATA_SOURCE_AUDIT.md)
     // Holfuy source.
-    const markers = page.locator(".leaflet-marker-icon");
+    const markers = page.locator(".rose-marker-icon");
     await markers.first().waitFor();
     await page.waitForTimeout(1500); // let both forecast + live fetches settle
-    await markers.first().click();
+    // force: true - with all 24 sites located (Block 13), some cluster
+    // closely enough to visually overlap at this zoom (known, deferred
+    // §16 gap, not exercised by this test).
+    await markers.first().click({ force: true });
 
     const badge = page.getByTestId("site-sheet-source");
     await expect(badge).toBeVisible();

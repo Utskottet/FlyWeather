@@ -1,21 +1,25 @@
 import { expect, test } from "@playwright/test";
 
-const LOCATED_SITE_COUNT = 5; // hammar, ravlunda, ven-n, ven-sv, ven-v (see docs/SITE_DATA_AUDIT.md)
+const LOCATED_SITE_COUNT = 24; // all enabled sites now have coordinates as of Block 13 (see docs/SITE_DATA_AUDIT.md)
 
 test.describe("Site map", () => {
   test("renders the map with one marker per located enabled site", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByTestId("site-map")).toBeVisible();
-    const markers = page.locator(".leaflet-marker-icon");
+    const markers = page.locator(".rose-marker-icon");
     await expect(markers).toHaveCount(LOCATED_SITE_COUNT);
   });
 
   test("tapping a marker opens the site sheet, closing dismisses it", async ({ page }) => {
     await page.goto("/");
-    const markers = page.locator(".leaflet-marker-icon");
+    const markers = page.locator(".rose-marker-icon");
     await expect(markers).toHaveCount(LOCATED_SITE_COUNT);
 
-    await markers.first().click();
+    // force: true - with all 24 sites now located (Block 13), several
+    // cluster closely enough at this zoom to visually overlap (a known,
+    // deferred §16 marker-clustering gap, not something this test
+    // exercises); force bypasses Playwright's overlap-interception check.
+    await markers.first().click({ force: true });
     const sheet = page.getByTestId("site-sheet");
     await expect(sheet).toBeVisible();
     await expect(sheet.locator("h2")).not.toBeEmpty();

@@ -10,7 +10,7 @@ test.describe("Time slider", () => {
     });
 
     await page.goto("/");
-    await page.locator(".leaflet-marker-icon").first().waitFor();
+    await page.locator(".rose-marker-icon").first().waitFor();
 
     const range = page.getByTestId("time-slider-range");
     // wait for the actual signal that forecast data has loaded (max stays

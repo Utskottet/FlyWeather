@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { findNowIndex } from "../domain/timeAxis.ts";
-import { openMeteoForecastProvider } from "../providers/forecast/openMeteoProvider.ts";
+import { fetchSitesForecastBatch } from "../providers/forecast/openMeteoProvider.ts";
 import { MODEL_HEIGHTS_M } from "../domain/types.ts";
 import type { LocatedSite } from "../domain/sites.ts";
 import type { SiteForecast } from "../domain/types.ts";
@@ -16,9 +16,13 @@ interface SiteForecastsState {
 }
 
 /**
- * Fetches each located site's forecast once and windows it to the
- * NOW..+72h slider range. The time slider then only ever indexes into
- * this already-fetched data - no API call per slider tick (§26).
+ * Fetches every located site's forecast in one batched request (Block
+ * 13: with all 24 enabled sites now located, 24 separate requests per
+ * page load was real, measurable overhead - Open-Meteo's multi-location
+ * support handles this in one call, same technique as the wind grid)
+ * and windows each to the NOW..+72h slider range. The time slider then
+ * only ever indexes into this already-fetched data - no API call per
+ * slider tick (§26).
  */
 export function useSiteForecasts(sites: LocatedSite[]): SiteForecastsState {
   const [state, setState] = useState<SiteForecastsState>({
@@ -39,14 +43,12 @@ export function useSiteForecasts(sites: LocatedSite[]): SiteForecastsState {
     let cancelled = false;
     const now = new Date();
 
-    Promise.all(
-      sites.map((site) =>
-        openMeteoForecastProvider.fetchSiteForecast({
-          siteId: site.id,
-          lat: site.coordinates.lat,
-          lon: site.coordinates.lon,
-        }),
-      ),
+    fetchSitesForecastBatch(
+      sites.map((site) => ({
+        siteId: site.id,
+        lat: site.coordinates.lat,
+        lon: site.coordinates.lon,
+      })),
     )
       .then((forecasts) => {
         if (cancelled) return;

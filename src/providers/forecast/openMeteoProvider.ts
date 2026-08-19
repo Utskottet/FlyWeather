@@ -49,6 +49,25 @@ export function buildOpenMeteoUrl(lat: number, lon: number): string {
   return `${OPEN_METEO_BASE_URL}?${params.toString()}`;
 }
 
+/**
+ * One request for every site's forecast, using the same comma-separated
+ * multi-location capability the wind grid (Block 10) already relies on -
+ * verified live that it also works with full hourly variables, not just
+ * `current`. With 24 sites now located (Block 13), fetching each one
+ * individually was 24 separate requests per page load; this cuts it to 1.
+ */
+export function buildOpenMeteoBatchUrl(points: { lat: number; lon: number }[]): string {
+  const params = new URLSearchParams({
+    latitude: points.map((p) => p.lat.toFixed(6)).join(","),
+    longitude: points.map((p) => p.lon.toFixed(6)).join(","),
+    hourly: HOURLY_VARS.join(","),
+    wind_speed_unit: "ms",
+    timezone: "UTC",
+    forecast_days: String(FORECAST_DAYS),
+  });
+  return `${OPEN_METEO_BASE_URL}?${params.toString()}`;
+}
+
 /** Normalizes a raw Open-Meteo response into our internal SiteForecast shape. Pure - no network. */
 export function normalizeOpenMeteoResponse(siteId: string, raw: OpenMeteoResponse): SiteForecast {
   const { hourly } = raw;
@@ -79,3 +98,17 @@ export const openMeteoForecastProvider: ForecastProvider = {
     return normalizeOpenMeteoResponse(site.siteId, raw);
   },
 };
+
+/** Fetches every site's forecast in a single batched request. */
+export async function fetchSitesForecastBatch(sites: ForecastSiteRequest[]): Promise<SiteForecast[]> {
+  if (sites.length === 0) return [];
+  if (sites.length === 1) return [await openMeteoForecastProvider.fetchSiteForecast(sites[0])];
+
+  const url = buildOpenMeteoBatchUrl(sites);
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Open-Meteo batch request failed (HTTP ${res.status})`);
+  }
+  const raw = (await res.json()) as OpenMeteoResponse[];
+  return sites.map((site, i) => normalizeOpenMeteoResponse(site.siteId, raw[i]));
+}

@@ -99,3 +99,45 @@ was flipped to `true` from CPS prose anywhere in Block 2, per §24 — every
 sector/speed corroboration found only confirms the compass-label or
 minimum-speed-quote the existing provisional data was already seeded
 from, not exact verified boundaries.
+
+## Block 13 — Non-CPS coordinate resolution (OpenStreetMap Nominatim)
+
+Block 2 deliberately stayed CPS-only and left 19 sites unresolved. This
+block revisits that limitation using OpenStreetMap's Nominatim geocoder
+(free, keyless, rate-limited to 1 request/second with a required
+descriptive User-Agent - both respected). Every result below was sanity-
+checked against known regional geography before being accepted (e.g.
+correct kommun/municipality, correct coast, correct country) - none were
+accepted purely on the geocoder's word.
+
+**All 19 coordinates below are village/landmark-level approximations,
+not exact launch-point coordinates**, and are marked `coordinates.
+verified: false` accordingly, per §24's provisional-data rule extended
+to this new source type. Each `SITES.md` entry's `coordinates.source`
+field states exactly what was searched and how confident the match is.
+
+| Site | Query | Result | Confidence |
+|---|---|---|---|
+| kaseberga-s | "Kåseberga, Sweden" | Direct hamlet match | Village-level |
+| rokerierna | "Kåseberga, Sweden" | Same as above (reused) | Village-level, and this site is a distinct sub-location near the harbor, not the village center |
+| ales-stenar-sv | "Ales stenar, Sweden" | Direct landmark match (the monument itself) | Landmark-level - the closest match in this batch |
+| vik | "Vik, Simrishamns kommun, Sweden" | Direct village match, kommun-disambiguated | Village-level |
+| vitemolla | "Vitemölla, Sweden" | Direct village match | Village-level |
+| lernacken | "Lernacken, Malmö, Sweden" | Matched a "Lernacken" railway/site POI near the Öresund bridge's Swedish landfall | Moderate - name matches exactly but the POI type is unusual |
+| brofastet | "Brofästet, Malmö, Sweden" then fallback "Klagshamn, Malmö, Sweden" | No direct result; used the nearest named locality near the bridge's Swedish side | Coarse fallback |
+| barseback | "Barsebäck, Sweden" | Direct village match (Kävlinge kommun; a same-named Stockholm result was rejected) | Village-level |
+| alabodarna | "Ålabodarna, Glumslöv, Sweden" | Matched a kiosk directly at Ålabodstranden beach | Beach-level - closer than most in this batch |
+| larod | "Laröd, Helsingborg, Sweden" (dropped "-baden" suffix after no result) | Direct village match | Village-level |
+| hoganas | "Höganäs Strandbaden, Sweden" then fallback "Höganäs, Sweden" | No direct result; used the town center | Coarse fallback - actual site is a specific beach, not the town center |
+| molle | "Mölle, Sweden" | Direct village match (a same-named Umeå result was rejected) | Village-level |
+| hovs-hallar-n / hovs-hallar-nv | "Hovs Hallar, Sweden" | Matched POIs at the nature reserve | Shared between both sites - does not distinguish the two separate launch points |
+| ven-so | "Ven, Landskrona, Sweden" | Matched the island generally | Island-level - coarser than ven-n/sv/v's CPS-sourced side-specific coordinates |
+| dk-gilbjerg-hoved | "Gilbjerg Hoved, Gilleleje, Denmark" then fallback "Gilleleje, Denmark" | No direct result; used the nearby town (site is stated as between Gilleleje and Smidstrup) | Coarse fallback |
+| dk-strandbjerggard | "Rågeleje, Denmark" | Direct village match | Village-level |
+| dk-lokken | "Løkken, Denmark" | Direct match, disambiguated from a same-named Syddjurs Kommune hamlet | Village-level |
+| dk-dokkedal | "Dokkedal, Denmark" | Direct village match | Village-level |
+
+**Result: 24 of 24 enabled sites now have a coordinate** (up from 5).
+None were flipped to `verified: true` - that still requires a
+pilot-confirmed or CPS-stated coordinate, which this geocoding pass does
+not provide.

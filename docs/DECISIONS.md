@@ -434,3 +434,43 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   non-duplicated behavior. Replaced the fixed sleep with a real wait
   condition (polling the range input's `max` attribute until forecast
   data actually arrives) instead of just increasing an opaque timeout.
+
+## Block 13
+
+- **OpenStreetMap Nominatim for coordinate resolution**, not a paid
+  geocoder - free, keyless, and its usage policy (1 req/sec, descriptive
+  User-Agent) was respected directly in the research script. Every
+  result was sanity-checked against known regional geography (correct
+  kommun/coast/country) before being accepted, not taken on the
+  geocoder's word alone - full source/confidence notes per site in
+  `docs/SITE_DATA_AUDIT.md`.
+- **Every new coordinate stays `verified: false`** with an explicit
+  `coordinates.source` note describing precision (village-level,
+  landmark-level, or a coarser fallback proxy where even the village
+  name didn't geocode) - none were promoted to `verified: true`, since
+  a geocoded village center is not a pilot-confirmed launch point.
+- **Found and fixed a real architecture problem this surfaced, not
+  papered over with longer test timeouts**: going from 5 to 24 located
+  sites meant `useSiteForecasts` fired 24 separate Open-Meteo requests
+  per page load (doubled to 48 by dev-mode StrictMode), which pushed one
+  E2E test's runtime from ~7s to over a minute and caused several others
+  to fail outright. Root cause diagnosed, then fixed by extending the
+  multi-location batching technique already built for the wind grid
+  (Block 10) to per-site forecasts too (`fetchSitesForecastBatch`) -
+  verified live that Open-Meteo's multi-location endpoint supports full
+  hourly variables, not just `current`. Cut 24 requests to 1, restoring
+  the full E2E suite to ~7s. This also improves real-world production
+  page-load performance and is better API citizenship toward Open-Meteo,
+  not just a test-suite fix.
+- **Marker-clustering elevated from a minor to a clearly-visible issue.**
+  Block 7 first flagged Ven's three sites overlapping at low zoom as a
+  deferred §16 gap. With all 24 sites now on the map, several more
+  clusters appeared (Kåseberga's three sites share a coordinate exactly,
+  since two share zero landmark precision and were assigned the same
+  village center; Hovs Hallar's two sites likewise). Not fixed in this
+  block - still out of scope for "resolve coordinates" - but four E2E
+  tests needed `{ force: true }` clicks to work around Playwright's
+  overlap-interception check, each commented with why. This meaningfully
+  raises the priority of real marker-clustering/collision handling for
+  whenever map polish work happens (Block 14's MapLibre rewrite is a
+  natural place to build it in properly).
