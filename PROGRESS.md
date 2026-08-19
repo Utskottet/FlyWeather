@@ -26,9 +26,9 @@ the block's work.
 | 14c   | MapLibre + Mapterhorn: MAP                    | done        | commit 6a2090b; CI green; live |
 | 15    | Soaring/Winch site-mode switch                | done        | commit 4d3f1a4; CI green; live; lower priority per user |
 | 16    | flyxc data source research                    | done        | commit TBD; research only, no code changes; lower priority per user |
-| 17    | Airspace layer                                | not_started | depends on Block 16 |
-| 18    | Skyways layer                                 | not_started | depends on Block 16 |
-| 19    | Live tracking                                 | not_started | depends on Block 16 |
+| 17    | Airspace layer                                | blocked     | needs a free OpenAIP account/API key - see Block 16 findings |
+| 18    | Skyways layer                                 | done        | commit TBD; verified locally; lower priority per user |
+| 19    | Live tracking                                 | blocked     | needs an architecture decision (persistent backend) - see Block 16 findings |
 
 Status values: `not_started`, `in_progress`, `blocked`, `done`.
 
@@ -528,3 +528,39 @@ implementation started yet - purely a planning update.
   process anywhere). Real support would need a genuine architecture
   change, flagged for Block 19 as a decision point rather than resolved
   here.
+
+## Block 18 complete: Skyways layer
+- Status: done
+- Definition of Done: [x] renders on map load with no user action -
+  always-on in all three map modes, no toggle  [x] doesn't obscure site
+  roses - markers are MapLibre `Marker` DOM elements, which always paint
+  above the WebGL canvas regardless of style layer order, so this is
+  structurally guaranteed rather than something that needed z-index
+  tuning  [x] degrades gracefully if unavailable - raster tile fetch
+  failures are handled internally by MapLibre (blank tile, no thrown
+  error), verified nothing here can block map `load`  [x] CI green
+- Files changed: new skywaysLayer.ts; MapLibreMap.tsx (registers the
+  layer on every `style.load` event, not just the first, so it survives
+  RELIEF/TOPO/MAP switches)
+- **Found and fixed a real bug before shipping**: the initial
+  implementation rendered an always-blank overlay - no error anywhere,
+  tiles requested and returned `200`, just visually empty. Traced to a
+  tile Y-axis scheme mismatch: kk7's tiles use the TMS convention
+  (Y=0 south), not the XYZ/slippy-map convention MapLibre assumes by
+  default. Confirmed by cross-referencing flyxc's own Google-Maps
+  overlay code (which manually flips Y) and by fetching a known
+  soaring-hotspot tile (Annecy, France) both ways: un-flipped returned
+  a 68-byte blank PNG, TMS-flipped returned a 90KB+ real thermal-density
+  image (viewed directly to confirm). Fixed with MapLibre's built-in
+  `scheme: "tms"` raster-source option. Re-verified after the fix by
+  screenshotting real colored track data over inland Skåne and sampling
+  tile response sizes (500B-22KB, well above the blank-tile threshold).
+  This is exactly the kind of silent, error-free failure this project's
+  "verify against production/real output, don't trust absence of
+  errors" practice exists to catch.
+- Attribution (`thermal.kk7.ch`, CC BY-NC-SA 4.0 per Block 16's license
+  finding) surfaces automatically through MapLibre's existing
+  attribution control via the source's `attribution` field - no extra
+  UI needed.
+- Deferred / unresolved: none - self-contained once the TMS bug was
+  found and fixed.

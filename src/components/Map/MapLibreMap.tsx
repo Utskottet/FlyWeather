@@ -8,6 +8,7 @@ import {
   type StyleSpecification,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { addSkywaysLayer } from "./skywaysLayer.ts";
 // MapLibre resolves its worker script's URL relative to its own bundled
 // module's import.meta.url at runtime, which breaks once Rollup inlines
 // maplibre-gl into our own bundle (the worker file itself never gets
@@ -72,6 +73,11 @@ export function MapLibreMap({ style, bounds, boundsPadding = 40, maxZoom = 12, c
     instance.once("load", () => {
       window.__flyweatherMapLoaded = true;
     });
+    // "style.load" fires on the initial load AND after every setStyle()
+    // call (mode switch) - setStyle() clears sources/layers not part of
+    // the new spec, so this must re-run every time to stay always-on
+    // across RELIEF/TOPO/MAP per Block 18's "no toggle" requirement.
+    instance.on("style.load", () => addSkywaysLayer(instance));
 
     return () => {
       instance.remove();

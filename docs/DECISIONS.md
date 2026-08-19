@@ -709,3 +709,42 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   complete and tested, but the Winch site set is honestly empty right
   now - a real data gap, not a missing feature, and it activates
   automatically the moment either site gets a real coordinate.
+
+## Block 18
+
+- **Layer registered imperatively in `MapLibreMap.tsx`, not baked into
+  each mode's `StyleSpecification`**: since MAP mode points at an
+  external OpenFreeMap style URL (Block 14c) rather than an inline
+  spec, there's no single style JSON to add a layer into across all
+  three modes. Instead, `addSkywaysLayer()` is called on every
+  `style.load` event (fires on initial load *and* after every
+  `setStyle()` call) - one code path handles all three modes uniformly
+  and survives mode switches, since `setStyle()` clears any
+  sources/layers not part of the incoming style.
+- **Bug found before shipping: silent blank-overlay from a tile scheme
+  mismatch.** The first implementation had no visible errors anywhere -
+  tiles requested successfully (`200`), `getStyle()` showed the source/
+  layer present - but rendered nothing. Root cause: `thermal.kk7.ch`
+  serves tiles in the TMS Y-axis convention (Y=0 at the south), not the
+  XYZ/slippy-map convention MapLibre's raster source assumes by
+  default. Cross-referenced flyxc's own frontend code
+  (`skyways-element.ts`'s `getTileUrl`), which manually flips Y for
+  Google Maps' overlay API - the same transform TMS vs. XYZ requires -
+  confirming this wasn't a one-off flyxc quirk but the tile server's
+  actual scheme. Verified by fetching one tile both ways at a known
+  soaring hotspot (Annecy, France): un-flipped returned a 68-byte blank
+  PNG, correctly-scheme'd returned a real 90KB+ image with visible
+  thermal-density data (viewed directly). Fixed with MapLibre's native
+  `scheme: "tms"` raster-source option rather than hand-rolling the Y
+  flip in the URL template. This is a good example of why "no console
+  errors and the network tab looks fine" isn't sufficient verification
+  for a visual feature - only actually looking at rendered output over
+  a region with real data caught it.
+- **Opacity 0.85, layer added on top of the style stack** (no
+  `beforeId`): kk7's PNGs already carry per-pixel transparency for
+  areas without data, so a full-stack top layer with a slight
+  reduction blends acceptably over hillshade/contours/roads in all
+  three modes without needing per-mode z-order tuning. Not obscuring
+  site roses is structurally guaranteed regardless of this choice - GL
+  `Marker` instances are separate DOM elements positioned above the
+  WebGL canvas entirely, not part of the style's layer stack.
