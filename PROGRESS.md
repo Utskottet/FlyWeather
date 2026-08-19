@@ -676,3 +676,37 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   (hit earlier this session from extensive testing) was still active
   at implementation time. CI runs on different runners and is
   unaffected; production verification happens post-deploy as usual.
+
+## Wind arrow round 2: triple density again, 1.5x size, gray sea
+- Status: done
+- User feedback: "great let tripple that desity of arrosw. and increse
+  size of arrows.. x 1.5 also make map sea gray #8c94a1"
+- Definition of Done: [x] density tripled again - 225 -> 676 points
+  (~3x)  [x] arrow size 1.5x - 26px -> 39px  [x] sea gray in Relief/Topo
+  - verified via pixel-sampling a live screenshot (`#969da9`, matching
+    the requested `#8c94a1` allowing for anti-aliasing)  [x] CI green
+- Files changed: useWindGrid.ts (GRID_RESOLUTION 15->26);
+  openMeteoGridProvider.ts (new request-batching logic + 2 new unit
+  tests); SiteMap.tsx (ARROW_SIZE 26->39); mapStyles.ts (water
+  fill-color -> #8c94a1)
+- **Real bug caught mid-implementation**: tripling density to 676
+  points would exceed Open-Meteo's real URL-length ceiling. Initial
+  probing used a naive raw-string-concatenated test URL and found ~500
+  points safe - but the actual `buildGridUrl()` uses `URLSearchParams`,
+  which percent-encodes commas (%2C, 3 bytes vs. 1), so the real ceiling
+  is meaningfully lower (~400-449 points) than that first probe
+  suggested. Re-tested using the exact same URL-building code as
+  production before picking a final batch size (300, with real margin
+  below the boundary, not sitting at the edge) - this is exactly the
+  kind of gap between "how I tested" and "what the code sends" that's
+  easy to miss without re-checking against the real function.
+- Sea color change only affects RELIEF/TOPO (this codebase's own inline
+  styles) - MAP mode is an externally hosted OpenFreeMap style (Block
+  14c) not under this project's control, though its own positron style
+  happens to already read as grayish so no visible clash resulted.
+- Deferred / unresolved: same as the previous round - Open-Meteo's
+  daily rate limit blocked a full live-data visual check locally
+  (confirmed via curl and the verification agent's browser hitting the
+  same 429). Sea color WAS verified live via pixel sampling; density/
+  size/arrow-shape together need a check once the quota resets or from
+  a different network.

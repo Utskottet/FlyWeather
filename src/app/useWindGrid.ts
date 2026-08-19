@@ -3,11 +3,14 @@ import { buildWindGrid } from "../domain/windGrid.ts";
 import { fetchWindGrid, type GridWindPoint } from "../providers/forecast/openMeteoGridProvider.ts";
 import type { LatLonBounds } from "../components/Map/mapBounds.ts";
 
-// 15x15 = up to 225 points, ~6.25x the previous 6x6=36 grid - user
-// feedback after Block 10 asked for "x6 density." Verified the request
-// URL (comma-separated lat/lon lists) stays well under 4000 chars at
-// this size, far below typical URL length limits.
-const GRID_RESOLUTION = 15;
+// 26x26 = up to 676 points, ~3x the previous 15x15=225 grid - user
+// feedback asked to "tripple that density." A single request at this
+// size would exceed Open-Meteo's nginx front-end's real URL-length
+// ceiling (empirically ~400-449 points before a hard 414, see
+// openMeteoGridProvider.ts's MAX_POINTS_PER_REQUEST), so fetchWindGrid
+// splits large point sets into parallel batched requests rather than
+// one oversized URL.
+const GRID_RESOLUTION = 26;
 
 interface WindGridState {
   points: GridWindPoint[];

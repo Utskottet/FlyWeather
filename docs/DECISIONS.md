@@ -847,3 +847,43 @@ direction reads unambiguously at a glance.
   (`WindArrow.test.tsx` parses the path's `d` attribute to check
   tip/tail positioning and the head/tail width step;
   `windGrid.test.ts` locks in the 225-point/6.25x figure).
+
+## Wind arrow field, round 2: triple density again, 1.5x arrow size, gray sea
+
+Immediate follow-up feedback after the first density/shape pass:
+"tripple that desity of arrosw," arrows 1.5x bigger, and the map's sea
+color changed to gray (#8c94a1).
+
+- **Grid resolution 15->26** (225 -> 676 points, ~3x). A single request
+  at 676 points would exceed Open-Meteo's real URL-length ceiling (see
+  below), so `fetchWindGrid` now splits into parallel batched requests
+  automatically rather than needing a smaller resolution as a workaround.
+- **Bug caught before shipping: the first URL-length probe from Block
+  10/the previous round was measuring the wrong thing.** Re-testing to
+  find a safe per-batch point cap, a naive Node script built the grid
+  URL via raw string concatenation (`"latitude=" + values.join(",")`),
+  which found ~500 points (~8.1KB) safe and ~600 (~9.7KB) failing with
+  `414 Request-URI Too Large`. But the *actual* `buildGridUrl()` builds
+  its URL via `URLSearchParams`, which percent-encodes every comma as
+  `%2C` (3 bytes instead of 1) - a real, easy-to-miss gap between "how
+  I tested" and "what the code actually sends." Re-probed using
+  `URLSearchParams` exactly like production code: 400 points (~8.0KB)
+  still works, 450 (~9.0KB) fails - a real ceiling roughly 30-40%
+  *lower* in point-count terms than the naive test suggested. Landed on
+  `MAX_POINTS_PER_REQUEST = 300` (openMeteoGridProvider.ts) for genuine
+  margin below that boundary rather than sitting right at the edge -
+  676 points now splits into 3 batches (300+300+76), verified end-to-
+  end via a temporary diagnostic E2E spec confirming real request sizes
+  stay well under 6.1KB each.
+- **Arrow size 26px -> 39px** (1.5x, `ARROW_SIZE` in `SiteMap.tsx`) -
+  the arrow shape itself (previous round's redesign) needed no changes,
+  since its proportions are all relative to the `size` prop.
+- **Sea color -> gray (`#8c94a1`)**: changed the shared `water` layer's
+  `fill-color` in `mapStyles.ts`, which RELIEF and TOPO both use (TOPO
+  spreads RELIEF's layers). MAP mode's sea color is NOT changed by this
+  - it's OpenFreeMap's externally hosted style (Block 14c), not
+  something this codebase controls without forking that entire style;
+  confirmed via a live screenshot that MAP mode's own sea color happens
+  to already read as grayish in their positron style anyway, so no
+  visible inconsistency resulted, but this is coincidental, not
+  something this change actually controls.

@@ -9,9 +9,9 @@ describe("buildWindGrid", () => {
     expect(buildWindGrid(bounds, 3)).toHaveLength(9);
   });
 
-  it("resolution=15 (useWindGrid's production value) yields ~6x the original 6x6 density", () => {
-    expect(buildWindGrid(bounds, 15)).toHaveLength(225);
-    expect(225 / 36).toBeCloseTo(6.25, 1);
+  it("resolution=26 (useWindGrid's production value) yields ~3x the previous 15x15 density", () => {
+    expect(buildWindGrid(bounds, 26)).toHaveLength(676);
+    expect(676 / 225).toBeCloseTo(3, 1);
   });
 
   it("pads outward beyond the raw bounds", () => {

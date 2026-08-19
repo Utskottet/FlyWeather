@@ -73,7 +73,12 @@ export function buildReliefStyle(): StyleSpecification {
         source: "openmaptiles",
         "source-layer": "water",
         filter: WATER_FILTER,
-        paint: { "fill-color": "#a9cfe3" },
+        // Gray per user feedback (was a light blue, #a9cfe3) - applies to
+        // RELIEF and TOPO (TOPO spreads RELIEF's layers, see below). MAP
+        // mode's sea color isn't ours to change - it's OpenFreeMap's
+        // externally hosted positron style (Block 14c), not an inline
+        // spec built here.
+        paint: { "fill-color": "#8c94a1" },
       },
       {
         id: "hillshade",

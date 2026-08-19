@@ -28,7 +28,7 @@ import type { GridWindPoint } from "../../providers/forecast/openMeteoGridProvid
 const MARKER_SIZE = 48;
 const SELECTED_MARKER_SIZE = 60;
 const SURFACE_HEIGHT_M = 10;
-const ARROW_SIZE = 26;
+const ARROW_SIZE = 39; // 1.5x the original 26px, per user feedback
 
 /** Non-interactive - never intercepts clicks meant for site markers or the map itself. */
 function buildWindArrowHtml(point: GridWindPoint): string | null {

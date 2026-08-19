@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { buildGridUrl, normalizeGridResponse } from "../../src/providers/forecast/openMeteoGridProvider.ts";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { buildGridUrl, fetchWindGrid, normalizeGridResponse } from "../../src/providers/forecast/openMeteoGridProvider.ts";
+import type { GridPoint } from "../../src/domain/windGrid.ts";
 
 const POINTS = [
   { lat: 55.4, lon: 13.0 },
@@ -37,5 +38,44 @@ describe("normalizeGridResponse", () => {
     const result = normalizeGridResponse(POINTS, []);
     expect(result).toHaveLength(3);
     expect(result[0]).toEqual({ lat: 55.4, lon: 13.0, windDirectionDeg: null, windSpeedMs: null });
+  });
+});
+
+describe("fetchWindGrid batching", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("splits a point set larger than the per-request cap into multiple parallel requests and preserves order", async () => {
+    const points: GridPoint[] = Array.from({ length: 900 }, (_, i) => ({ lat: 55 + i * 0.001, lon: 13 }));
+    const requestedUrls: string[] = [];
+    const fetchMock = vi.fn(async (url: string) => {
+      requestedUrls.push(url);
+      const params = new URL(url).searchParams;
+      const lats = params.get("latitude")!.split(",");
+      const entries = lats.map((lat) => ({
+        latitude: Number(lat),
+        longitude: 13,
+        current: { wind_speed_10m: 5, wind_direction_10m: 180 },
+      }));
+      return { ok: true, json: async () => entries } as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchWindGrid(points);
+
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(1); // 900 points exceeds the per-request cap
+    expect(result).toHaveLength(900);
+    // order preserved: first result point matches the first requested point
+    expect(result[0].lat).toBeCloseTo(points[0].lat, 6);
+    expect(result[899].lat).toBeCloseTo(points[899].lat, 6);
+  });
+
+  it("returns an empty array without fetching for an empty point set", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await fetchWindGrid([]);
+    expect(result).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
