@@ -859,9 +859,10 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   genuinely changes (different rotation, different speed-color) after
   moving the time slider forward 48 hours - not just that "NOW" still
   works.
-- Deferred / unresolved: the actual density/slider-following behavior
-  against *real* Open-Meteo data is unverified in this sandbox (still
-  rate-limited); will confirm live post-deploy as usual. File-size
-  impact of hourly grid data at 961 points not yet measured against
-  real Open-Meteo data (synthetic test data isn't representative of
-  compressed real-world size).
+- **Confirmed live** (commit a5dd8fa): 961 `.wind-arrow-icon` markers
+  present. Compared one marker's rendered SVG path at NOW vs. after
+  moving the slider to +48h - the path genuinely changed (real
+  Open-Meteo forecast wind differs at that offset), confirming arrows
+  now follow the slider with real data, not just the synthetic test.
+  Only same-origin `generated/forecast-wind-grid.json` requests seen,
+  zero direct `api.open-meteo.com` calls. No console errors.

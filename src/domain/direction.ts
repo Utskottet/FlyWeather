@@ -79,6 +79,25 @@ export function describeRingSector(
   ].join(" ");
 }
 
+/**
+ * SVG path `d` for a true pie-slice wedge from the center out to
+ * `radius`, sweeping clockwise from fromDeg to toDeg - distinct from
+ * describeRingSector's donut band (inner radius > 0). Used by
+ * WindRose's sector rendering (per the user's uploaded reference
+ * design, which shows the flyable direction range as a solid wedge
+ * rather than a thin arc band). Handles wrap-around sectors the same
+ * way describeRingSector does.
+ */
+export function describeSector(cx: number, cy: number, radius: number, fromDeg: number, toDeg: number): string {
+  const sweep = sectorSweepDeg(fromDeg, toDeg);
+  const largeArc = sweep > 180 ? 1 : 0;
+
+  const start = polarToCartesian(cx, cy, radius, fromDeg);
+  const end = polarToCartesian(cx, cy, radius, fromDeg + sweep);
+
+  return [`M ${cx} ${cy}`, `L ${start.x} ${start.y}`, `A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y}`, "Z"].join(" ");
+}
+
 const COMPASS_16 = [
   "N",
   "NNE",
