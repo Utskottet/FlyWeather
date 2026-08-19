@@ -9,7 +9,6 @@ import { classifyFreshness } from "../../domain/freshness.ts";
 import { selectEffectiveSample, type EffectiveSample } from "../../domain/effectiveSample.ts";
 import { interpolateWindAtHeight } from "../../domain/heightInterpolation.ts";
 import { WindRose } from "../WindRose/index.ts";
-import { WeatherGlyph } from "../WeatherGlyph/index.ts";
 import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
 import { HeightModeToggle, type HeightMode } from "../HeightModeToggle/HeightModeToggle.tsx";
 import { SiteModeToggle, type SiteMode } from "../SiteModeToggle/SiteModeToggle.tsx";
@@ -140,19 +139,15 @@ function buildRoseHtml(
   );
 
   const html = renderToStaticMarkup(
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <WindRose
-        size={size}
-        greenSectors={greenSectors}
-        orangeSectors={orangeSectors}
-        windDirectionDeg={sample.windDirectionDeg}
-        windSpeedMs={sample.windSpeedMs}
-        state={state}
-      />
-      <div style={{ marginTop: -6 }}>
-        <WeatherGlyph kind={weatherKind} size={16} />
-      </div>
-    </div>,
+    <WindRose
+      size={size}
+      greenSectors={greenSectors}
+      orangeSectors={orangeSectors}
+      windDirectionDeg={sample.windDirectionDeg}
+      windSpeedMs={sample.windSpeedMs}
+      state={state}
+      weatherKind={weatherKind}
+    />,
   );
   return { html, size };
 }

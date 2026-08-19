@@ -905,3 +905,33 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   consumers (SiteMap markers, SiteSheet's expanded view, the rose
   gallery) work unchanged since the component's props/behavior are
   identical, only its internal SVG rendering changed.
+
+## WindRose round 2: full color/style fidelity + weather icon moved inside
+- Status: done
+- User feedback: "please try to mimik reht referance rose deign
+  better. scrap old design and fully comply with new htlm style
+  wise.. mind that wether icon moved inside sector icon now"
+- Definition of Done: [x] adopted the reference's exact color palette
+  (green #27c93f, orange #ff9800, red #f23535, ink #111) for both
+  sectors and the ring, replacing this project's own earlier colors
+  [x] ring thinned toward the reference's proportions (8->4), kept
+  state-colored per Block 11's still-valid functional requirement
+  [x] weather icon moved from an external sibling element into the
+  rose's own SVG (new `weatherKind` prop; SiteMap.tsx/SiteSheet.tsx no
+  longer compose WeatherGlyph separately)  [x] dropped the separate
+  unit text row, matching the reference's explicit "deliberately no
+  unit"  [x] CI green
+- Files changed: WindRose.tsx (colors, ring width, embedded weather
+  icon, dropped unit text/prop); SiteMap.tsx + SiteSheet.tsx (pass
+  weatherKind instead of composing WeatherGlyph externally); RoseGallery.tsx
+  (added weather variety per fixture case for visual verification);
+  tests/unit/WindRose.test.tsx (2 new tests for the embedded icon);
+  tests/e2e/rose-gallery.spec.ts (`.first()` fix - the nested icon svg
+  made the old bare "svg" selector ambiguous, not a functional bug)
+- Verified at the ACTUAL 48px marker size (a real Playwright screenshot
+  of the true rendered size, not an upscaled mockup) that icon + number
+  + north-tick + pointer all stay legible together, before considering
+  this done - then re-verified against the live-served build (map
+  markers and the 140px SiteSheet rose) via Playwright, confirming no
+  overlap/clashing and zero console errors.
+- Deferred / unresolved: none - self-contained.

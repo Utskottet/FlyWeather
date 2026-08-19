@@ -1,4 +1,5 @@
 import { WindRose, type RoseSector } from "../components/WindRose/index.ts";
+import type { WeatherKind } from "../domain/weather.ts";
 
 interface Case {
   slug: string;
@@ -8,6 +9,7 @@ interface Case {
   windDirectionDeg: number | null;
   windSpeedMs: number | null;
   state: "green" | "orange" | "red" | "gray";
+  weather?: WeatherKind;
   history?: { directionDeg: number; recencyRank: number }[];
 }
 
@@ -27,6 +29,7 @@ const CASES: Case[] = [
     windDirectionDeg: 225,
     windSpeedMs: 5.2,
     state: "green",
+    weather: "partly-cloudy",
   },
   {
     slug: "kaseberga-s",
@@ -39,6 +42,7 @@ const CASES: Case[] = [
     windDirectionDeg: 180,
     windSpeedMs: 6.0,
     state: "green",
+    weather: "clear",
     history: [
       { directionDeg: 178, recencyRank: 0 },
       { directionDeg: 183, recencyRank: 1 },
@@ -56,6 +60,7 @@ const CASES: Case[] = [
     windDirectionDeg: 90,
     windSpeedMs: 4.5,
     state: "green",
+    weather: "rain",
   },
   {
     slug: "n-wraparound",
@@ -68,6 +73,7 @@ const CASES: Case[] = [
     windDirectionDeg: 5,
     windSpeedMs: 5.0,
     state: "green",
+    weather: "cloudy",
   },
   {
     slug: "wrong-direction-red",
@@ -80,6 +86,7 @@ const CASES: Case[] = [
     windDirectionDeg: 45,
     windSpeedMs: 7.1,
     state: "red",
+    weather: "thunder",
   },
   {
     slug: "unverified-orange",
@@ -92,6 +99,7 @@ const CASES: Case[] = [
     windDirectionDeg: 225,
     windSpeedMs: 5.2,
     state: "orange",
+    weather: "showers",
   },
   {
     slug: "stale-gray",
@@ -119,6 +127,7 @@ export function RoseGallery() {
             windDirectionDeg={c.windDirectionDeg}
             windSpeedMs={c.windSpeedMs}
             state={c.state}
+            weatherKind={c.weather}
             historyPoints={c.history}
           />
           <figcaption>{c.title}</figcaption>
@@ -132,6 +141,7 @@ export function RoseGallery() {
           windDirectionDeg={225}
           windSpeedMs={5.2}
           state="green"
+          weatherKind="partly-cloudy"
           siteName="Hammar"
         />
         <figcaption>48px marker size</figcaption>
@@ -144,6 +154,7 @@ export function RoseGallery() {
           windDirectionDeg={225}
           windSpeedMs={5.2}
           state="green"
+          weatherKind="partly-cloudy"
           siteName="Hammar"
         />
         <figcaption>64px marker size</figcaption>

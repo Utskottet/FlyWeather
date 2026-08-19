@@ -2,7 +2,6 @@ import type { LocatedSite } from "../../domain/sites.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { degreesToCompass16 } from "../../domain/direction.ts";
 import { WindRose } from "../WindRose/index.ts";
-import { WeatherGlyph } from "../WeatherGlyph/index.ts";
 import type { HeightMode } from "../HeightModeToggle/HeightModeToggle.tsx";
 import type { WeatherKind } from "../../domain/weather.ts";
 import type { Freshness } from "../../domain/freshness.ts";
@@ -88,8 +87,8 @@ export function SiteSheet({
           windDirectionDeg={sample.windDirectionDeg}
           windSpeedMs={sample.windSpeedMs}
           state={state}
+          weatherKind={sample.weatherKind}
         />
-        <WeatherGlyph kind={sample.weatherKind} size={28} />
       </div>
       <h2>{site.name}</h2>
       <p className="site-sheet-status" data-testid="site-sheet-status">

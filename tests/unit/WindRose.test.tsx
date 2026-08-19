@@ -135,6 +135,21 @@ describe("WindRose - north reference (per user's uploaded sector-rose design)", 
   });
 });
 
+describe("WindRose - embedded weather icon (per user's uploaded sector-rose design: icon moved inside the rose)", () => {
+  it("renders the weather icon inside the rose when a kind is supplied", () => {
+    const { container } = render(<WindRose {...baseProps()} weatherKind="rain" />);
+    const iconGroup = container.querySelector('[data-testid="rose-weather-icon"]');
+    expect(iconGroup).not.toBeNull();
+    // nested inside the rose's own <svg>, not a sibling element - confirms the icon lives INSIDE the rose now
+    expect(container.querySelector("svg svg")).not.toBeNull();
+  });
+
+  it("renders no icon when no weather kind is supplied (never fabricate weather data)", () => {
+    const { container } = render(<WindRose {...baseProps()} />);
+    expect(container.querySelector('[data-testid="rose-weather-icon"]')).toBeNull();
+  });
+});
+
 describe("WindRose - size handling (§29.11, §29.12)", () => {
   it.each([48, 64])("renders at %ipx", (size) => {
     const { container } = render(<WindRose {...baseProps()} size={size} />);

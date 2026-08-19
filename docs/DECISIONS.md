@@ -1189,3 +1189,57 @@ elements" rather than the whole file verbatim.
   nuisance in one already-known worst case, not a new functional
   regression, so shipped as designed rather than shrinking the pointer
   preemptively.
+
+## WindRose round 2: much closer fidelity to the reference, weather icon moved inside
+
+User feedback after seeing round 1 live: "scrap old design and fully
+comply with new html style wise.. mind that wether icon moved inside
+sector icon now" - round 1 had kept the old design's own color palette
+and ring width, only borrowing the reference's wedge/pointer/north-tick
+shapes. This round goes further: adopts the reference's actual colors
+and proportions directly, and moves the weather icon from an external
+sibling element into the rose's own SVG.
+
+- **Exact reference colors adopted**: green `#27c93f`, orange `#ff9800`,
+  red `#f23535`, "ink" `#111` - replacing this project's own earlier
+  palette (`#2e7d32`/`#e65100`/`#c62828`/etc.) entirely, for both
+  sectors and the ring.
+- **Ring thinned from 8 to 4** (the reference's own ring is thinner
+  still, ~1.5 at our scale, but at that width it started disappearing
+  at 48px marker size when tested - 4 is a deliberate compromise
+  toward the reference's proportions without sacrificing legibility at
+  the smallest real marker size). Kept the ring STATE-colored
+  (green/orange/red/gray) rather than switching to the reference's
+  plain always-"ink" ring: the reference conveys status purely through
+  its single sector wedge's fill, but this app's sites can have several
+  independent sectors at once, so there's still a genuine need for one
+  distinct "what's today's overall verdict" signal apart from "which
+  directions are configured favorable" - decided the ring should keep
+  that job (established, functional, from Block 11) while the pointer
+  stays plain ink-black like the reference (avoiding two redundant
+  state-colored elements).
+- **Weather icon moved inside the rose's own `<svg>`** (a nested `<svg>`
+  positioned above the speed number, matching the reference's internal
+  layout) - `WindRoseProps` gained an optional `weatherKind` prop;
+  `SiteMap.tsx` and `SiteSheet.tsx` no longer compose a separate
+  external `WeatherGlyph` sibling next to `WindRose`, they just pass
+  `weatherKind` through. Reused the existing `WeatherGlyph` component
+  itself (not the reference's own hand-drawn icons) - still the
+  project's own tested icon set, just relocated.
+- **Dropped the separate unit ("m/s") text row entirely**, matching the
+  reference's own explicit comment ("wind speed, deliberately no
+  unit") - the `unit` prop was unused by every caller anyway (all relied
+  on the "m/s" default), so removed rather than kept as dead surface
+  area. Kept period decimals over the reference's comma format -
+  still a locale/content choice, not a graphic-style one.
+- **E2E fix, not a bug**: `rose-gallery.spec.ts`'s `figure.locator("svg")`
+  selectors became ambiguous once the weather icon started rendering as
+  its own nested `<svg>` inside the rose's `<svg>` - two elements now
+  match a bare "svg" locator. Fixed with `.first()` (the outer rose SVG
+  is always first in document order), not a functional issue.
+- **Verified at true marker scale, not just the enlarged gallery view**:
+  rendered the actual 48px marker (Playwright's own screenshot, not a
+  manually up-scaled mockup) and confirmed icon + number + north-tick +
+  pointer all stay legible together at that real size, then re-verified
+  against the live-served build (both the map markers and the 140px
+  SiteSheet rose) via Playwright.

@@ -23,7 +23,11 @@ test.describe("WindRose gallery", () => {
     for (const slug of CASES) {
       const figure = page.getByTestId(`rose-case-${slug}`);
       await expect(figure).toBeVisible();
-      await expect(figure.locator("svg")).toBeVisible();
+      // .first() - the weather icon now renders as its own nested <svg>
+      // inside the rose's <svg> (per the user's uploaded reference
+      // design moving the icon inside), so a plain "svg" locator would
+      // match both; the outer rose svg is always first in document order.
+      await expect(figure.locator("svg").first()).toBeVisible();
       await figure.screenshot({ path: `test-results/rose-gallery/${slug}.png` });
     }
   });
@@ -34,8 +38,9 @@ test.describe("WindRose gallery", () => {
     const marker48 = page.getByTestId("rose-case-marker-48");
     const marker64 = page.getByTestId("rose-case-marker-64");
 
-    await expect(marker48.locator("svg")).toHaveAttribute("width", "48");
-    await expect(marker64.locator("svg")).toHaveAttribute("width", "64");
+    // .first() - see the comment above about the nested weather-icon svg.
+    await expect(marker48.locator("svg").first()).toHaveAttribute("width", "48");
+    await expect(marker64.locator("svg").first()).toHaveAttribute("width", "64");
 
     await marker48.screenshot({ path: "test-results/rose-gallery/marker-48.png" });
     await marker64.screenshot({ path: "test-results/rose-gallery/marker-64.png" });
