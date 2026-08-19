@@ -21,7 +21,7 @@ the block's work.
 | 11    | Rose overall-state visibility                 | done        | commit 55f2605; CI green; live |
 | 12    | Time slider day/hour graduations              | done        | commit 1b89e2a; CI green; live |
 | 13    | Site coordinate coverage expansion            | done        | commit 3829bd6; CI green; live |
-| 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | done        | commit TBD; CI green; live |
+| 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | done        | commits 3206048, f4a6feb, 6aed79e; CI green; live |
 | 14b   | MapLibre + Mapterhorn: TOPO                   | not_started |       |
 | 14c   | MapLibre + Mapterhorn: MAP                    | not_started |       |
 | 15    | Soaring/Winch site-mode switch                | not_started | lower priority per user |
@@ -388,12 +388,24 @@ implementation started yet - purely a planning update.
   test/dev-server runs this session (confirmed via direct curl:
   `"Hourly API request limit exceeded"`) - not a code regression; CI runs
   on a different IP so is unaffected.
-- **Post-deploy fix**: visually checking the live production URL after
-  the first deploy (not just trusting green CI) found the map rendering
-  markers but no tiles/hillshade at all - a third bug beyond the two
-  found during local dev (MapLibre's worker script 404s in the actual
-  Rollup production build, a separate code path from the dev-only
-  `optimizeDeps.exclude` fix). Fixed via Vite's `?url` import +
-  MapLibre's `setWorkerUrl()`, verified by inspecting the built bundle
-  directly for the correct base-prefixed worker URL. Full details in
-  docs/DECISIONS.md. Re-deploying and re-verifying live now.
+- **Post-deploy fixes (2 rounds)**: visually checking the live production
+  URL after the first deploy (not just trusting green CI) found the map
+  rendering markers but no tiles/hillshade at all - a third bug beyond
+  the two found during local dev (MapLibre's worker script 404s in the
+  actual Rollup production build, a separate code path from the dev-only
+  `optimizeDeps.exclude` fix). First fix attempt (Vite `?url` import +
+  `setWorkerUrl()`) was itself incomplete - re-checking production again
+  found the worker now loaded but its own sibling import
+  (`maplibre-gl-shared.mjs`) still 404'd. Properly fixed with
+  `scripts/copy-maplibre-worker.ts`, copying both files together into
+  `public/vendor/maplibre-gl/`. This time verified by serving the actual
+  `dist/` build locally under the real `/FlyWeather/` base path (not
+  `vite preview`, which skips the build base) before touching production
+  again, then re-confirmed live. Full details in docs/DECISIONS.md.
+- **Final confirmed live**: https://utskottet.github.io/FlyWeather/ -
+  worker loads clean, `window.__flyweatherMapLoaded` flips true in
+  ~789ms, screenshot shows clear hillshade/terrain relief across the
+  Skåne coastline, marker click opens the site sheet with live data,
+  mode toggle shows Relief active / Topo+Map disabled. Commits: 3206048
+  (main port), f4a6feb (worker fix attempt 1, incomplete), 6aed79e
+  (worker fix attempt 2, confirmed working).
