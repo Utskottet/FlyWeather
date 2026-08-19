@@ -11,8 +11,17 @@ test.describe("Time slider", () => {
 
     await page.goto("/");
     await page.locator(".leaflet-marker-icon").first().waitFor();
-    // wait for the forecast fetch (5 sites) to settle before taking the baseline count
-    await page.waitForTimeout(1500);
+
+    const range = page.getByTestId("time-slider-range");
+    // wait for the actual signal that forecast data has loaded (max stays
+    // "0" - the empty-hours default - until useSiteForecasts resolves),
+    // rather than a fixed sleep that can flake under network/CPU load.
+    // Generous timeout: React StrictMode double-invokes effects in dev
+    // (harmless in production, where StrictMode's double-invoke doesn't
+    // happen), so every fetch fires twice against the dev server here.
+    await expect(range).not.toHaveAttribute("max", "0", { timeout: 15_000 });
+    // let any in-flight requests fully settle before taking the baseline
+    await page.waitForTimeout(300);
     const countAfterLoad = forecastRequestCount;
     expect(countAfterLoad).toBeGreaterThan(0);
 
@@ -22,7 +31,6 @@ test.describe("Time slider", () => {
     const label = page.getByTestId("time-slider-label");
     await expect(label).toHaveText("NOW");
 
-    const range = page.getByTestId("time-slider-range");
     await range.fill("6");
     await expect(label).not.toHaveText("NOW");
     const labelAt6h = await label.textContent();

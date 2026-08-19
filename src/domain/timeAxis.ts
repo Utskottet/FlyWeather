@@ -40,3 +40,18 @@ export function findNowIndex(hours: string[], now: Date): number {
   const index = hours.findIndex((h) => new Date(h).getTime() >= nowTime);
   return index === -1 ? Math.max(0, hours.length - 1) : index;
 }
+
+export type TickLevel = "hour" | "six-hour" | "day";
+
+/** Graduation level for a slider tick at this local (Europe/Stockholm) hour. */
+export function classifyTick(date: Date): TickLevel {
+  const hour = Number(stockholmHour(date));
+  if (hour === 0) return "day";
+  if (hour % 6 === 0) return "six-hour";
+  return "hour";
+}
+
+/** Short day-boundary label, e.g. "TUE". */
+export function tickDayLabel(date: Date): string {
+  return stockholmWeekday(date);
+}

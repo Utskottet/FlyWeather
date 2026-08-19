@@ -409,3 +409,28 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   confirmed by re-running the full existing WindRose test suite
   unchanged (no test needed updating, since none hardcoded the old
   radius values).
+
+## Block 12
+
+- **Custom tick row, not native `<datalist>`.** A native `<input
+  type="range">` supports tick marks via `<datalist>` in some desktop
+  browsers, but iOS Safari - this app's primary target - doesn't render
+  them at all. Built a separate absolutely-positioned tick row instead,
+  computed from the same `hours` array the slider already has.
+- **Three-tier graduation**: plain hourly ticks (thin, subtle) for the
+  "ruler" texture, six-hour ticks (00/06/12/18 local) at medium
+  prominence, and day-boundary ticks (local midnight) tallest/darkest
+  with a weekday label - giving both the "hours" and "days" graduation
+  the user asked for without 73 competing labels.
+- **Found and fixed a real E2E test bug while verifying this block**:
+  `time-slider.spec.ts` used a fixed 1.5s sleep before assuming forecast
+  data had loaded, which Block 10's extra network request (the wind
+  grid fetch) pushed past the edge of reliability. Root-caused it with
+  a diagnostic spec rather than just upping the sleep blindly: React
+  `StrictMode` double-invokes effects in dev (confirmed via duplicated
+  200 responses in the network log), roughly doubling dev-mode load
+  time - **harmless in production**, since `StrictMode`'s double-invoke
+  is dev-only and every live production check so far has shown correct,
+  non-duplicated behavior. Replaced the fixed sleep with a real wait
+  condition (polling the range input's `max` attribute until forecast
+  data actually arrives) instead of just increasing an opaque timeout.

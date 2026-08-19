@@ -69,7 +69,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 92px;
+  bottom: 112px;
   max-height: 55%;
   overflow-y: auto;
   background: #fff;
@@ -115,7 +115,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 92px;
+  height: 112px;
   background: #fff;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
   z-index: 900;
@@ -153,6 +153,49 @@
 
 .time-slider-range {
   width: 100%;
+  display: block;
+}
+
+.time-slider-ticks {
+  position: relative;
+  height: 20px;
+  /* aligns roughly with the native range input's thumb-travel area */
+  margin: 0 8px;
+}
+
+.time-slider-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  width: 1px;
+  background: #999;
+}
+
+.time-slider-tick-hour {
+  height: 4px;
+}
+
+.time-slider-tick-six-hour {
+  height: 8px;
+  background: #888;
+  width: 1.5px;
+}
+
+.time-slider-tick-day {
+  height: 12px;
+  background: #444;
+  width: 2px;
+}
+
+.time-slider-tick-label {
+  position: absolute;
+  top: 13px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 700;
+  color: #444;
+  white-space: nowrap;
 }
 
 .site-sheet-close {

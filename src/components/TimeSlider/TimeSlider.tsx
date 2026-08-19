@@ -1,4 +1,4 @@
-import { formatSliderLabel } from "../../domain/timeAxis.ts";
+import { classifyTick, formatSliderLabel, tickDayLabel } from "../../domain/timeAxis.ts";
 
 export interface TimeSliderProps {
   /** Windowed hours, index 0 = NOW (see useSiteForecasts). */
@@ -40,6 +40,22 @@ export function TimeSlider({ hours, selectedIndex, onChange }: TimeSliderProps) 
         aria-label="Selected forecast time"
         data-testid="time-slider-range"
       />
+      <div className="time-slider-ticks" data-testid="time-slider-ticks" aria-hidden="true">
+        {hours.map((h, i) => {
+          const level = classifyTick(new Date(h));
+          const leftPercent = maxIndex === 0 ? 0 : (i / maxIndex) * 100;
+          return (
+            <div
+              key={h}
+              className={`time-slider-tick time-slider-tick-${level}`}
+              style={{ left: `${leftPercent}%` }}
+              data-testid={`time-slider-tick-${level}`}
+            >
+              {level === "day" && <span className="time-slider-tick-label">{tickDayLabel(new Date(h))}</span>}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

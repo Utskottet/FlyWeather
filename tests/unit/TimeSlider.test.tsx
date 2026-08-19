@@ -43,4 +43,22 @@ describe("TimeSlider", () => {
     );
     expect(getByTestId("time-slider-range").getAttribute("max")).toBe("9");
   });
+
+  it("renders one graduation tick per hour across the full range (Block 12)", () => {
+    const { container } = render(
+      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
+    );
+    expect(container.querySelectorAll(".time-slider-tick")).toHaveLength(73);
+  });
+
+  it("renders at least one day-boundary tick with a weekday label across 73 hours", () => {
+    const { getByTestId, container } = render(
+      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
+    );
+    expect(getByTestId("time-slider-ticks")).toBeTruthy();
+    const dayTicks = container.querySelectorAll(".time-slider-tick-day");
+    // 73 hours always spans at least one local midnight
+    expect(dayTicks.length).toBeGreaterThanOrEqual(1);
+    expect(dayTicks[0].querySelector(".time-slider-tick-label")?.textContent).toMatch(/^[A-Z]{3}$/);
+  });
 });
