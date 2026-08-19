@@ -17,7 +17,7 @@ the block's work.
 | 7     | Height mode                                   | done        | commit 5d6dcaa; CI green |
 | 8     | Autonomous deployment (Actions + Pages)       | done        | commits ebdcc2b, d458303; live at https://utskottet.github.io/FlyWeather/ |
 | 9     | Polish                                        | done        | commit e5be055; CI green; V1 live |
-| 10    | Regional wind arrow field                     | not_started |       |
+| 10    | Regional wind arrow field                     | done        | commit c1ddb71; CI green; live |
 | 11    | Rose overall-state visibility                 | not_started |       |
 | 12    | Time slider day/hour graduations              | not_started |       |
 | 13    | Site coordinate coverage expansion            | not_started |       |
@@ -291,3 +291,18 @@ lower-priority flyxc-inspired features (live tracking, skyways,
 airspace) and a Soaring/Winch site-mode switch. Added as Blocks 10-19
 in BLOCKS.md, ordered by the priority signalled in conversation. No
 implementation started yet - purely a planning update.
+
+## Block 10 complete: regional wind arrow field
+- Status: done
+- Definition of Done: [x] wind arrows visible across the map at a
+  sensible density, clearly show direction (color also indicates speed)
+  [x] no credential bypass - reused the already-integrated, keyless
+  Open-Meteo provider, no new source needed
+- Commit: c1ddb71 "Block 10: regional wind arrow field"
+- Files changed: 12 files, +428/-1
+- Confirmed live on production (36 arrows rendering, real current wind
+  data). Verified site-marker clicks still work through the arrow
+  layer (non-interactive, negative z-index).
+- Deferred / unresolved (documented, not oversights): grid shows only
+  current conditions, not tied to the 72h time slider; grid is fixed to
+  the sites' fitted bounds, doesn't extend as the user pans the map.
