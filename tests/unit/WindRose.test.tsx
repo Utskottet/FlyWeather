@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach } from "vitest";
-import { WindRose, type RoseSector, type RoseState } from "../../src/components/WindRose/index.ts";
+import { WindRose, type RoseSector } from "../../src/components/WindRose/index.ts";
 
 afterEach(cleanup);
 
@@ -17,7 +17,6 @@ function baseProps() {
     orangeSectors: SW_ORANGE,
     windDirectionDeg: 225,
     windSpeedMs: 5.2,
-    state: "green" as RoseState,
   };
 }
 
@@ -103,27 +102,31 @@ describe("WindRose - history dots (§29.9)", () => {
   });
 });
 
-describe("WindRose - overall state styling (§29.10)", () => {
-  it.each<RoseState>(["green", "orange", "red", "gray"])(
-    "keeps sector geometry visible under %s overall state",
-    (state) => {
-      const { container } = render(<WindRose {...baseProps()} state={state} />);
-      expect(container.querySelectorAll('[data-testid="green-sector"]')).toHaveLength(1);
-      expect(container.querySelectorAll('[data-testid="orange-sector"]')).toHaveLength(2);
-      expect(container.querySelector('[data-testid="state-ring"]')).not.toBeNull();
-    },
-  );
-
-  it("gives the red state a dashed ring, not just a hue (§28 - colorblind-safe cue)", () => {
-    const { container } = render(<WindRose {...baseProps()} state="red" />);
-    const ring = container.querySelector('[data-testid="state-ring"]');
-    expect(ring?.getAttribute("stroke-dasharray")).not.toBeNull();
+describe("WindRose - outer ring (per the reference HTML's own rendering: plain black outline, not a status indicator)", () => {
+  it("always renders a plain black ring, independent of sector/wind data", () => {
+    const { container } = render(<WindRose {...baseProps()} />);
+    const ring = container.querySelector('[data-testid="outer-ring"]');
+    expect(ring).not.toBeNull();
+    expect(ring?.getAttribute("stroke")).toBe("#111");
   });
 
-  it.each<RoseState>(["green", "orange", "gray"])("keeps a solid ring for %s (only red is dashed)", (state) => {
-    const { container } = render(<WindRose {...baseProps()} state={state} />);
-    const ring = container.querySelector('[data-testid="state-ring"]');
+  it("never adds a dasharray - overall status is read from sector color and pointer position, not the ring", () => {
+    const { container } = render(<WindRose {...baseProps()} windDirectionDeg={45} />);
+    const ring = container.querySelector('[data-testid="outer-ring"]');
     expect(ring?.getAttribute("stroke-dasharray")).toBeNull();
+  });
+
+  it("keeps sector geometry visible regardless of wind direction/speed", () => {
+    const { container } = render(<WindRose {...baseProps()} windDirectionDeg={45} windSpeedMs={7.1} />);
+    expect(container.querySelectorAll('[data-testid="green-sector"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-testid="orange-sector"]')).toHaveLength(2);
+  });
+});
+
+describe("WindRose - weather icon background (per follow-up feedback: transparent, so the sector color shows through)", () => {
+  it("renders no opaque backing patch behind the icon/speed text", () => {
+    const { container } = render(<WindRose {...baseProps()} weatherKind="rain" />);
+    expect(container.querySelector('[data-testid="text-legibility-bg"]')).toBeNull();
   });
 });
 

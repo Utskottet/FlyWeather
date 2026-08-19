@@ -1243,3 +1243,56 @@ sibling element into the rose's own SVG.
   pointer all stay legible together at that real size, then re-verified
   against the live-served build (both the map markers and the 140px
   SiteSheet rose) via Playwright.
+
+## WindRose round 3: ring reverted to plain black, icon backing removed
+- User compared round 2 directly against the reference HTML's own
+  rendering (screenshot of `uploads/wind-sector-rose.html` opened in a
+  browser) and gave corrective feedback: the ring should be a plain
+  black outline (not state-colored), and the weather icon should sit
+  on a transparent background so the sector color shows through -
+  round 2's choices on both points didn't match what the reference
+  actually renders as, despite matching its stated colors/proportions.
+- **Ring is no longer state-colored.** Reversed the round-2 decision to
+  keep `STATE_RING_COLOR`/dashed-red: the ring is now always a plain
+  `#111` ("ink") outline, `RING_WIDTH` raised 4->6 (the reference's own
+  ring reads visually thick despite its literal `--stroke:3.5`, at our
+  46-radius/100-viewBox scale 6 matches that weight). The "what's
+  today's overall verdict" signal this project decided in Block 11 the
+  ring needed to carry is now read instead from where the pointer lands
+  relative to the colored sector wedges (inside a green wedge = good,
+  inside orange = maybe, outside both = bad, no pointer at all = no
+  data) - a positional/spatial cue, not a hue, so it's colorblind-safe
+  without needing the red state's separate dashed treatment, which was
+  dropped along with the rest of `STATE_RING_COLOR`.
+- **`WindRoseProps` no longer takes a `state` prop at all** - once the
+  ring stopped reading it, nothing inside the component used it, so it
+  was removed rather than kept as an unused/dead prop. `RoseState` the
+  *type* stays exported from `WindRose/index.ts` because
+  `domain/flyability.ts` imports it as `FlyabilityResult`'s own
+  vocabulary, independent of WindRose's rendering.
+  `SiteMap.tsx`/`SiteSheet.tsx`/`RoseGallery.tsx` all stopped passing
+  `state={...}` into `<WindRose>`; `SiteMap.tsx`'s `evaluateFlyability`
+  call (which existed there only to feed that prop) was removed
+  entirely along with its now-unused import; `SiteSheet.tsx` keeps its
+  own `evaluateFlyability` call since it still needs `state`/`reasons`
+  for the status label and reasons list shown elsewhere on the sheet.
+- **Removed the `text-legibility-bg` white backing circle** behind the
+  weather icon/speed number entirely, rather than reducing its opacity
+  - the reference has no backing at all, and `WeatherGlyph`'s own SVG
+  shapes (sun/cloud/rain/etc.) have no opaque background of their own,
+  so nothing else needed to change to get a transparent result.
+  Accepted the same tradeoff the reference's own design implicitly
+  accepts: for a site whose sector happens to span the exact center,
+  the number could sit partly on a colored wedge and partly on the
+  neutral backdrop - not treated as a regression worth solving since
+  the reference doesn't solve it either.
+- `data-testid="state-ring"` renamed to `"outer-ring"` (no longer a
+  state indicator, the old name was actively misleading) - updated in
+  `tests/unit/WindRose.test.tsx`, no other file referenced the old id.
+- Verified via a live-served build (dist/ served under the real
+  `/FlyWeather/` base path): ring is `#111`/width 6/no dasharray
+  identically across every fixture case including
+  `wrong-direction-red` and `stale-gray`; `text-legibility-bg` absent
+  page-wide; sector fills still correct; icon/number sit directly on
+  the sector-color backdrop with no white halo at both gallery scale
+  and the real 48px/64px marker sizes; zero console errors.

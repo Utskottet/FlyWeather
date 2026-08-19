@@ -126,7 +126,6 @@ export function RoseGallery() {
             orangeSectors={c.orange}
             windDirectionDeg={c.windDirectionDeg}
             windSpeedMs={c.windSpeedMs}
-            state={c.state}
             weatherKind={c.weather}
             historyPoints={c.history}
           />
@@ -140,7 +139,6 @@ export function RoseGallery() {
           orangeSectors={CASES[0].orange}
           windDirectionDeg={225}
           windSpeedMs={5.2}
-          state="green"
           weatherKind="partly-cloudy"
           siteName="Hammar"
         />
@@ -153,7 +151,6 @@ export function RoseGallery() {
           orangeSectors={CASES[0].orange}
           windDirectionDeg={225}
           windSpeedMs={5.2}
-          state="green"
           weatherKind="partly-cloudy"
           siteName="Hammar"
         />

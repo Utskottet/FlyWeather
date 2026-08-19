@@ -935,3 +935,43 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   markers and the 140px SiteSheet rose) via Playwright, confirming no
   overlap/clashing and zero console errors.
 - Deferred / unresolved: none - self-contained.
+
+## WindRose round 3: ring reverted to plain black, icon backing removed
+- Status: done
+- User feedback (after opening the reference HTML directly and
+  screenshotting its actual rendering): "indication ring should go
+  bleck outline think sector is now inly in one color and green
+  flyable orange manuyy red not.. n only indication.. weather icon..
+  inside circle traparecy to we see bg" - i.e. round 2 still didn't
+  match the reference closely enough on the ring color and the icon's
+  background.
+- Definition of Done: [x] ring is always a plain black (`#111`)
+  outline, no longer colored/dashed by overall state, width raised
+  4->6 to match the reference's visual weight  [x] `text-legibility-bg`
+  white backing circle removed entirely so the sector color shows
+  through behind the weather icon and speed number  [x] `state` prop
+  removed from `WindRoseProps` (nothing inside the component used it
+  anymore); all 3 callers (SiteMap, SiteSheet, RoseGallery) stopped
+  passing it  [x] `data-testid="state-ring"` renamed to `"outer-ring"`
+  [x] unit tests rewritten for the new ring/icon behavior  [x] `tsc
+  --noEmit` clean, full unit suite green (167/167)  [x] verified
+  against a live-served production build under the real `/FlyWeather/`
+  base path
+- Files changed: WindRose.tsx (ring always ink/width 6, dropped
+  `STATE_RING_COLOR`/dashed-red/`GRAY`/`RED` constants and the `state`
+  prop, removed the legibility-bg circle); SiteMap.tsx (stopped passing
+  `state`, removed the now-unused `evaluateFlyability` call/import);
+  SiteSheet.tsx + RoseGallery.tsx (stopped passing `state` to
+  `<WindRose>`, kept their own `evaluateFlyability`/fixture `state`
+  data where still needed for other purposes); tests/unit/WindRose.test.tsx
+  (replaced the "overall state styling" describe block with tests for
+  the always-plain ring and the removed icon backing)
+- Verified via a live-served build (dist/ under the real base path,
+  not `vite preview`): Playwright confirmed the ring is `#111`/width
+  6/no dasharray identically across every fixture including
+  wrong-direction-red and stale-gray, `text-legibility-bg` is absent
+  page-wide, sector fills are unchanged/correct, and the icon/number
+  sit directly on the sector-color backdrop with no white halo at both
+  gallery scale and the real 48px/64px marker sizes - screenshots
+  reviewed directly, not just DOM assertions. Zero console errors.
+- Deferred / unresolved: none - self-contained.

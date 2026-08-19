@@ -22,7 +22,6 @@ export interface WindRoseProps {
   orangeSectors: RoseSector[];
   windDirectionDeg: number | null;
   windSpeedMs: number | null;
-  state: RoseState;
   /** Rendered inside the rose (per the user's uploaded reference design), above the speed number - not composed externally by the caller anymore. */
   weatherKind?: WeatherKind;
   historyPoints?: HistoryPoint[];
@@ -42,23 +41,14 @@ const HISTORY_R = OUTER_R + 4;
 const INK = "#111";
 const GREEN = "#27c93f";
 const ORANGE = "#ff9800";
-const RED = "#f23535";
-const GRAY = "#757575"; // reference has no "unknown" state - this app's own addition, kept neutral like the others
 
-// The reference's ring is a plain, thin, always-"ink" compass boundary
-// (status is conveyed by the sector wedge's fill alone in their single-
-// sector demo model). This app's sites can have several independent
-// green/orange sectors at once, so - unlike the reference - there's
-// still a need for one clear "what does the CURRENT overall reading
-// evaluate to, right now" signal distinct from "which directions are
-// configured favorable." Keeping the ring state-colored (a real,
-// explicitly requested feature from Block 11) but adopting the
-// reference's much thinner stroke now that the sector wedges
-// themselves carry strong color too - the extra-wide ring from Block 11
-// was compensating for the OLD thin ring-band sectors being too
-// subtle, which solid wedges no longer are.
-const RING_WIDTH = 4;
-const STATE_RING_COLOR: Record<RoseState, string> = { green: GREEN, orange: ORANGE, red: RED, gray: GRAY };
+// Per explicit follow-up feedback after comparing directly against the
+// reference HTML's own rendering: the ring is NOT a state indicator -
+// it's a plain black compass boundary, same as the reference. Overall
+// status is read from the sector wedge colors (green/orange) and from
+// where the pointer lands relative to them, not from a separate ring
+// hue - so the ring no longer varies by RoseState at all.
+const RING_WIDTH = 6;
 
 // The reference's rose is transparent, sitting on a fixed-color demo
 // page. Ours sits directly on a map whose background varies by mode
@@ -95,8 +85,6 @@ const NORTH_LABEL_R = OUTER_R - 11;
 const ICON_CY = CENTER - 17;
 const ICON_SIZE = 20;
 const SPEED_CY = CENTER + 10;
-const TEXT_BG_CY = CENTER - 2;
-const TEXT_BG_R = 26;
 
 /** Split-tail wind pointer, per the reference. Tip points toward the compass direction wind is coming FROM (§29.3 - unchanged convention, only the shape changed). */
 function pointerPoints(angleDeg: number): string {
@@ -113,12 +101,10 @@ export function WindRose({
   orangeSectors,
   windDirectionDeg,
   windSpeedMs,
-  state,
   weatherKind,
   historyPoints = [],
   siteName,
 }: WindRoseProps) {
-  const ringColor = STATE_RING_COLOR[state];
   const northTickOuter = polarToCartesian(CENTER, CENTER, NORTH_TICK_OUTER_R, 0);
   const northTickInner = polarToCartesian(CENTER, CENTER, NORTH_TICK_INNER_R, 0);
   const northLabelPos = polarToCartesian(CENTER, CENTER, NORTH_LABEL_R, 0);
@@ -161,14 +147,9 @@ export function WindRose({
           cy={CENTER}
           r={OUTER_R}
           fill="none"
-          stroke={ringColor}
+          stroke={INK}
           strokeWidth={RING_WIDTH}
-          strokeLinecap="round"
-          // Red (the "don't fly" signal) also gets a dashed ring, not just
-          // a hue, so it stays distinguishable from green/orange for
-          // colorblind users at map-marker scale too (§28).
-          strokeDasharray={state === "red" ? RING_WIDTH * 1.8 : undefined}
-          data-testid="state-ring"
+          data-testid="outer-ring"
         />
 
         <line
@@ -214,8 +195,6 @@ export function WindRose({
         {windDirectionDeg !== null && (
           <polygon points={pointerPoints(windDirectionDeg)} fill={INK} data-testid="wind-pointer" />
         )}
-
-        <circle cx={CENTER} cy={TEXT_BG_CY} r={TEXT_BG_R} fill="rgba(255,255,255,0.85)" data-testid="text-legibility-bg" />
 
         {weatherKind && (
           <g transform={`translate(${CENTER - ICON_SIZE / 2} ${ICON_CY - ICON_SIZE / 2})`} data-testid="rose-weather-icon">

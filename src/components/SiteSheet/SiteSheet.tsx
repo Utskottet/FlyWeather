@@ -86,7 +86,6 @@ export function SiteSheet({
           orangeSectors={orangeSectors}
           windDirectionDeg={sample.windDirectionDeg}
           windSpeedMs={sample.windSpeedMs}
-          state={state}
           weatherKind={sample.weatherKind}
         />
       </div>
