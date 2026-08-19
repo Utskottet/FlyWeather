@@ -282,3 +282,30 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   `pages.yml` runs - the application code isn't changing between
   refresh runs, only the collected live data, so re-verifying it every
   5 minutes would be pure waste (§13.1: "keep the collector fast").
+- **Two real problems found only by actually deploying, not by local
+  build success:**
+  1. `actions/configure-pages` failed on the first deploy attempt
+     because the repo's Pages feature had never been switched on -
+     `pages: write` in the workflow permissions isn't sufficient by
+     itself; the repo owner had to visit Settings → Pages → Build and
+     deployment → Source and select "GitHub Actions" once. A genuine
+     one-time credential/permission blocker per AGENTS.md, so this
+     stopped and asked rather than attempting a workaround. Also
+     manually triggered `pages.yml` and `weather-refresh.yml` once each
+     via `workflow_dispatch` (clicked by the repo owner - I have no
+     token that can call the dispatch API myself) to confirm both work
+     without waiting on the cron's first natural firing.
+  2. Even after that fix, the first successful deploy served a **blank
+     page** - GitHub Pages serves a project repo from `/FlyWeather/`,
+     not the domain root, but `vite build`'s default `base: '/'`
+     produced asset references like `/assets/main-*.js` (wrong;
+     actually served at `/FlyWeather/assets/main-*.js`) and the app's
+     own `fetch("/generated/sites.json")` calls had the identical bug.
+     Fixed by setting `base` conditionally
+     (`command === "build" ? "/FlyWeather/" : "/"`, so local dev/preview
+     and Playwright's root-relative `page.goto("/")` keep working) and
+     building both `fetch()` calls from `import.meta.env.BASE_URL`
+     instead of a hardcoded leading slash. Confirmed by loading the
+     actual production URL with Playwright afterward, not just trusting
+     a green CI run - `npm run build` succeeding locally never would
+     have caught either of these, since neither is a build-time error.

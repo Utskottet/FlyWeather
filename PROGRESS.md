@@ -15,7 +15,7 @@ the block's work.
 | 5     | Forecast provider + time slider               | done        | commit e9d7b8f; CI green |
 | 6     | Live wind adapters                            | done        | commit e102b33; CI green |
 | 7     | Height mode                                   | done        | commit 5d6dcaa; CI green |
-| 8     | Autonomous deployment (Actions + Pages)       | not_started |       |
+| 8     | Autonomous deployment (Actions + Pages)       | done        | commits ebdcc2b, d458303; live at https://utskottet.github.io/FlyWeather/ |
 | 9     | Polish                                        | not_started |       |
 
 Status values: `not_started`, `in_progress`, `blocked`, `done`.
@@ -184,3 +184,44 @@ Status values: `not_started`, `in_progress`, `blocked`, `done`.
   **Stopping here** - this closes out the "do blocks 5/6/7" request; the
   block-discipline default (one block, then pause for review) resumes
   from Block 8 onward unless told otherwise.
+
+## Block 8 complete: autonomous deployment
+- Status: done
+- Definition of Done: [x] public GitHub Pages URL serves the app -
+  **https://utskottet.github.io/FlyWeather/** - confirmed working with
+  Playwright against the real production URL (map, markers, live data,
+  height toggle, time slider all functional)  [x] a refresh run
+  completed successfully and updated served data without a new commit -
+  confirmed: `live.json`'s `generatedAt` (07:55:40) matches the refresh
+  run's timing exactly, HEAD commit unchanged before/after (`d458303`)
+- Commits: ebdcc2b "Block 8: autonomous deployment (GitHub Actions +
+  Pages)", d458303 "Fix GitHub Pages project-page base path"
+- Files changed: 3 new workflow/decision files + 3-file base-path fix
+- Two real problems surfaced only by actually deploying (not by local
+  `npm run build` succeeding), both documented in full in
+  `docs/DECISIONS.md`:
+  1. **Genuine credential/permission blocker** - `actions/configure-pages`
+     can't enable a repo's Pages feature from inside a workflow alone;
+     the repo owner had to visit Settings → Pages once and set Source to
+     "GitHub Actions". Stopped and asked per AGENTS.md rather than
+     attempting a workaround. Also needed the repo owner to click
+     "Run workflow" manually twice (`pages.yml` and `weather-refresh.yml`
+     each once) since I have no token to call the dispatch API myself.
+  2. **Blank-page bug**: GitHub Pages serves this repo under
+     `/FlyWeather/`, not root - `vite build`'s default `base: '/'` broke
+     both the built asset references and the app's own
+     `fetch("/generated/...")` calls. Fixed with a build-only conditional
+     `base` and `import.meta.env.BASE_URL`-based fetch URLs; verified by
+     loading the actual live URL with Playwright, not just trusting CI.
+- Deferred / unresolved: the 5-minute cron itself hasn't been observed
+  firing on its own schedule yet (both confirmations above came from
+  manual `workflow_dispatch` runs) - GitHub's own docs note new
+  schedules can take a while to activate and aren't timing-guaranteed,
+  so this is expected, not a problem; it will fire on its own going
+  forward. Same known gaps carried over from earlier blocks remain: 19/24
+  enabled sites still lack coordinates, and Ven's three sites overlap at
+  low map zoom.
+- Next: Block 9 — Polish (mobile layout pass, outdoor-readability
+  contrast, PWA shell if practical, final sweep against MASTER_SPEC.md
+  §38's V1 definition-of-done checklist). This is the last block in
+  BLOCKS.md.
