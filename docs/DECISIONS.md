@@ -1123,3 +1123,69 @@ density again, and make arrows actually change with the time slider
   changes (different rotation, different speed-color) after moving the
   time slider forward - not just that the code compiles or that "NOW"
   still works.
+
+## WindRose visual redesign, using the user's uploaded reference
+
+User uploaded a standalone HTML/SVG "wind sector rose" demo
+(`uploads/wind-sector-rose.html`) and asked for it as the site rose's
+visual design, explicitly permitting reusing "just the graphic
+elements" rather than the whole file verbatim.
+
+- **Sectors changed from ring bands to true pie wedges.** The old
+  design drew each green/orange sector as a thin donut-band arc
+  (`describeRingSector`, inner radius > 0) around the outside of the
+  circle; the reference draws the flyable direction as a single solid
+  wedge from the center out to the ring. Added `describeSector` (pie
+  wedge, inner radius always 0) to `domain/direction.ts` alongside the
+  existing ring-band helper rather than replacing it, since
+  `describeRingSector` may still be useful elsewhere and the two are
+  genuinely different shapes, not just a parameter difference - unit
+  tested the same way (normal sector, wrap-around, large-arc flag).
+  Unlike the reference (which only supports one sector), our sites can
+  have multiple green/orange sectors, so this renders one wedge per
+  configured sector rather than being limited to the reference's
+  single-sector demo API.
+- **Base backdrop changed from a ring band to a full disc** in the same
+  neutral pink (`SECTOR_BASE_COLOR`) for the same reason - a ring band
+  doesn't make sense once the favorable-direction sectors are full
+  wedges reaching the center.
+- **Pointer redesigned as a "split-tail dart"** (`pointerPoints()`),
+  replacing the old thin line+small-triangle arrow - a 4-point polygon
+  with a tip poking just inside the ring and a wide, notched tail
+  fanning out past it, geometry lifted from the reference's own
+  proportions but re-expressed as multiples of `OUTER_R` (not copied
+  pixel values) so it scales correctly with this component's own
+  viewBox. Direction convention unchanged (tip points toward where wind
+  is coming FROM, §29.3) - only the shape changed, not the meaning.
+- **Added a north tick + "N" label** (the reference has this, the old
+  design didn't) - a small, fixed reference mark, not a full compass
+  rose, to help orient the wedges/pointer at a glance.
+- **Kept, not ported**: the reference's weather icon is embedded inside
+  its SVG; this app already has a separate, tested `WeatherGlyph`
+  component rendered alongside (not inside) `WindRose` by `SiteMap.tsx`
+  - left that composition unchanged rather than duplicating icon logic
+  inside `WindRose` itself, since "sector rose" was the actual ask, not
+  the weather icon. Also kept period decimals (`5.2`) over the
+  reference's comma format (`5,2`, likely just the demo author's own
+  locale default) - not something explicitly requested, and changing
+  number formatting is a separate concern from the graphic redesign.
+- **New legibility concern the reference didn't have to deal with**:
+  since our sectors now reach the center (unlike the reference's single
+  demo sector, which happened to be green behind the speed number),
+  whatever sector color sits behind the speed text varies per site/
+  reading. Added a small semi-opaque white disc (`TEXT_BG_R`) behind
+  the number specifically for this - not present in the reference, but
+  required once multiple real sector configurations are in play instead
+  of one fixed demo state.
+- **Checked the larger pointer against the known marker-clustering
+  issue before shipping**, not just in isolation: the new pointer
+  extends ~31% past the ring versus the old arrow, which stayed fully
+  inside it - a real risk of making already-overlapping markers (Block
+  13's documented clustering gap) worse. Verified via Playwright against
+  the actual map, zoomed into the worst known cluster (4 sites within a
+  few hundred meters): the overlap is marginally worse there, but ring
+  colors/speed numbers stay legible, pointers still read as distinct
+  directions, and marker click targeting is unaffected - a cosmetic
+  nuisance in one already-known worst case, not a new functional
+  regression, so shipped as designed rather than shrinking the pointer
+  preemptively.

@@ -3,6 +3,7 @@ import {
   compass16ToDegrees,
   degreesToCompass16,
   describeRingSector,
+  describeSector,
   isAngleInSector,
   normalizeDeg,
   polarToCartesian,
@@ -117,6 +118,27 @@ describe("describeRingSector", () => {
 
   it("uses the large-arc flag for a sweep greater than 180deg", () => {
     const d = describeRingSector(50, 50, 20, 40, 0, 270);
+    expect(d).toContain("A 40 40 0 1 1");
+  });
+});
+
+describe("describeSector (pie wedge, WindRose's sector rendering)", () => {
+  it("starts and ends at the center - a true wedge, not a ring band", () => {
+    const d = describeSector(50, 50, 40, 200, 250);
+    expect(d.startsWith("M 50 50")).toBe(true);
+    expect(d.endsWith("Z")).toBe(true);
+    expect(d).toContain("A 40 40");
+    // only one arc (to the outer edge) - unlike describeRingSector's two
+    expect(d.match(/A /g)).toHaveLength(1);
+  });
+
+  it("produces a valid path for a wrap-around sector 337.5 -> 22.5 (§29.4)", () => {
+    const d = describeSector(50, 50, 40, 337.5, 22.5);
+    expect(d).toContain("A 40 40 0 0 1");
+  });
+
+  it("uses the large-arc flag for a sweep greater than 180deg", () => {
+    const d = describeSector(50, 50, 40, 0, 270);
     expect(d).toContain("A 40 40 0 1 1");
   });
 });

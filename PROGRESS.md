@@ -866,3 +866,42 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   now follow the slider with real data, not just the synthetic test.
   Only same-origin `generated/forecast-wind-grid.json` requests seen,
   zero direct `api.open-meteo.com` calls. No console errors.
+
+## WindRose visual redesign (uploads/wind-sector-rose.html reference)
+- Status: done
+- User feedback: "that compass rose in the uploads folder i want to use
+  that as the sercor rose.. if you want to can just take the grafic
+  elemets from it but it."
+- Definition of Done: [x] sectors render as pie wedges from center
+  (matching the reference) instead of ring bands, supporting multiple
+  green/orange sectors (the reference only supported one)  [x] pointer
+  redesigned as the reference's "split-tail dart" shape  [x] north tick
+  + label added  [x] existing functionality preserved - overall-state
+  ring (Block 11), history dots, colorblind-safe dashed red ring, size
+  scaling (48/64/160px+), all still work identically  [x] CI green
+- Files changed: domain/direction.ts (new `describeSector` pie-wedge
+  helper, alongside the existing ring-band one); WindRose.tsx (full
+  rewrite of the SVG rendering); tests/unit/direction.test.ts (3 new
+  tests for describeSector); tests/unit/WindRose.test.tsx (updated
+  testids/assertions for the new pointer shape, 1 new test for the
+  north reference)
+- Verified visually before finalizing, not just that it compiles:
+  rendered the full rose gallery (all §29 fixture cases - SW/S/E/N-
+  wraparound/red/orange/gray/marker-size variants) via the existing dev
+  gallery harness and reviewed the actual screenshot; then specifically
+  checked the new pointer's larger overflow (~31% past the ring, vs.
+  the old arrow which stayed inside it) against the map's known
+  marker-clustering issue by zooming into the worst real cluster (4
+  sites within a few hundred meters) - found the overlap marginally
+  worse there but not a functional regression (ring colors, speed
+  numbers, click targeting all still work), so shipped rather than
+  preemptively shrinking the design.
+- Kept scope focused on "the sector rose" specifically: did not port
+  the reference's embedded weather icon (this app already has a
+  separate, tested WeatherGlyph component composed alongside WindRose,
+  not inside it) or its comma-decimal number format (not something
+  asked for, a separate concern from the graphic redesign).
+- Deferred / unresolved: none - self-contained, all existing WindRose
+  consumers (SiteMap markers, SiteSheet's expanded view, the rose
+  gallery) work unchanged since the component's props/behavior are
+  identical, only its internal SVG rendering changed.

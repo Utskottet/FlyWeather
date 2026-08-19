@@ -50,23 +50,20 @@ describe("WindRose - sector rendering (§29.5, §29.6)", () => {
   });
 });
 
-describe("WindRose - wind arrow (§29.7)", () => {
-  it("rotates the arrow when wind direction changes", () => {
+describe("WindRose - wind pointer (§29.7)", () => {
+  it("rotates the pointer when wind direction changes", () => {
     const { container, rerender } = render(<WindRose {...baseProps()} windDirectionDeg={90} />);
-    const line1 = container.querySelector('[data-testid="wind-arrow-line"]');
-    const x2At90 = line1?.getAttribute("x2");
-    const y2At90 = line1?.getAttribute("y2");
+    const pointsAt90 = container.querySelector('[data-testid="wind-pointer"]')?.getAttribute("points");
 
     rerender(<WindRose {...baseProps()} windDirectionDeg={270} />);
-    const line2 = container.querySelector('[data-testid="wind-arrow-line"]');
+    const pointsAt270 = container.querySelector('[data-testid="wind-pointer"]')?.getAttribute("points");
 
-    expect(line2?.getAttribute("x2")).not.toBe(x2At90);
-    expect(line2?.getAttribute("y2")).not.toBe(y2At90);
+    expect(pointsAt270).not.toBe(pointsAt90);
   });
 
-  it("renders no arrow when wind direction is unknown", () => {
+  it("renders no pointer when wind direction is unknown", () => {
     const { container } = render(<WindRose {...baseProps()} windDirectionDeg={null} />);
-    expect(container.querySelector('[data-testid="wind-arrow"]')).toBeNull();
+    expect(container.querySelector('[data-testid="wind-pointer"]')).toBeNull();
   });
 });
 
@@ -130,6 +127,14 @@ describe("WindRose - overall state styling (§29.10)", () => {
   });
 });
 
+describe("WindRose - north reference (per user's uploaded sector-rose design)", () => {
+  it("always renders a fixed north tick and label, independent of sector/wind data", () => {
+    const { container } = render(<WindRose {...baseProps()} windDirectionDeg={null} windSpeedMs={null} />);
+    expect(container.querySelector('[data-testid="north-tick"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="north-label"]')?.textContent).toBe("N");
+  });
+});
+
 describe("WindRose - size handling (§29.11, §29.12)", () => {
   it.each([48, 64])("renders at %ipx", (size) => {
     const { container } = render(<WindRose {...baseProps()} size={size} />);
@@ -146,10 +151,9 @@ describe("WindRose - size handling (§29.11, §29.12)", () => {
     const largeSectorD = large.container.querySelector('[data-testid="green-sector"]')?.getAttribute("d");
     expect(smallSectorD).toBe(largeSectorD);
 
-    const smallArrow = small.container.querySelector('[data-testid="wind-arrow-line"]');
-    const largeArrow = large.container.querySelector('[data-testid="wind-arrow-line"]');
-    expect(smallArrow?.getAttribute("x2")).toBe(largeArrow?.getAttribute("x2"));
-    expect(smallArrow?.getAttribute("y2")).toBe(largeArrow?.getAttribute("y2"));
+    const smallPointer = small.container.querySelector('[data-testid="wind-pointer"]');
+    const largePointer = large.container.querySelector('[data-testid="wind-pointer"]');
+    expect(smallPointer?.getAttribute("points")).toBe(largePointer?.getAttribute("points"));
 
     const smallSvg = small.container.querySelector("svg");
     const largeSvg = large.container.querySelector("svg");

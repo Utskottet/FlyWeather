@@ -1,4 +1,4 @@
-import { describeRingSector, polarToCartesian } from "../../domain/direction.ts";
+import { describeSector, polarToCartesian } from "../../domain/direction.ts";
 
 export type RoseState = "green" | "orange" | "red" | "gray";
 
@@ -29,18 +29,30 @@ export interface WindRoseProps {
 const VIEWBOX = 100;
 const CENTER = VIEWBOX / 2;
 const OUTER_R = 46;
-// Widened from 5 (user feedback: overall state wasn't visible enough).
+// Widened from 5 (user feedback: overall state wasn't visible enough, Block 11).
 const STATE_RING_WIDTH = 8;
-const SECTOR_OUTER_R = OUTER_R - STATE_RING_WIDTH - 2;
-const SECTOR_WIDTH = 12;
-const SECTOR_INNER_R = SECTOR_OUTER_R - SECTOR_WIDTH;
-const SECTOR_MID_R = (SECTOR_INNER_R + SECTOR_OUTER_R) / 2;
-const CENTER_R = SECTOR_INNER_R - 2;
-const ARROW_INNER_R = CENTER_R * 0.6;
-const ARROW_HEAD_R = SECTOR_OUTER_R;
-const ARROW_SHAFT_R = ARROW_HEAD_R - 6;
-const ARROW_HALF_WIDTH_DEG = 7;
 const HISTORY_R = OUTER_R + 4;
+
+// Pointer geometry (per the user's uploaded reference design: a
+// "split-tail" dart, mostly OUTSIDE the ring with a wide notched back,
+// tip poking slightly inward) - proportions carried over from the
+// reference's own 240-viewBox pixel values, re-expressed as multiples
+// of OUTER_R so they scale with this component's 100-viewBox instead
+// of being copied as magic numbers.
+const POINTER_TIP_R = OUTER_R * 0.91;
+const POINTER_NOTCH_R = OUTER_R * 1.21;
+const POINTER_WING_R = OUTER_R * 1.31;
+const POINTER_WING_HALF_DEG = 8.2;
+
+// Small legibility patch behind the speed number - needed now that
+// sector wedges reach all the way to the center (see below), so
+// whatever wedge color happens to sit behind the number (green/orange/
+// base) doesn't fight with the dark text.
+const TEXT_BG_R = 17;
+
+const NORTH_TICK_OUTER_R = OUTER_R;
+const NORTH_TICK_INNER_R = OUTER_R - 4;
+const NORTH_LABEL_R = OUTER_R - 11;
 
 // Center fill moved from a near-white tint to a genuinely saturated
 // mid-tone per user feedback ("the whole center... should be the color
@@ -48,22 +60,31 @@ const HISTORY_R = OUTER_R + 4;
 // every fill below stays well above WCAG AA's 4.5:1 contrast minimum
 // for text, so the number stays clearly readable (§28) even though the
 // background is now much more visually prominent than before.
-const STATE_COLORS: Record<RoseState, { ring: string; fill: string }> = {
-  green: { ring: "#2e7d32", fill: "#a5d6a7" },
-  orange: { ring: "#e65100", fill: "#ffcc80" },
-  red: { ring: "#c62828", fill: "#ef9a9a" },
-  gray: { ring: "#757575", fill: "#cfd8dc" },
+const STATE_COLORS: Record<RoseState, { ring: string }> = {
+  green: { ring: "#2e7d32" },
+  orange: { ring: "#e65100" },
+  red: { ring: "#c62828" },
+  gray: { ring: "#757575" },
 };
 
 const SECTOR_BASE_COLOR = "#f3d4d4";
 const GREEN_SECTOR_COLOR = "#43a047";
 const ORANGE_SECTOR_COLOR = "#fb8c00";
 
-function arrowheadPoints(angleDeg: number): string {
-  const tip = polarToCartesian(CENTER, CENTER, ARROW_HEAD_R, angleDeg);
-  const left = polarToCartesian(CENTER, CENTER, ARROW_SHAFT_R, angleDeg - ARROW_HALF_WIDTH_DEG);
-  const right = polarToCartesian(CENTER, CENTER, ARROW_SHAFT_R, angleDeg + ARROW_HALF_WIDTH_DEG);
-  return `${tip.x},${tip.y} ${left.x},${left.y} ${right.x},${right.y}`;
+/**
+ * "Split-tail" wind pointer per the user's uploaded reference design
+ * (uploads/wind-sector-rose.html) - a dart shape with a pointed tip
+ * poking just inside the ring and a wide, notched back fanning out
+ * past it, replacing the previous simple line+arrowhead. Tip points
+ * toward the compass direction wind is coming FROM (§29.3 - unchanged
+ * convention, only the shape changed).
+ */
+function pointerPoints(angleDeg: number): string {
+  const tip = polarToCartesian(CENTER, CENTER, POINTER_TIP_R, angleDeg);
+  const wingLeft = polarToCartesian(CENTER, CENTER, POINTER_WING_R, angleDeg - POINTER_WING_HALF_DEG);
+  const notch = polarToCartesian(CENTER, CENTER, POINTER_NOTCH_R, angleDeg);
+  const wingRight = polarToCartesian(CENTER, CENTER, POINTER_WING_R, angleDeg + POINTER_WING_HALF_DEG);
+  return [tip, wingLeft, notch, wingRight].map((p) => `${p.x},${p.y}`).join(" ");
 }
 
 export function WindRose({
@@ -78,10 +99,9 @@ export function WindRose({
   unit = "m/s",
 }: WindRoseProps) {
   const stateColor = STATE_COLORS[state];
-  const arrowShaftEnd =
-    windDirectionDeg !== null ? polarToCartesian(CENTER, CENTER, ARROW_SHAFT_R, windDirectionDeg) : null;
-  const arrowStart =
-    windDirectionDeg !== null ? polarToCartesian(CENTER, CENTER, ARROW_INNER_R, windDirectionDeg) : null;
+  const northTickOuter = polarToCartesian(CENTER, CENTER, NORTH_TICK_OUTER_R, 0);
+  const northTickInner = polarToCartesian(CENTER, CENTER, NORTH_TICK_INNER_R, 0);
+  const northLabelPos = polarToCartesian(CENTER, CENTER, NORTH_LABEL_R, 0);
 
   return (
     <div
@@ -92,24 +112,17 @@ export function WindRose({
         width={size}
         height={size}
         viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
+        overflow="visible"
         role="img"
         aria-label={siteName ? `Wind rose for ${siteName}` : "Wind rose"}
       >
-        {/* implicit "unfavorable direction" background - everywhere not covered by a green/orange sector */}
-        <circle
-          cx={CENTER}
-          cy={CENTER}
-          r={SECTOR_MID_R}
-          fill="none"
-          stroke={SECTOR_BASE_COLOR}
-          strokeWidth={SECTOR_WIDTH}
-          data-testid="sector-base"
-        />
+        {/* implicit "unfavorable direction" backdrop - a full disc, not just a ring band, since sectors are now solid wedges reaching the center */}
+        <circle cx={CENTER} cy={CENTER} r={OUTER_R} fill={SECTOR_BASE_COLOR} data-testid="sector-base" />
 
         {orangeSectors.map((s, i) => (
           <path
             key={`orange-${i}`}
-            d={describeRingSector(CENTER, CENTER, SECTOR_INNER_R, SECTOR_OUTER_R, s.fromDeg, s.toDeg)}
+            d={describeSector(CENTER, CENTER, OUTER_R, s.fromDeg, s.toDeg)}
             fill={ORANGE_SECTOR_COLOR}
             data-testid="orange-sector"
           />
@@ -117,13 +130,12 @@ export function WindRose({
         {greenSectors.map((s, i) => (
           <path
             key={`green-${i}`}
-            d={describeRingSector(CENTER, CENTER, SECTOR_INNER_R, SECTOR_OUTER_R, s.fromDeg, s.toDeg)}
+            d={describeSector(CENTER, CENTER, OUTER_R, s.fromDeg, s.toDeg)}
             fill={GREEN_SECTOR_COLOR}
             data-testid="green-sector"
           />
         ))}
 
-        <circle cx={CENTER} cy={CENTER} r={CENTER_R} fill={stateColor.fill} data-testid="state-fill" />
         <circle
           cx={CENTER}
           cy={CENTER}
@@ -137,6 +149,29 @@ export function WindRose({
           strokeDasharray={state === "red" ? STATE_RING_WIDTH * 1.6 : undefined}
           data-testid="state-ring"
         />
+
+        <line
+          x1={northTickOuter.x}
+          y1={northTickOuter.y}
+          x2={northTickInner.x}
+          y2={northTickInner.y}
+          stroke="#111827"
+          strokeWidth={2}
+          strokeLinecap="round"
+          data-testid="north-tick"
+        />
+        <text
+          x={northLabelPos.x}
+          y={northLabelPos.y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={7}
+          fontWeight={800}
+          fill="#111827"
+          data-testid="north-label"
+        >
+          N
+        </text>
 
         {historyPoints.map((hp, i) => {
           const pt = polarToCartesian(CENTER, CENTER, HISTORY_R, hp.directionDeg);
@@ -155,22 +190,15 @@ export function WindRose({
           );
         })}
 
-        {windDirectionDeg !== null && arrowStart && arrowShaftEnd && (
-          <g data-testid="wind-arrow">
-            <line
-              x1={arrowStart.x}
-              y1={arrowStart.y}
-              x2={arrowShaftEnd.x}
-              y2={arrowShaftEnd.y}
-              stroke="#111827"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              data-testid="wind-arrow-line"
-            />
-            <polygon points={arrowheadPoints(windDirectionDeg)} fill="#111827" data-testid="wind-arrow-head" />
-          </g>
+        {windDirectionDeg !== null && (
+          <polygon
+            points={pointerPoints(windDirectionDeg)}
+            fill="#111827"
+            data-testid="wind-pointer"
+          />
         )}
 
+        <circle cx={CENTER} cy={CENTER} r={TEXT_BG_R} fill="rgba(255,255,255,0.82)" data-testid="text-legibility-bg" />
         <text
           x={CENTER}
           y={CENTER}
