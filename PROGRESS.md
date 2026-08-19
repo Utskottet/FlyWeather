@@ -975,3 +975,50 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   gallery scale and the real 48px/64px marker sizes - screenshots
   reviewed directly, not just DOM assertions. Zero console errors.
 - Deferred / unresolved: none - self-contained.
+
+## WindRose round 4: single status-colored wedge, exact reference proportions
+- Status: done
+- User feedback: "you fail to make the rose look like the htlm. what
+  can i do to help ?" followed by: "the sector cake that is now green
+  shoudl be the only cace remove the yellow edge of sector. onty one
+  take the inner one for degrees. the filled field should be
+  transparet alpha so that we see map bg though it.. the good maybe
+  nogo color should be indicated by the sector color." - round 3's
+  fixes weren't enough; screenshotting the reference directly (instead
+  of trusting a subagent's description) confirmed 3 more real gaps:
+  ring 3x too thick, a pink backdrop the reference never had, and two
+  wedges instead of the reference's one.
+- Definition of Done: [x] wedge geometry now comes from
+  `site.rose.green[0]` only (verified every SITES.md site has exactly
+  one green entry) - orange sub-ranges no longer drawn  [x] wedge fill
+  color driven by live `state` (green/orange/red/gray), `opacity=0.78`
+  matching the reference exactly  [x] `SECTOR_BASE_COLOR` pink backdrop
+  removed entirely  [x] `RING_WIDTH` recalculated from the reference's
+  real CSS ratio (3.5/90 of radius, was ~3x too thick)  [x] icon/speed
+  vertical offsets re-derived as ratios of the reference's own
+  coordinates  [x] `WindRoseProps` changed to `sector: RoseSector |
+  null` + `state: RoseState`, all 3 callers updated  [x] `tsc --noEmit`
+  clean, full unit suite green (175/175)  [x] verified by directly
+  screenshotting BOTH the reference HTML and the new live-served build
+  myself and comparing the actual images pixel-by-pixel, not just
+  DOM/text assertions
+- Files changed: WindRose.tsx (full rewrite of sector rendering -
+  single wedge from `sector` prop, `STATE_SECTOR_COLOR` map,
+  opacity, removed backdrop, recalculated ring/layout constants);
+  SiteMap.tsx (re-added `evaluateFlyability` call/import, passes
+  `sector`+`state`); SiteSheet.tsx (passes `sector`+`state` instead of
+  `greenSectors`/`orangeSectors`); RoseGallery.tsx (`Case` type
+  simplified to one `sector`, added a `no-sector-configured` fixture);
+  tests/unit/WindRose.test.tsx (rewritten for the single-wedge model);
+  tests/e2e/rose-gallery.spec.ts (added the new fixture slug)
+- Verified by screenshotting `uploads/wind-sector-rose.html` directly
+  with a standalone local Playwright script, then building, staging
+  `dist/` under the real `/FlyWeather/` base path, serving it locally,
+  and screenshotting the new gallery the same way - compared the two
+  sets of PNGs myself side by side (not delegated to a subagent) since
+  round 3's subagent-based verification had already missed real gaps
+  once. All fixture states match the reference's model visually; zero
+  console errors.
+- Deferred / unresolved: none - self-contained. Not yet re-verified
+  against the live production deploy at time of writing (pending
+  push).

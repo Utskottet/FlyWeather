@@ -4,6 +4,7 @@ import type { LngLatBoundsLike } from "maplibre-gl";
 import type { LocatedSite } from "../../domain/sites.ts";
 import type { SiteForecast, WindSample } from "../../domain/types.ts";
 import { MODEL_HEIGHTS_M } from "../../domain/types.ts";
+import { evaluateFlyability } from "../../domain/flyability.ts";
 import { classifyFreshness } from "../../domain/freshness.ts";
 import { selectEffectiveSample, type EffectiveSample } from "../../domain/effectiveSample.ts";
 import { interpolateWindAtHeight } from "../../domain/heightInterpolation.ts";
@@ -126,14 +127,22 @@ function buildRoseHtml(
   weatherKind: SiteForecast["weatherKind"][number],
 ): { html: string; size: number } {
   const size = selected ? SELECTED_MARKER_SIZE : MARKER_SIZE;
-  const greenSectors = site.rose.green.map((s) => ({ fromDeg: s.from_deg, toDeg: s.to_deg }));
-  const orangeSectors = site.rose.orange.map((s) => ({ fromDeg: s.from_deg, toDeg: s.to_deg }));
+  const green = site.rose.green[0];
+  const sector = green ? { fromDeg: green.from_deg, toDeg: green.to_deg } : null;
+  const { state } = evaluateFlyability(
+    sample.windDirectionDeg,
+    sample.windSpeedMs,
+    sample.windGustMs,
+    site.rose.green,
+    site.rose.orange,
+    site.wind_speed,
+  );
 
   const html = renderToStaticMarkup(
     <WindRose
       size={size}
-      greenSectors={greenSectors}
-      orangeSectors={orangeSectors}
+      sector={sector}
+      state={state}
       windDirectionDeg={sample.windDirectionDeg}
       windSpeedMs={sample.windSpeedMs}
       weatherKind={weatherKind}

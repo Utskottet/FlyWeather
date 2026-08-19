@@ -14,6 +14,7 @@ const CASES = [
   "wrong-direction-red",
   "unverified-orange",
   "stale-gray",
+  "no-sector-configured",
 ];
 
 test.describe("WindRose gallery", () => {

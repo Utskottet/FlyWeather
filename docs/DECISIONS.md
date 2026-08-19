@@ -1296,3 +1296,78 @@ sibling element into the rose's own SVG.
   page-wide; sector fills still correct; icon/number sit directly on
   the sector-color backdrop with no white halo at both gallery scale
   and the real 48px/64px marker sizes; zero console errors.
+
+## WindRose round 4: single status-colored wedge, exact reference proportions
+- Round 3 still didn't match: the user pointed out the ring was
+  actually way too *thick* (a misreading of "think" as "thick" in
+  round 3's feedback - it should have stayed thin), the rose still had
+  a solid opaque pink backdrop disc the reference never had, and it
+  still drew two separate green+orange wedges instead of the
+  reference's single status-colored one. This was caught by finally
+  screenshotting `uploads/wind-sector-rose.html` directly with a local
+  Playwright script and comparing pixels against this project's own
+  screenshot side by side, instead of trusting a verification
+  subagent's textual description as done in round 3 - that comparison
+  immediately surfaced all three gaps. Reading the reference's actual
+  JS/CSS source (not just eyeballing renders) gave exact numbers for
+  everything below instead of guessed proportions.
+- **User's explicit resolution for the wedge-count question**: use
+  only the site's green ("inner") sector's bounds for the wedge -
+  never the orange sub-ranges, never a union of both. Every site in
+  `SITES.md` has exactly exactly one green entry (verified by
+  script - min/max both 1 across all 24 enabled sites), so
+  `site.rose.green[0]` is always a safe, real (not fabricated) source
+  for the wedge's angular span. Orange sub-ranges are no longer drawn
+  at all.
+- **`WindRoseProps` changed from `greenSectors[]`/`orangeSectors[]` to
+  a single `sector: RoseSector | null`**, plus `state: RoseState`
+  reintroduced (it now colors the wedge, not the ring) - a real API
+  change since only one sector can ever be meaningful now. Null sector
+  (a site with no green range configured) renders no wedge at all,
+  matching the "never fabricate" principle rather than inventing a
+  placeholder shape.
+- **Ring width recalculated from the reference's actual numbers**: its
+  CSS is `stroke-width: 3.5` on a `viewBox="0 0 240 240"` circle of
+  `r="90"` - a ratio of `3.5/90 ≈ 0.039` of the radius. Applied that
+  exact ratio to this component's own `OUTER_R` (`RING_WIDTH = OUTER_R
+  * (3.5 / 90)`, ≈1.79) instead of another guessed pixel value - round
+  3's `6` was roughly 3x too thick relative to the circle.
+  `RING_WIDTH` is a derived constant now, not a hardcoded number, so
+  it can't drift out of proportion again if `OUTER_R` ever changes.
+- **Removed the `SECTOR_BASE_COLOR` pink backdrop disc entirely.** It
+  was this project's own invented deviation from round 2/3 (justified
+  at the time as "contrast against varying map backgrounds"), but the
+  reference has zero fill outside its one wedge - genuinely
+  transparent, and the user explicitly asked for the map to show
+  through. If contrast against certain map modes turns out to be a
+  real problem later, that's a new, separate issue to raise - not
+  grounds for reintroducing an element the reference never had.
+- **Wedge fill dropped from opaque to `opacity={0.78}`**, matching the
+  reference's own `.sector { opacity: .78 }` exactly - per explicit
+  feedback that the fill needs to be alpha-transparent so the map
+  shows through it, same reasoning as removing the backdrop disc.
+- **Icon/speed layout offsets re-derived as ratios of the reference's
+  own R=90**, not copied as absolute pixel numbers: icon group
+  `translate(120 103)` is 17 units above center (17/90 of the radius);
+  speed text `y=174` is 54 units below center (54/90). Both re-applied
+  to this component's `OUTER_R` (`ICON_CY`/`SPEED_CY`) so the vertical
+  spacing matches the reference's proportions instead of an earlier
+  pass's much tighter, guessed offsets.
+- Pointer geometry was re-checked against the reference's literal
+  `points="120,38 103,2 120,11 137,2"` and confirmed already correct
+  (tip/notch/wing radii and the 8.2° wing half-angle all matched to
+  within rounding) - not touched again.
+- `RoseGallery.tsx`'s fixture `Case` type simplified from
+  `green[]`/`orange[]` to a single `sector`, matching the new prop; a
+  new `no-sector-configured` fixture case added (`sector: null`) to
+  cover the never-fabricate path, added to
+  `tests/e2e/rose-gallery.spec.ts`'s case list too.
+- Verified by building, staging `dist/` under the real `/FlyWeather/`
+  base path, serving it locally, and directly screenshotting both the
+  reference HTML file (via a standalone local Playwright script) and
+  the live-served gallery myself - compared the actual PNGs side by
+  side rather than delegating that comparison to a subagent's
+  description, given round 3's verification already missed real gaps
+  once. All fixture states (green/orange/red/gray/no-sector) confirmed
+  visually consistent with the reference's model; zero console errors;
+  full unit suite green (175/175).

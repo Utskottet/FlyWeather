@@ -1,51 +1,64 @@
 import { describe, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach } from "vitest";
-import { WindRose, type RoseSector } from "../../src/components/WindRose/index.ts";
+import { WindRose, type RoseSector, type RoseState } from "../../src/components/WindRose/index.ts";
 
 afterEach(cleanup);
 
-const SW_GREEN: RoseSector[] = [{ fromDeg: 213.75, toDeg: 236.25 }];
-const SW_ORANGE: RoseSector[] = [
-  { fromDeg: 202.5, toDeg: 213.75 },
-  { fromDeg: 236.25, toDeg: 247.5 },
-];
+const SW_SECTOR: RoseSector = { fromDeg: 213.75, toDeg: 236.25 };
 
 function baseProps() {
   return {
-    greenSectors: SW_GREEN,
-    orangeSectors: SW_ORANGE,
+    sector: SW_SECTOR,
+    state: "green" as RoseState,
     windDirectionDeg: 225,
     windSpeedMs: 5.2,
   };
 }
 
-describe("WindRose - sector rendering (§29.5, §29.6)", () => {
-  it("renders multiple green sectors", () => {
-    const { container } = render(
-      <WindRose
-        {...baseProps()}
-        greenSectors={[
-          { fromDeg: 60, toDeg: 90 },
-          { fromDeg: 240, toDeg: 270 },
-        ]}
-      />,
-    );
-    expect(container.querySelectorAll('[data-testid="green-sector"]')).toHaveLength(2);
+describe("WindRose - sector rendering (per feedback: one wedge, colored by live status, not multiple green/orange wedges)", () => {
+  it("renders exactly one sector wedge, filled by the current state's color", () => {
+    const { container } = render(<WindRose {...baseProps()} state="orange" />);
+    const wedges = container.querySelectorAll('[data-testid="sector"]');
+    expect(wedges).toHaveLength(1);
+    expect(wedges[0].getAttribute("fill")).toBe("#ff9800");
   });
 
-  it("keeps sector paths fixed when only the wind direction changes", () => {
+  it.each<[RoseState, string]>([
+    ["green", "#27c93f"],
+    ["orange", "#ff9800"],
+    ["red", "#f23535"],
+    ["gray", "#757575"],
+  ])("colors the wedge %s -> %s", (state, expectedFill) => {
+    const { container } = render(<WindRose {...baseProps()} state={state} />);
+    expect(container.querySelector('[data-testid="sector"]')?.getAttribute("fill")).toBe(expectedFill);
+  });
+
+  it("renders the wedge at less than full opacity so a map background shows through, matching the reference", () => {
+    const { container } = render(<WindRose {...baseProps()} />);
+    const opacity = container.querySelector('[data-testid="sector"]')?.getAttribute("opacity");
+    expect(Number(opacity)).toBeLessThan(1);
+    expect(Number(opacity)).toBeGreaterThan(0);
+  });
+
+  it("renders no wedge when the site has no sector configured (never fabricate a range)", () => {
+    const { container } = render(<WindRose {...baseProps()} sector={null} />);
+    expect(container.querySelector('[data-testid="sector"]')).toBeNull();
+  });
+
+  it("keeps the sector path fixed when only the wind direction changes", () => {
     const { container, rerender } = render(<WindRose {...baseProps()} windDirectionDeg={90} />);
-    const before = Array.from(container.querySelectorAll('[data-testid="green-sector"]')).map((el) =>
-      el.getAttribute("d"),
-    );
+    const before = container.querySelector('[data-testid="sector"]')?.getAttribute("d");
 
     rerender(<WindRose {...baseProps()} windDirectionDeg={270} />);
-    const after = Array.from(container.querySelectorAll('[data-testid="green-sector"]')).map((el) =>
-      el.getAttribute("d"),
-    );
+    const after = container.querySelector('[data-testid="sector"]')?.getAttribute("d");
 
-    expect(after).toEqual(before);
+    expect(after).toBe(before);
+  });
+
+  it("does not render a solid backdrop disc behind the wedge (reference is fully transparent otherwise)", () => {
+    const { container } = render(<WindRose {...baseProps()} />);
+    expect(container.querySelector('[data-testid="sector-base"]')).toBeNull();
   });
 });
 
@@ -110,16 +123,27 @@ describe("WindRose - outer ring (per the reference HTML's own rendering: plain b
     expect(ring?.getAttribute("stroke")).toBe("#111");
   });
 
-  it("never adds a dasharray - overall status is read from sector color and pointer position, not the ring", () => {
-    const { container } = render(<WindRose {...baseProps()} windDirectionDeg={45} />);
+  it("stays the same color across every state - status is read from the wedge, not the ring", () => {
+    const { container, rerender } = render(<WindRose {...baseProps()} state="red" />);
+    const redRingColor = container.querySelector('[data-testid="outer-ring"]')?.getAttribute("stroke");
+
+    rerender(<WindRose {...baseProps()} state="green" />);
+    const greenRingColor = container.querySelector('[data-testid="outer-ring"]')?.getAttribute("stroke");
+
+    expect(redRingColor).toBe(greenRingColor);
+  });
+
+  it("never adds a dasharray", () => {
+    const { container } = render(<WindRose {...baseProps()} state="red" />);
     const ring = container.querySelector('[data-testid="outer-ring"]');
     expect(ring?.getAttribute("stroke-dasharray")).toBeNull();
   });
 
-  it("keeps sector geometry visible regardless of wind direction/speed", () => {
-    const { container } = render(<WindRose {...baseProps()} windDirectionDeg={45} windSpeedMs={7.1} />);
-    expect(container.querySelectorAll('[data-testid="green-sector"]')).toHaveLength(1);
-    expect(container.querySelectorAll('[data-testid="orange-sector"]')).toHaveLength(2);
+  it("is thin relative to the rose's radius, matching the reference's proportions (not the earlier too-thick pass)", () => {
+    const { container } = render(<WindRose {...baseProps()} />);
+    const width = Number(container.querySelector('[data-testid="outer-ring"]')?.getAttribute("stroke-width"));
+    expect(width).toBeGreaterThan(0);
+    expect(width).toBeLessThan(3);
   });
 });
 
@@ -165,8 +189,8 @@ describe("WindRose - size handling (§29.11, §29.12)", () => {
     const small = render(<WindRose {...baseProps()} size={64} />);
     const large = render(<WindRose {...baseProps()} size={160} />);
 
-    const smallSectorD = small.container.querySelector('[data-testid="green-sector"]')?.getAttribute("d");
-    const largeSectorD = large.container.querySelector('[data-testid="green-sector"]')?.getAttribute("d");
+    const smallSectorD = small.container.querySelector('[data-testid="sector"]')?.getAttribute("d");
+    const largeSectorD = large.container.querySelector('[data-testid="sector"]')?.getAttribute("d");
     expect(smallSectorD).toBe(largeSectorD);
 
     const smallPointer = small.container.querySelector('[data-testid="wind-pointer"]');

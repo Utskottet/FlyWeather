@@ -54,8 +54,8 @@ export function SiteSheet({
   selectedTimestamp,
   onClose,
 }: SiteSheetProps) {
-  const greenSectors = site.rose.green.map((s) => ({ fromDeg: s.from_deg, toDeg: s.to_deg }));
-  const orangeSectors = site.rose.orange.map((s) => ({ fromDeg: s.from_deg, toDeg: s.to_deg }));
+  const green = site.rose.green[0];
+  const sector = green ? { fromDeg: green.from_deg, toDeg: green.to_deg } : null;
   const { state, reasons } = evaluateFlyability(
     sample.windDirectionDeg,
     sample.windSpeedMs,
@@ -82,8 +82,8 @@ export function SiteSheet({
       <div className="site-sheet-rose-row">
         <WindRose
           size={140}
-          greenSectors={greenSectors}
-          orangeSectors={orangeSectors}
+          sector={sector}
+          state={state}
           windDirectionDeg={sample.windDirectionDeg}
           windSpeedMs={sample.windSpeedMs}
           weatherKind={sample.weatherKind}
