@@ -632,3 +632,32 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   contour/road/label layers exist only in TOPO (not leaking into
   RELIEF), switching modes preserves center/zoom exactly, and marker
   clicks still work.
+
+## Block 14c
+
+- **MAP mode points at OpenFreeMap's hosted `positron` style URL**
+  (`https://tiles.openfreemap.org/styles/positron`) rather than hand-
+  building a full conventional-map style from scratch. Fetched and
+  inspected it first: 55 layers (roads, buildings, water, boundaries,
+  labels at every zoom), `background-color: rgb(242,243,240)`, and
+  critically **no hillshade layer at all** - satisfies the spec's
+  "hillshade reduced or removed" exactly without needing to add that
+  logic ourselves. Since MapLibre's `style` option natively accepts a
+  URL string (not just an inline `StyleSpecification` object), this
+  needed only a type widening
+  (`MapLibreMap`'s `style` prop -> `StyleSpecification | string`,
+  `buildStyleForMode`'s return type likewise) rather than any new
+  runtime logic. Using OpenFreeMap's own maintained style also means it
+  stays current with their schema without us re-copying ~55 layers by
+  hand and letting that copy drift stale.
+- **All three modes now selectable** - `SiteMap.tsx`'s `availableModes`
+  is `["relief", "topo", "map"]`, completing `MapModeToggle`. This
+  closes out Block 14 as a whole (14a/14b/14c).
+- **Verification, same discipline as 14a/14b**: built and served the
+  actual `dist/` output locally under the real `/FlyWeather/` base path
+  before pushing. Confirmed via Playwright: all three modes render
+  distinctly (Map = flat street map, Topo = hillshade + contours, Relief
+  = hillshade only), switching between any pair preserves center/zoom
+  exactly (compared across all 4 states: initial, Map, Topo, Relief),
+  and a marker click still opens the site sheet with real data
+  regardless of which mode is active.

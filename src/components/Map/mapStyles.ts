@@ -188,12 +188,21 @@ export function buildTopoStyle(): StyleSpecification {
   };
 }
 
-/** MAP stub (Block 14c builds this out: full OpenFreeMap positron-style layers, reduced hillshade). */
-export function buildMapModeStyle(): StyleSpecification {
-  return buildReliefStyle();
+// OpenFreeMap's own hosted Positron-equivalent style: roads, buildings,
+// water, boundaries, place labels at every zoom, no hillshade at all -
+// exactly the "conventional clean orientation map... hillshade reduced
+// or removed" the user asked for. Pointing at it directly (MapLibre
+// accepts a style URL as well as an inline spec) rather than hand-
+// copying its ~55 layers into this file, since OpenFreeMap maintains and
+// updates it themselves.
+const OPENFREEMAP_POSITRON_STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
+
+/** MAP: conventional orientation map, no terrain layer at all (per spec). */
+export function buildMapModeStyle(): string {
+  return OPENFREEMAP_POSITRON_STYLE_URL;
 }
 
-export function buildStyleForMode(mode: MapMode): StyleSpecification {
+export function buildStyleForMode(mode: MapMode): StyleSpecification | string {
   switch (mode) {
     case "relief":
       return buildReliefStyle();

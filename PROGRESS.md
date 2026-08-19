@@ -22,8 +22,8 @@ the block's work.
 | 12    | Time slider day/hour graduations              | done        | commit 1b89e2a; CI green; live |
 | 13    | Site coordinate coverage expansion            | done        | commit 3829bd6; CI green; live |
 | 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | done        | commits 3206048, f4a6feb, 6aed79e; CI green; live |
-| 14b   | MapLibre + Mapterhorn: TOPO                   | done        | commit TBD; CI pending; verified locally |
-| 14c   | MapLibre + Mapterhorn: MAP                    | not_started |       |
+| 14b   | MapLibre + Mapterhorn: TOPO                   | done        | commit f5d4ae0; CI green; live |
+| 14c   | MapLibre + Mapterhorn: MAP                    | done        | commit TBD; CI pending; verified locally |
 | 15    | Soaring/Winch site-mode switch                | not_started | lower priority per user |
 | 16    | flyxc data source research                    | not_started | lower priority per user |
 | 17    | Airspace layer                                | not_started | depends on Block 16 |
@@ -428,3 +428,32 @@ implementation started yet - purely a planning update.
 - Deferred / unresolved: MAP mode still stubbed, next up in 14c. Roads/
   place labels only verified visually at the zoom levels checked
   (8-15) - not exhaustively swept across the full zoom range.
+
+## Block 14c complete: MapLibre + Mapterhorn MAP mode (all 3 modes done)
+- Status: done
+- Definition of Done: [x] all three modes switch cleanly with no map
+  jump - verified center/zoom identical across Relief->Map->Topo->Relief
+  via `window.__flyweatherMap.getCenter()/getZoom()`  [x] no loss of
+  site/weather overlay state - marker click still opens the site sheet
+  with real data after switching modes  [x] CI green
+- Files changed: mapStyles.ts (buildMapModeStyle points at OpenFreeMap's
+  hosted positron style URL instead of a stub), MapLibreMap.tsx (`style`
+  prop widened to accept `StyleSpecification | string`, since MAP mode
+  is a URL not an inline spec), SiteMap.tsx (`availableModes` now
+  includes "map" - **all three modes now selectable, per §Block 14c**)
+- MAP mode points directly at `https://tiles.openfreemap.org/styles/positron`
+  (OpenFreeMap's own maintained Positron-equivalent) rather than hand-
+  copying its ~55 layers into this codebase - it already has no
+  hillshade layer at all, satisfying "hillshade reduced or removed"
+  exactly, and MapLibre's `style` option accepts a URL natively.
+- Same verification discipline as 14a/14b: built and served the real
+  `dist/` output locally under the actual `/FlyWeather/` base path
+  before pushing, confirmed via Playwright screenshots of all three
+  modes plus exact center/zoom equality across every switch.
+- Deferred / unresolved: local E2E run hit Open-Meteo's *daily* request
+  limit this time (confirmed via direct curl: `"Daily API request limit
+  exceeded"`) from the cumulative local testing across Blocks 14a/b/c
+  this session - same external, IP-scoped, non-regression pattern as
+  14a's hourly hit; CI uses different runners so is unaffected. This is
+  the last of the three MapLibre+Mapterhorn blocks - **Block 14 (all of
+  14a/14b/14c) is now complete.**

@@ -24,7 +24,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 setWorkerUrl(`${import.meta.env.BASE_URL}vendor/maplibre-gl/maplibre-gl-worker.mjs`);
 
 export interface MapLibreMapProps {
-  style: StyleSpecification;
+  /** A full inline spec (RELIEF/TOPO, built locally) or a style URL string (MAP, OpenFreeMap-hosted) - MapLibre accepts both natively. */
+  style: StyleSpecification | string;
   /** [[minLng, minLat], [maxLng, maxLat]] - note lng/lat order, opposite of Leaflet's lat/lng. */
   bounds: LngLatBoundsLike;
   /**
