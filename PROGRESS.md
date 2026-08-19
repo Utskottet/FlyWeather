@@ -17,6 +17,18 @@ the block's work.
 | 7     | Height mode                                   | done        | commit 5d6dcaa; CI green |
 | 8     | Autonomous deployment (Actions + Pages)       | done        | commits ebdcc2b, d458303; live at https://utskottet.github.io/FlyWeather/ |
 | 9     | Polish                                        | done        | commit e5be055; CI green; V1 live |
+| 10    | Regional wind arrow field                     | not_started |       |
+| 11    | Rose overall-state visibility                 | not_started |       |
+| 12    | Time slider day/hour graduations              | not_started |       |
+| 13    | Site coordinate coverage expansion            | not_started |       |
+| 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | not_started |       |
+| 14b   | MapLibre + Mapterhorn: TOPO                   | not_started |       |
+| 14c   | MapLibre + Mapterhorn: MAP                    | not_started |       |
+| 15    | Soaring/Winch site-mode switch                | not_started | lower priority per user |
+| 16    | flyxc data source research                    | not_started | lower priority per user |
+| 17    | Airspace layer                                | not_started | depends on Block 16 |
+| 18    | Skyways layer                                 | not_started | depends on Block 16 |
+| 19    | Live tracking                                 | not_started | depends on Block 16 |
 
 Status values: `not_started`, `in_progress`, `blocked`, `done`.
 
@@ -267,3 +279,15 @@ scope (site data completeness, more live sources, the explicitly-future
 RASP phase per §37) rather than anything BLOCKS.md called for - a good
 point to check in with the user on priorities before continuing
 autonomously.
+
+## Planning update: Phase 2 (V1.1) blocks added, 2026-08-19
+
+User gathered feedback after seeing V1 live and requested a follow-up
+phase: a regional wind-arrow field (top priority), more visible rose
+state indication, graduated time-slider ticks, resolving more site
+coordinates, a full MapLibre+Mapterhorn terrain overhaul (RELIEF/TOPO/
+MAP modes, split into 14a/b/c since it's a full library swap), plus
+lower-priority flyxc-inspired features (live tracking, skyways,
+airspace) and a Soaring/Winch site-mode switch. Added as Blocks 10-19
+in BLOCKS.md, ordered by the priority signalled in conversation. No
+implementation started yet - purely a planning update.

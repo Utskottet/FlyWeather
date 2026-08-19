@@ -264,6 +264,246 @@ Definition of done:
 
 ---
 
+# Phase 2 — V1.1 blocks
+
+V1 (Blocks 1–9 above) is done and live. These blocks are user-requested
+additions gathered in a planning conversation on 2026-08-19, not part of
+the original `MASTER_SPEC.md` scope for every item (flyxc-inspired
+features and the Soaring/Winch mode are new scope; the map overhaul and
+wind-arrow field extend §9's "regional wind indication," which V1
+explicitly deferred). Same block discipline applies: one block per
+session, commit, stop.
+
+Ordered roughly by the priority signalled in that conversation — wind
+arrows were called "the main thing"; flyxc features and Soaring/Winch
+mode were explicitly flagged "maybe not this round."
+
+## Block 10 — Regional wind arrow field
+
+Deliverables:
+- A field of wind-direction/speed arrows across the visible map area,
+  in the spirit of Yr.no's wind map (tapered streak/arrow glyphs, not
+  just site-marker roses).
+- Investigate feasibility of a live/dynamic version first (e.g. a
+  gridded wind-vector source rendered client-side). If that proves too
+  costly for this stage, a static GRIB-derived arrow field is an
+  explicitly acceptable fallback per the user - ship whichever is
+  actually feasible rather than stalling on the ideal version.
+- Must not visually compete with or obscure site roses (§9's existing
+  constraint still applies): keep arrows visually secondary, sparse
+  enough at typical zoom to stay legible, and site markers must render
+  on top.
+- Document the data source and its licensing/access terms in
+  `docs/DATA_SOURCE_AUDIT.md`, same as every other external source in
+  this project.
+
+Definition of done:
+- Wind arrows are visible across the map at a sensible density and
+  clearly show direction (and ideally speed) independent of clicking
+  any individual site.
+- No credential bypass; if the chosen source needs a key/account, that's
+  a documented decision, not a silent workaround.
+
+## Block 11 — Rose overall-state visibility
+
+Deliverables:
+- Make the GOOD/MAYBE/BAD/UNKNOWN state read more clearly at a glance,
+  per user feedback that the current outer-ring-only indicator is too
+  subtle. Two concrete options raised: shift more of the state color
+  into the center fill (where the speed number sits), or widen the
+  ring. Pick whichever preserves rose legibility best; §2.1's
+  "overall state visible mainly through border/background... without
+  destroying the internal sector visualization" rule still applies -
+  the green/orange sector wedges must stay clearly readable.
+- Keep the existing red-dashed-ring accessibility cue (Block 9) working
+  under whatever visual change is made here.
+
+Definition of done:
+- Visual comparison (before/after screenshots) shows a clearly more
+  prominent state indicator.
+- `tests/unit/WindRose.test.tsx`'s existing state-styling assertions
+  still pass (sector geometry stays visible under every state).
+
+## Block 12 — Time slider day/hour graduations
+
+Deliverables:
+- Add visible tick marks along the time slider track itself (not just
+  the single floating label above it) marking hour and day boundaries
+  across the 72h range, so a pilot can see at a glance where "tomorrow"
+  or "+24h" falls without moving the slider.
+
+Definition of done:
+- Ticks render correctly across a full 72h range and visually align
+  with the underlying hour indices.
+- Works at the three tested mobile widths (360/390/430px) without
+  crowding illegibly.
+
+## Block 13 — Site coordinate coverage expansion
+
+Deliverables:
+- Attempt to resolve coordinates for as many of the 19 currently-
+  uncoordinated enabled sites as legitimately possible, now using
+  non-CPS sources (e.g. OpenStreetMap/Nominatim place-name lookups for
+  villages/landmarks named in each site's description) - Block 2
+  deliberately stayed CPS-only; this block is where that limitation
+  gets revisited.
+- Any coordinate resolved this way is inherently lower-precision than
+  an on-site GPS reading (a village/landmark center, not the actual
+  launch point) - mark `coordinates.verified: false` with a clear note
+  explaining the source and its imprecision, never `true`, per §24's
+  provisional-data rule extended to this new source type.
+- Update `docs/SITE_DATA_AUDIT.md` per site, same format as Block 2.
+
+Definition of done:
+- More than 5 of 24 enabled sites are placed on the map.
+- Every newly-added coordinate's audit row states its source and
+  precision honestly.
+
+## Block 14a — MapLibre + Mapterhorn: RELIEF mode (library swap)
+
+This is the load-bearing block - swapping the map library itself. TOPO
+and MAP (14b/14c) only add cartographic layers on top of what this
+block establishes.
+
+Deliverables:
+- Replace Leaflet/react-leaflet with MapLibre GL, porting all existing
+  functionality: site rose markers, click-to-open-sheet, zoom/bounds-
+  fit behavior, the time slider and height-mode toggle's "no map jump"
+  guarantee. Preserve existing application state/behavior - this block
+  changes the basemap/terrain system only, per the user's own explicit
+  instruction.
+- Mapterhorn DEM (`https://tiles.mapterhorn.com/tilejson.json`) as a
+  `raster-dem` source, rendered as a hillshade layer. Start around
+  `hillshade-exaggeration: 1.0`, illumination ~315°, tuned aggressively
+  (not subtly) so Skåne's modest terrain is actually obvious - if it
+  looks too weak, push it further rather than reverting to plain
+  cartography.
+- A minimal water/land base (blue sea, pale land, coastline) - likely a
+  stripped-down OpenFreeMap layer showing only water, with everything
+  else (roads, labels, POIs, buildings) removed. RELIEF has no
+  labels/roads/POIs at all.
+- Overhead 2D view by default (no pitch), even if terrain geometry is
+  enabled internally.
+- The three-way `RELIEF | TOPO | MAP` mode selector UI, with RELIEF as
+  the only working option this block - TOPO/MAP can be stubbed/disabled
+  until 14b/14c land. Centralize each mode's style/config (one
+  config/function per mode), not scattered per the user's instruction.
+- Site rose/weather layers must render above terrain in every mode.
+
+Definition of done:
+- RELIEF visually verified (screenshots) at several zoom levels over
+  Skåne - terrain differences must be obviously visible, not subtle.
+- All existing E2E tests (site markers, click-to-sheet, time slider,
+  height mode, no-map-jump) pass against the MapLibre implementation.
+- Mode-switch UI exists and preserves zoom/center/bearing even with
+  only RELIEF functional.
+
+## Block 14b — MapLibre + Mapterhorn: TOPO mode
+
+Deliverables:
+- Contour lines generated from the Mapterhorn DEM (start ~5m minor /
+  25m major, adjust after visually testing over Skåne's flat terrain),
+  with elevation labels where practical.
+- Major roads only, town/place names, lakes/rivers, quiet landcover.
+- Hillshade stays present and visually dominant over the added roads/
+  labels - this is not a step toward a street map.
+
+Definition of done:
+- TOPO visually verified over Skåne; contours are legible and useful
+  given the flat terrain.
+- Switching RELIEF ↔ TOPO preserves zoom/center/bearing, no map jump.
+
+## Block 14c — MapLibre + Mapterhorn: MAP mode
+
+Deliverables:
+- Conventional clean orientation map via OpenFreeMap vector tiles
+  (Positron-style starting point), hillshade reduced or removed.
+- Roads, town names, normal labels, water, boundaries.
+- Complete the three-way selector - all modes functional.
+
+Definition of done:
+- All three modes switch cleanly with no map jump and no loss of site/
+  weather overlay state.
+- Full E2E suite passes against the completed MapLibre implementation.
+
+## Block 15 — Soaring/Winch site-mode switch
+
+*Flagged by the user as "maybe not this round" - lower priority than
+Blocks 10–14.*
+
+Deliverables:
+- A switch toggling which site set the map displays: the existing
+  soaring/hang sites, or a winch-site set. `SITES.md` already has two
+  winch entries (`winch-brandstad`, `winch-urasa`) sitting `enabled:
+  false` specifically pending this - this block is where they activate.
+- Winch sites likely need different rose/flyability semantics than
+  ridge-soaring sites (e.g. runway direction/length, crosswind limits,
+  not a green/orange soaring sector) - do not force soaring semantics
+  onto winch sites; define what's honestly displayable for them, and
+  mark anything unsupported as gray/unknown rather than guessing.
+
+Definition of done:
+- Toggle switches the displayed site set without a map jump.
+- Winch sites show honest data only - no invented flyability rules.
+
+## Block 16 — flyxc data source research
+
+*Flagged by the user as "maybe not this round." Research only - no
+implementation. Produces the groundwork for Blocks 17–19.*
+
+Deliverables:
+- Investigate flyxc.app's open-source repository for what it uses as
+  data sources for: live pilot tracking, the Skyways thermal/soaring-
+  route layer, and airspace boundaries.
+- For each, determine: is it a public/free API or dataset, does it
+  require a key/account, what are its licensing/attribution terms.
+- Document findings in `docs/DATA_SOURCE_AUDIT.md`, same rigor as the
+  Holfuy investigation - including anything that turns out blocked.
+
+Definition of done:
+- `docs/DATA_SOURCE_AUDIT.md` has a clear entry for each of the three
+  features stating what's usable, what's blocked, and why.
+
+## Block 17 — Airspace layer
+
+Deliverables:
+- A switchable (off by default or on - decide based on Block 16's
+  findings and typical airspace-layer UX conventions) layer showing
+  controlled/restricted airspace boundaries, per the source(s)
+  identified in Block 16.
+
+Definition of done:
+- Layer toggles on/off without a map jump.
+- Airspace boundaries render correctly over Skåne/Denmark against a
+  known reference (e.g. cross-check a known controlled zone).
+
+## Block 18 — Skyways layer
+
+Deliverables:
+- An always-on (no toggle, per the user's explicit instruction)
+  thermal/soaring-route overlay, per the source identified in Block 16.
+
+Definition of done:
+- Layer renders on map load with no user action required, doesn't
+  obscure site roses, degrades gracefully if the source is unavailable
+  (never blocks the rest of the app from loading).
+
+## Block 19 — Live tracking
+
+Deliverables:
+- Display live pilot positions on the map, per whatever mechanism
+  Block 16 finds feasible (this may turn out to need its own tracker-
+  integration decision beyond just reading flyxc's data, depending on
+  what's actually available/licensable - treat that as a real open
+  question, not an assumption).
+
+Definition of done:
+- At least one live (or near-live) pilot position renders on the map
+  from a real data source, clearly labeled with its own freshness/age
+  the same way live wind observations are (§11.2's pattern).
+
+---
+
 ## Notes for whoever (human or agent) revises this list
 
 - Blocks are ordered for dependency reasons (schema before data, rose before
