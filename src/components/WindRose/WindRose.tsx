@@ -124,6 +124,10 @@ export function WindRose({
           fill="none"
           stroke={stateColor.ring}
           strokeWidth={STATE_RING_WIDTH}
+          // Red (the "don't fly" signal) also gets a dashed ring, not just
+          // a hue, so it stays distinguishable from green/orange for
+          // colorblind users at map-marker scale too (§28).
+          strokeDasharray={state === "red" ? STATE_RING_WIDTH * 1.6 : undefined}
           data-testid="state-ring"
         />
 

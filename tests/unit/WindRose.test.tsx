@@ -116,6 +116,18 @@ describe("WindRose - overall state styling (§29.10)", () => {
       expect(container.querySelector('[data-testid="state-ring"]')).not.toBeNull();
     },
   );
+
+  it("gives the red state a dashed ring, not just a hue (§28 - colorblind-safe cue)", () => {
+    const { container } = render(<WindRose {...baseProps()} state="red" />);
+    const ring = container.querySelector('[data-testid="state-ring"]');
+    expect(ring?.getAttribute("stroke-dasharray")).not.toBeNull();
+  });
+
+  it.each<RoseState>(["green", "orange", "gray"])("keeps a solid ring for %s (only red is dashed)", (state) => {
+    const { container } = render(<WindRose {...baseProps()} state={state} />);
+    const ring = container.querySelector('[data-testid="state-ring"]');
+    expect(ring?.getAttribute("stroke-dasharray")).toBeNull();
+  });
 });
 
 describe("WindRose - size handling (§29.11, §29.12)", () => {

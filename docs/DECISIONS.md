@@ -309,3 +309,43 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
      actual production URL with Playwright afterward, not just trusting
      a green CI run - `npm run build` succeeding locally never would
      have caught either of these, since neither is a build-time error.
+
+## Block 9
+
+- **Touch targets bumped to 44px minimum** (the NOW button, height-mode
+  toggle buttons, site-sheet close button) - the originals were as small
+  as ~24px tall, well under the accessibility-standard 44px minimum
+  §28 calls for. The time slider bar grew from 76px to 92px to
+  comfortably fit a 44px button row plus the range input without
+  cramming.
+- **Red gets a dashed ring, not just a hue** (`WindRose`'s state ring
+  now uses `strokeDasharray` specifically for `state === "red"`). §28
+  only explicitly requires non-color state cues "in expanded view"
+  (already satisfied by the GOOD/MAYBE/BAD/UNKNOWN text label there),
+  but red is the single most safety-critical signal ("don't fly") and a
+  colorblind pilot glancing at the map itself, not the expanded sheet,
+  deserves that same non-color cue at marker scale too - a small,
+  low-risk addition worth doing beyond the letter of the requirement.
+- **Darkened several marginal-contrast grays** (`#777`->`#555`,
+  `#666`->`#444`, accent blue `#1976d2`->`#1565c0`) for headroom beyond
+  bare WCAG AA minimums, given §28's explicit "UI should work in bright
+  outdoor light" - direct sunlight on a phone screen eats contrast
+  margin fast, so bare-minimum compliance isn't enough here.
+- **PWA: manifest + SVG icon added, no service worker.**
+  `manifest.webmanifest` + `public/icon.svg` (referenced via a
+  `sizes: "any"`, `type: "image/svg+xml"` icon entry, no PNG generation
+  tooling needed) give "Add to Home Screen" installability, satisfying
+  §27's "nice to have, not blocker" framing. A full offline-caching
+  service worker was deliberately **not** built: §27 explicitly only
+  asks for caching "the application shell," but this app rebuilds and
+  redeploys every 5 minutes (Block 8's weather-refresh.yml) - a
+  naively-cached service worker is a well-known footgun for exactly
+  this situation (serving a stale JS bundle to a returning visitor
+  after a deploy, requiring careful cache-versioning to avoid). Given
+  the feature is explicitly optional and the risk of getting cache
+  invalidation wrong is real, this was judged not worth it for the
+  value gained; installability without offline caching is the safer
+  subset to ship now.
+- **§38 V1 definition-of-done swept against the actual live URL**
+  (`https://utskottet.github.io/FlyWeather/`), not just local dev - see
+  `PROGRESS.md`'s Block 9 report for the item-by-item result.

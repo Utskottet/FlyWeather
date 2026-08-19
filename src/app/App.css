@@ -32,14 +32,15 @@
 .height-mode-toggle button {
   border: none;
   background: transparent;
-  padding: 8px 14px;
-  font-size: 13px;
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
   font-weight: 600;
-  color: #555;
+  color: #444;
 }
 
 .height-mode-toggle button.active {
-  background: #1976d2;
+  background: #1565c0;
   color: #fff;
 }
 
@@ -63,7 +64,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 76px;
+  bottom: 92px;
   max-height: 55%;
   overflow-y: auto;
   background: #fff;
@@ -96,7 +97,7 @@
 }
 
 .site-sheet-facts dt {
-  color: #777;
+  color: #555;
   font-weight: 600;
 }
 
@@ -109,7 +110,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 76px;
+  height: 92px;
   background: #fff;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
   z-index: 900;
@@ -122,6 +123,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 4px;
+  min-height: 44px;
 }
 
 .time-slider-label {
@@ -130,13 +132,14 @@
 }
 
 .time-slider-now-button {
-  border: 1px solid #1976d2;
-  color: #1976d2;
+  border: 1px solid #1565c0;
+  color: #1565c0;
   background: #fff;
   border-radius: 999px;
-  padding: 4px 14px;
+  min-height: 44px;
+  padding: 0 18px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .time-slider-now-button:disabled {
@@ -149,14 +152,15 @@
 
 .site-sheet-close {
   position: absolute;
-  top: 8px;
-  right: 12px;
+  top: 4px;
+  right: 8px;
   border: none;
   background: none;
   font-size: 24px;
   line-height: 1;
   cursor: pointer;
-  padding: 8px;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .site-sheet-status {
@@ -168,10 +172,10 @@
   display: inline-block;
   font-size: 12px;
   font-weight: 600;
-  color: #666;
-  background: #f0f0f0;
+  color: #444;
+  background: #eee;
   border-radius: 4px;
-  padding: 2px 8px;
+  padding: 4px 8px;
   margin: 4px 0 8px;
 }
 
