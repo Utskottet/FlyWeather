@@ -812,3 +812,38 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   mouse click producing the popup with the same data. Same
   build-and-serve-locally-under-the-real-base-path discipline as every
   MapLibre-related block since 14a.
+
+## Wind arrow field density + shape iteration (post-Block 17)
+
+User feedback after seeing the live map: the regional wind-arrow field
+(Block 10) needed roughly 6x the density, and the arrows themselves
+needed a more distinct arrowhead and a tapered "swimming" tail so
+direction reads unambiguously at a glance.
+
+- **Density**: `useWindGrid.ts`'s `GRID_RESOLUTION` went from 6 (36
+  points) to 15 (225 points, ~6.25x) - "6x density" read most naturally
+  as 6x the *point count* (density), not a 6x increase in the per-axis
+  resolution value itself (which would have meant 1296 points - visibly
+  excessive and likely to hit URL-length/rendering-performance limits).
+  Verified before committing: the actual request URL for 225 points
+  stays under 4000 characters (well under typical browser/server
+  limits), and a temporary diagnostic E2E spec confirmed the real
+  request sends exactly 225 comma-separated coordinates - not just
+  trusting the arithmetic.
+- **Arrow shape redesign**: replaced the old thin `<line>` + small
+  triangle with a single tapered `<path>` - a compact triangular head
+  occupying only the outer ~22% of the shaft length, and a long, gently
+  curved tail (a quadratic-Bezier bulge before narrowing to a point)
+  making up the rest. Iterated visually before finalizing rather than
+  guessing proportions: rendered standalone SVG previews at an enlarged
+  size first, found the initial attempt (head occupying most of the
+  shaft) read as a generic kite/diamond rather than a directional
+  arrow, corrected the head-to-tail length ratio, then re-verified at
+  the actual ~26px on-map marker size, and finally rendered the real
+  compiled React component (via a temporary swap of the existing
+  gallery dev harness, reverted after) rather than trusting the
+  hand-transcribed preview math matched the shipped code exactly.
+- Both changes are covered by updated/new unit tests
+  (`WindArrow.test.tsx` parses the path's `d` attribute to check
+  tip/tail positioning and the head/tail width step;
+  `windGrid.test.ts` locks in the 225-point/6.25x figure).

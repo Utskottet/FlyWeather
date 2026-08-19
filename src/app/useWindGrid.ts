@@ -3,7 +3,11 @@ import { buildWindGrid } from "../domain/windGrid.ts";
 import { fetchWindGrid, type GridWindPoint } from "../providers/forecast/openMeteoGridProvider.ts";
 import type { LatLonBounds } from "../components/Map/mapBounds.ts";
 
-const GRID_RESOLUTION = 6; // 6x6 = up to 36 points
+// 15x15 = up to 225 points, ~6.25x the previous 6x6=36 grid - user
+// feedback after Block 10 asked for "x6 density." Verified the request
+// URL (comma-separated lat/lon lists) stays well under 4000 chars at
+// this size, far below typical URL length limits.
+const GRID_RESOLUTION = 15;
 
 interface WindGridState {
   points: GridWindPoint[];

@@ -641,3 +641,38 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   snapshot, but won't self-refresh without it. Airspace scoped to
   SE+DK only (not the full ~31,500 worldwide airspaces), matching this
   project's coverage area.
+
+## Wind arrow field: 6x density + redesigned shape (post-Block 17 feedback)
+- Status: done
+- User feedback: "a lot higher density x6 density and we also need a
+  more distingt arrow head and a smimming tail so its clear what
+  direction is is"
+- Definition of Done (informal, direct feedback rather than a BLOCKS.md
+  item): [x] ~6x point density - 36 -> 225 points (~6.25x), verified via
+  a temporary diagnostic E2E spec that the real request sends exactly
+  225 coordinates, not just trusting the math  [x] distinct arrowhead -
+  a compact triangle occupying only the outer ~22% of the shaft, wider
+  than the tail so the boundary is visually a clear "step," not a smooth
+  taper  [x] tapered "swimming" tail - a quadratic-Bezier curve that
+  bulges slightly before narrowing to a point, rather than a straight
+  line
+- Files changed: src/app/useWindGrid.ts (GRID_RESOLUTION 6->15);
+  src/components/WindArrowField/WindArrow.tsx (rewritten from
+  line+triangle to a single tapered path); tests/unit/WindArrow.test.tsx
+  (rewritten to parse the new path's `d` attribute);
+  tests/unit/windGrid.test.ts (new test locking in the 225-point figure)
+- Iterated the shape visually before committing to it rather than
+  guessing proportions from the geometry formulas alone: rendered
+  standalone SVG previews (enlarged, then at the actual ~26px on-map
+  size), found the first attempt's head occupied most of the shaft and
+  read as a generic kite rather than a directional arrow, corrected the
+  proportions, then rendered the *actual* compiled React component
+  (via a temporary swap of the existing gallery dev harness, reverted
+  cleanly after - confirmed clean via `git status`) to make sure the
+  shipped code matched the validated preview exactly, not just my
+  hand-transcribed math.
+- Deferred / unresolved: could not verify the new density/shape
+  against *live* wind data locally - Open-Meteo's daily rate limit
+  (hit earlier this session from extensive testing) was still active
+  at implementation time. CI runs on different runners and is
+  unaffected; production verification happens post-deploy as usual.

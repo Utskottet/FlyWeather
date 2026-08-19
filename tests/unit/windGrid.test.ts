@@ -9,6 +9,11 @@ describe("buildWindGrid", () => {
     expect(buildWindGrid(bounds, 3)).toHaveLength(9);
   });
 
+  it("resolution=15 (useWindGrid's production value) yields ~6x the original 6x6 density", () => {
+    expect(buildWindGrid(bounds, 15)).toHaveLength(225);
+    expect(225 / 36).toBeCloseTo(6.25, 1);
+  });
+
   it("pads outward beyond the raw bounds", () => {
     const points = buildWindGrid(bounds, 4);
     const lats = points.map((p) => p.lat);
