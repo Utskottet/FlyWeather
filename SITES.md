@@ -901,8 +901,8 @@ sites:
     wind_speed: { verified: false }
     soaring_height: { agl_m: null, verified: false }
     live_sources: []
-    description: "CPS winch-field catalogue entry; disabled from rose map until winch-specific rules are designed."
-    cps_url: "https://www.cps.to/flygstallen/"
+    description: "CPS page for this field states 'DETTA FÄLT ANVÄNDS FÖR NÄRVARANDE INTE' (this field is currently not in use), repeated multiple times - kept disabled because the source itself reports it inactive, not just pending winch-specific rules. Reached via Väg 13 from Hörby, turn at 'Krokhuset' sign near Brandstad; runway E/W and N/S; ~90m elevation. No coordinates published; contacts listed are Johan Svärd or Trisse."
+    cps_url: "https://www.cps.to/flygstallen/vinschfalt-brandstad/"
 
   - id: winch-urasa
     enabled: false
@@ -914,8 +914,8 @@ sites:
     wind_speed: { verified: false }
     soaring_height: { agl_m: null, verified: false }
     live_sources: []
-    description: "CPS winch-field catalogue entry; disabled from rose map until winch-specific rules are designed."
-    cps_url: "https://www.cps.to/flygstallen/"
+    description: "Active winch field (2.5km N-S runway, release altitude 400-600m) ~20km SE of Växjö off väg 30, between Ingelstad and Väckelsång, behind a locked gate. Kept disabled: CPS page publishes no coordinates, only driving directions plus a phone contact (Anders Bergqvist) for precise location - geocoding the nearest named places would place the marker several km from the actual field, which is worse than an honest gap. Needs a direct GPS reading or club-supplied coordinates."
+    cps_url: "https://www.cps.to/flygstallen/vinschfalt-urasa/"
 ```
 
 ## Agent maintenance rules

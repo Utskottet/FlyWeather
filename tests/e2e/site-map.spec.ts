@@ -28,6 +28,42 @@ test.describe("Site map", () => {
     await expect(sheet).not.toBeVisible();
   });
 
+  test("Soaring/Winch site-mode toggle switches the displayed set without a map jump", async ({ page }) => {
+    await page.goto("/");
+    const markers = page.locator(".rose-marker-icon");
+    await expect(markers).toHaveCount(LOCATED_SITE_COUNT);
+    await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
+
+    const viewBefore = await page.evaluate(() => {
+      const m = window.__flyweatherMap!;
+      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
+    });
+
+    // Neither winch-brandstad nor winch-urasa has a verified coordinate
+    // yet (see docs/SITE_DATA_AUDIT.md) - Winch mode is honestly empty,
+    // not a fabricated placement, so this checks the empty-state notice
+    // rather than any markers.
+    await page.getByTestId("site-mode-winch").click();
+    await expect(markers).toHaveCount(0);
+    await expect(page.locator(".site-mode-empty-notice")).toBeVisible();
+
+    const viewDuringWinch = await page.evaluate(() => {
+      const m = window.__flyweatherMap!;
+      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
+    });
+    expect(viewDuringWinch).toEqual(viewBefore);
+
+    await page.getByTestId("site-mode-soaring").click();
+    await expect(markers).toHaveCount(LOCATED_SITE_COUNT);
+    await expect(page.locator(".site-mode-empty-notice")).not.toBeVisible();
+
+    const viewAfter = await page.evaluate(() => {
+      const m = window.__flyweatherMap!;
+      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
+    });
+    expect(viewAfter).toEqual(viewBefore);
+  });
+
   for (const width of [360, 390, 430]) {
     test(`no horizontal overflow at ${width}px width`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });

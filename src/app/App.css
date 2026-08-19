@@ -31,7 +31,8 @@
 }
 
 .height-mode-toggle,
-.map-mode-toggle {
+.map-mode-toggle,
+.site-mode-toggle {
   display: inline-flex;
   background: #fff;
   border-radius: 999px;
@@ -40,7 +41,8 @@
 }
 
 .height-mode-toggle button,
-.map-mode-toggle button {
+.map-mode-toggle button,
+.site-mode-toggle button {
   border: none;
   background: transparent;
   min-height: 44px;
@@ -51,7 +53,8 @@
 }
 
 .height-mode-toggle button.active,
-.map-mode-toggle button.active {
+.map-mode-toggle button.active,
+.site-mode-toggle button.active {
   background: #1565c0;
   color: #fff;
 }
@@ -59,6 +62,23 @@
 .map-mode-toggle button:disabled {
   color: #bbb;
   cursor: not-allowed;
+}
+
+.site-mode-empty-notice {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 500;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  padding: 12px 16px;
+  max-width: 280px;
+  text-align: center;
+  font-size: 14px;
+  color: #444;
+  pointer-events: none;
 }
 
 .site-sheet-height-warning {

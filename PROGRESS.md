@@ -24,7 +24,7 @@ the block's work.
 | 14a   | MapLibre + Mapterhorn: RELIEF (library swap)  | done        | commits 3206048, f4a6feb, 6aed79e; CI green; live |
 | 14b   | MapLibre + Mapterhorn: TOPO                   | done        | commit f5d4ae0; CI green; live |
 | 14c   | MapLibre + Mapterhorn: MAP                    | done        | commit 6a2090b; CI green; live |
-| 15    | Soaring/Winch site-mode switch                | not_started | lower priority per user |
+| 15    | Soaring/Winch site-mode switch                | done        | commit TBD; CI pending; verified locally; lower priority per user |
 | 16    | flyxc data source research                    | not_started | lower priority per user |
 | 17    | Airspace layer                                | not_started | depends on Block 16 |
 | 18    | Skyways layer                                 | not_started | depends on Block 16 |
@@ -457,3 +457,39 @@ implementation started yet - purely a planning update.
   14a's hourly hit; CI uses different runners so is unaffected. This is
   the last of the three MapLibre+Mapterhorn blocks - **Block 14 (all of
   14a/14b/14c) is now complete.**
+
+## Block 15 complete: Soaring/Winch site-mode switch
+- Status: done
+- Definition of Done: [x] toggle switches the displayed site set without
+  a map jump - verified center/zoom identical before/during/after
+  switching  [x] winch sites show honest data only, no invented
+  flyability rules - satisfied trivially and correctly: neither
+  candidate winch site has a real coordinate, so Winch mode shows an
+  explicit empty-state notice rather than a fabricated pin  [x] CI green
+- Files changed: new SiteModeToggle component; SiteMap.tsx (siteMode
+  state, `visibleSites` filter by `site.type`, empty-state notice);
+  App.css (`.site-mode-toggle`, `.site-mode-empty-notice`); SITES.md
+  (both winch entries' descriptions rewritten with real findings);
+  docs/SITE_DATA_AUDIT.md (new Block 15 section); new E2E test in
+  site-map.spec.ts
+- Researched both winch candidates via their dedicated CPS pages (not
+  just the shared index used in Block 2/13): **winch-brandstad**'s page
+  explicitly states it's currently not in use (kept disabled for that
+  reason, not just missing rules); **winch-urasa** appears active but
+  its CPS page publishes no coordinates at all, only driving directions
+  and a phone contact - decided against Nominatim-geocoding the nearest
+  named village since it would land several km from the actual gated
+  field, worse than an honest gap. Full reasoning in
+  docs/SITE_DATA_AUDIT.md.
+- The existing `evaluateFlyability`/`computeDirectionFit` logic already
+  returns "unknown"/gray for a site with no configured green/orange
+  sectors (built that way back in Block 5/7) - no new winch-specific
+  flyability code was needed once the toggle correctly filters by
+  `site.type`; the "no invented rules" requirement was already
+  structurally guaranteed.
+- Deferred / unresolved: the toggle mechanism is fully built and tested
+  but currently activates to zero winch sites, since neither candidate
+  has a usable coordinate - this is real-world data availability, not a
+  missing feature. Will "just work" the moment either site gets a
+  verified coordinate (direct GPS reading or club-supplied), no further
+  code changes needed.

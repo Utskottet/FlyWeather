@@ -141,3 +141,36 @@ field states exactly what was searched and how confident the match is.
 None were flipped to `verified: true` - that still requires a
 pilot-confirmed or CPS-stated coordinate, which this geocoding pass does
 not provide.
+
+## Block 15: winch site research (kept disabled, honest reasons found)
+
+`winch-brandstad` and `winch-urasa` were investigated per Block 15's
+scope (activate the Soaring/Winch site-mode toggle) via their dedicated
+CPS pages, not the shared `/flygstallen/` index used above.
+
+- **winch-brandstad**: the CPS page itself states, repeated multiple
+  times, "DETTA FÄLT ANVÄNDS FÖR NÄRVARANDE INTE" (this field is
+  currently not in use). Kept `enabled: false` because the source
+  reports the field inactive, not because of a data gap - enabling an
+  inactive field would be worse than leaving it off. No coordinates
+  published either way. Directions: Väg 13 from Hörby, turn at the
+  "Krokhuset" road sign near Brandstad; usable wind directions E/W and
+  N/S; ~90m elevation. Contacts: Johan Svärd or Trisse.
+- **winch-urasa**: appears to be an active field (2.5km N-S runway,
+  400-600m release altitude) but the CPS page publishes no coordinates
+  at all - only driving directions (väg 30, between Ingelstad and
+  Väckelsång, locked gate) and a phone contact (Anders Bergqvist,
+  070-55 415 71) for exact location. Geocoding "Ingelstad" or
+  "Väckelsång" via Nominatim would land on a town/village center several
+  km from the actual field behind its gate - given the imprecision, that
+  would be a materially worse (and misleading) pin than for this
+  project's other Nominatim-geocoded sites, most of which match a named
+  feature at the actual site rather than a distant town center. Left
+  unresolved rather than publish a pin likely to send a pilot to the
+  wrong place; a direct GPS reading or club-supplied coordinate is
+  needed.
+
+**Net effect**: the Soaring/Winch toggle (Block 15) is built and
+functional, but the Winch site set is currently empty - both candidate
+sites have a real, documented reason to stay off the map rather than a
+fabricated location.

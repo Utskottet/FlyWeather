@@ -11,6 +11,7 @@ import { WindRose } from "../WindRose/index.ts";
 import { WeatherGlyph } from "../WeatherGlyph/index.ts";
 import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
 import { HeightModeToggle, type HeightMode } from "../HeightModeToggle/HeightModeToggle.tsx";
+import { SiteModeToggle, type SiteMode } from "../SiteModeToggle/SiteModeToggle.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
@@ -158,9 +159,22 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const [sliderIndex, setSliderIndex] = useState(0);
   const [heightMode, setHeightMode] = useState<HeightMode>("surface");
   const [mapMode, setMapMode] = useState<MapMode>("relief");
+  const [siteMode, setSiteMode] = useState<SiteMode>("soaring");
+  // Bounds/fit are computed from the full located set regardless of
+  // siteMode, same "no map jump" principle as heightMode/mapMode -
+  // switching to Winch never recenters the map just because that set is
+  // currently empty (neither winch-brandstad nor winch-urasa has a
+  // usable coordinate yet - see docs/SITE_DATA_AUDIT.md).
   const bounds = useMemo(() => computeSiteBounds(sites), [sites]);
+  const visibleSites = useMemo(
+    () => sites.filter((s) => (siteMode === "winch" ? s.type === "winch" : s.type !== "winch")),
+    [sites, siteMode],
+  );
   const mapStyle = useMemo(() => buildStyleForMode(mapMode), [mapMode]);
-  const selectedSite = sites.find((s) => s.id === selectedId) ?? null;
+  // Scoped to visibleSites, not the full sites list, so a selection from
+  // the other siteMode's marker set doesn't leave a stale sheet open
+  // for a site no longer shown on the map.
+  const selectedSite = visibleSites.find((s) => s.id === selectedId) ?? null;
   const { forecastsBySiteId, hours } = useSiteForecasts(sites);
   const { data: liveData } = useLiveData();
   const { points: windGridPoints } = useWindGrid(bounds);
@@ -195,7 +209,13 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
       <div className="top-controls">
         <MapModeToggle mode={mapMode} onChange={setMapMode} availableModes={["relief", "topo", "map"]} />
         <HeightModeToggle mode={heightMode} onChange={setHeightMode} />
+        <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
       </div>
+      {visibleSites.length === 0 && (
+        <div className="site-mode-empty-notice">
+          No winch sites with a verified location yet - see docs/SITE_DATA_AUDIT.md.
+        </div>
+      )}
       <MapLibreMap
         style={mapStyle}
         bounds={maplibreBounds}
@@ -225,7 +245,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
                 />
               );
             })}
-            {sites.map((site) => {
+            {visibleSites.map((site) => {
               const { sample, weatherKind } = effectiveSampleFor(site);
               const selected = site.id === selectedId;
               const { html } = buildRoseHtml(site, selected, sample, weatherKind);

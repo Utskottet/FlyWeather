@@ -661,3 +661,51 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   exactly (compared across all 4 states: initial, Map, Topo, Relief),
   and a marker click still opens the site sheet with real data
   regardless of which mode is active.
+
+## Block 15
+
+- **Filter by `site.type`, not a new field**: `SITES.md`'s schema
+  already has a `type` enum (`hang | winch | paramotor | school |
+  other`) that was defined but functionally unused everywhere else in
+  the codebase. `visibleSites` in `SiteMap.tsx` filters on it directly
+  (`type === "winch"` vs. `type !== "winch"`) rather than introducing a
+  parallel "site set" concept - Soaring mode is simply "not winch", so
+  any future non-winch type (paramotor, school) shows there too, which
+  matches the spec's framing of "the existing soaring/hang sites" as one
+  bucket versus "a winch-site set" as the other.
+- **Bounds/fit stay computed from the full site list, not the filtered
+  one**: same "no map jump on toggle" principle already established for
+  heightMode/mapMode in earlier blocks. If bounds were recomputed from
+  `visibleSites`, switching to Winch mode (currently 0 sites) would hit
+  `computeSiteBounds([])` returning null, which would trigger the
+  component's existing early-return ("No sites with known coordinates
+  yet.") and **remove the toggle itself along with everything else** -
+  a dead end with no way back to Soaring. Keeping bounds independent of
+  `siteMode` avoids that entirely and is also just correct: switching
+  which markers are drawn shouldn't move the camera.
+- **No new flyability code needed for winch semantics**: the spec asked
+  to "not force soaring semantics onto winch sites... mark anything
+  unsupported as gray/unknown rather than guessing." Checked
+  `computeDirectionFit`/`computeOverallState` in `flyability.ts` (from
+  Block 5/7) and found they already return "unknown"/gray whenever
+  `green`/`orange` sectors are empty, which is exactly the placeholder
+  state both winch entries already carry in `SITES.md`. The honesty
+  requirement was already structurally satisfied by the existing
+  architecture once the toggle correctly separates the two site sets -
+  no winch-specific rose variant was built, since nothing yet needs one.
+- **Winch site research, both kept disabled with real reasons** (not
+  fabricated placement): `winch-brandstad`'s own CPS page states,
+  repeated multiple times, that the field is currently not in use -
+  kept off for that reason specifically, not just "rules not designed
+  yet". `winch-urasa` appears active (2.5km N-S runway, real contact
+  phone number) but its CPS page publishes no coordinates, only driving
+  directions to a locked gate; Nominatim-geocoding the nearest named
+  village was considered and rejected - for most of this project's
+  other geocoded sites (Block 13) the matched feature sits at or very
+  near the actual site, but here the only nameable places are several km
+  from the field itself, which would produce a materially misleading pin
+  rather than an honestly imprecise one. Full findings in
+  `docs/SITE_DATA_AUDIT.md`. Net result: the toggle mechanism is
+  complete and tested, but the Winch site set is honestly empty right
+  now - a real data gap, not a missing feature, and it activates
+  automatically the moment either site gets a real coordinate.
