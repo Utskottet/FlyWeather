@@ -27,7 +27,7 @@ the block's work.
 | 15    | Soaring/Winch site-mode switch                | done        | commit 4d3f1a4; CI green; live; lower priority per user |
 | 16    | flyxc data source research                    | done        | commit TBD; research only, no code changes; lower priority per user |
 | 17    | Airspace layer                                | blocked     | needs a free OpenAIP account/API key - see Block 16 findings |
-| 18    | Skyways layer                                 | done        | commit TBD; verified locally; lower priority per user |
+| 18    | Skyways layer                                 | done        | commit e7aeece; CI green; live; lower priority per user |
 | 19    | Live tracking                                 | blocked     | needs an architecture decision (persistent backend) - see Block 16 findings |
 
 Status values: `not_started`, `in_progress`, `blocked`, `done`.
