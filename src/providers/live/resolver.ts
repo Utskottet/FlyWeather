@@ -1,10 +1,12 @@
 import type { WindSample } from "../../domain/types.ts";
 import type { LiveWindProvider, SiteLiveSource } from "./types.ts";
 import { holfuyWidgetProvider } from "./holfuyWidgetProvider.ts";
+import { vivaProvider } from "./vivaProvider.ts";
 
 const PROVIDERS: Record<string, LiveWindProvider> = {
   holfuy: holfuyWidgetProvider,
-  // viva, findwind, etc: not yet implemented. The resolver skips an
+  viva: vivaProvider,
+  // findwind, etc: not yet implemented. The resolver skips an
   // unrecognized provider name rather than crashing, per §11's
   // "Provider failure must degrade gracefully" - see
   // docs/DATA_SOURCE_AUDIT.md for what's outstanding.

@@ -1371,3 +1371,61 @@ sibling element into the rose's own SVG.
   once. All fixture states (green/orange/red/gray/no-sector) confirmed
   visually consistent with the reference's model; zero console errors;
   full unit suite green (175/175).
+
+## Site catalogue trim + Barsebäck's ViVa live source
+- User asked to disable 12 named sites to shrink the working set
+  ("only a few to get right" for now) and, separately, to wire up
+  `barseback`'s live wind source - previously a stub
+  (`provider: viva, station_id: null`) that always degraded to
+  "unavailable" - now that the exact station is known:
+  https://viva.sjofartsverket.se/station/25.
+- **ViVa's real API found by network capture, not by guessing.**
+  `viva.sjofartsverket.se` is an Angular SPA with zero data in its
+  server-rendered HTML (confirmed - a plain `curl`/fetch of the page
+  returns only the app shell). Loaded the real station page in
+  Playwright and inspected every response: the app fetches its own
+  `/assets/config/config.json` for a `baseUrl`, then calls
+  `{baseUrl}ViVaStationWithDirection/{id}?isMVY=false` -
+  `https://services.viva.sjofartsverket.se/output/vivaoutputservice.svc/ViVaStationWithDirection/25?isMVY=false`.
+  Unauthenticated JSON, no key - same "use the public embed's own
+  mechanism" pattern already established for Holfuy
+  (`docs/DATA_SOURCE_AUDIT.md`).
+- **Response shape is a named-sample array, not one wind object** -
+  `Medelvind` (mean/sustained, m/s), `Byvind` (gust, m/s),
+  `Vindriktning` (direction, degrees), plus an unrelated `Vattenstånd`
+  (water level) sample this app ignores. Speed/gust values carry a
+  Swedish compass-letter prefix ("V 3.2") that's redundant with (and
+  less precise than) `Vindriktning`'s own decimal value - stripped via
+  regex rather than parsed as a second, lower-precision direction
+  source. Each sample has its own `Quality` field; a non-`"Ok"` quality
+  on any of the three used samples is treated as "no usable reading"
+  (returns null, resolver falls through), not served silently -
+  same "never serve suspect data as if it were good" posture as the
+  Holfuy provider's own error handling.
+- `parseVivaResponse`'s first draft crashed on a literal `null` input
+  (`Cannot read properties of null`) - caught by its own unit test
+  before shipping, not in production. Fixed with an explicit
+  `typeof json !== "object"` guard. Left as evidence that the
+  test-before-trust discipline this project has followed all session
+  (write the parser, write the test against a real captured fixture,
+  run it) keeps paying for itself.
+- **CPS cross-check, per explicit request** ("check toward m.cps.to if
+  correct wind is being displayed"): the individual CPS site pages
+  (`cps.to/flygstallen/<slug>/`) turned out to embed no live widget at
+  all - just static text. The real ground truth is CPS's central
+  station map, `cps.to/vader/vara-vindmatare/` (Holfuy) and
+  `.../vindmatare-viva/` (ViVa), cross-checked against each Holfuy
+  widget's own self-reported `<title>` tag as a second, independent
+  confirmation. All 8 distinct station IDs across the 9 remaining
+  Holfuy/ViVa sites matched correctly - no wrong-station bugs. One
+  genuine open item, not a bug: `rokerierna` (station 155, shared with
+  `kaseberga-s`) has no distinct tile on CPS's own map, so the sharing
+  is plausible-by-proximity but not independently CPS-confirmed for
+  that specific site name - left `verified: false` with a note
+  explaining exactly that, rather than silently upgrading it on
+  incomplete evidence. `hovs-hallar-n` DID get upgraded to
+  `verified: true` (from `false`), since the same evidence its sibling
+  `hovs-hallar-nv` already relied on applies to it identically.
+- Confirmed end-to-end via a real `collect-live.ts` run (not just unit
+  tests): 10/10 configured live sources now resolve, up from 11/12
+  with `barseback` failing before this change.

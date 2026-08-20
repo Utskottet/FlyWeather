@@ -138,12 +138,12 @@ sites:
         station_id: "155"
         priority: 1
         verified: false
-        note: "Proxy candidate; verify exposure/appropriateness."
+        note: "Station is real and reads correctly (confirmed against CPS's station map), but CPS's own map has no distinct tile for \"Rökerierna\" - sharing station 155 with kaseberga-s is inferred from proximity/same area, not independently confirmed by CPS for this specific site name."
     description: "Southeast-facing Kåseberga site. Advanced site with seasonal/local access rules in CPS description."
     cps_url: "https://www.cps.to/flygstallen/so-rokerierna/"
 
   - id: ales-stenar-sv
-    enabled: true
+    enabled: false
     name: Ales stenar / Stenarna
     short_name: Stenarna
     country: SE
@@ -214,7 +214,7 @@ sites:
     cps_url: "https://www.cps.to/flygstallen/o-ravlunda/"
 
   - id: vik
-    enabled: true
+    enabled: false
     name: Vik
     short_name: Vik
     country: SE
@@ -247,7 +247,7 @@ sites:
     cps_url: "https://www.cps.to/flygstallen/o-vik/"
 
   - id: vitemolla
-    enabled: true
+    enabled: false
     name: Vitemölla
     short_name: Vitemölla
     country: SE
@@ -285,7 +285,7 @@ sites:
   # -----------------------
 
   - id: lernacken
-    enabled: true
+    enabled: false
     name: Lernacken
     short_name: Lernacken
     country: SE
@@ -320,7 +320,7 @@ sites:
     cps_url: "https://www.cps.to/flygstallen/s-lernacken/"
 
   - id: brofastet
-    enabled: true
+    enabled: false
     name: Brofästet
     short_name: Brofästet
     country: SE
@@ -376,10 +376,10 @@ sites:
       verified: false
     live_sources:
       - provider: viva
-        station_id: null
+        station_id: "25"
         priority: 1
-        verified: false
-        note: "Research CPS-linked/nearby ViVa source."
+        verified: true
+        note: "Sjöfartsverket ViVa station 25 (Barsebäck), confirmed by name/coordinates match against https://viva.sjofartsverket.se/station/25."
     description: "Low coastal ridge; CPS gives WNW–NNW as the usable direction range and lists it as advanced."
     cps_url: "https://www.cps.to/flygstallen/vnv-nnv-barseback/"
 
@@ -422,7 +422,7 @@ sites:
     cps_url: "https://www.cps.to/flygstallen/v-sv-alabodarna/"
 
   - id: larod
-    enabled: true
+    enabled: false
     name: Larödbaden
     short_name: Laröd
     country: SE
@@ -555,8 +555,8 @@ sites:
       - provider: holfuy
         station_id: "127"
         priority: 1
-        verified: false
-        note: "Verify whether station exposure matches N and/or NV launches."
+        verified: true
+        note: "Confirmed against CPS's station map (cps.to/vader/vara-vindmatare/, single generic \"Hovs Hallar\" tile -> station 127) and the Holfuy widget's own title (\"Hovs hallar NW\"), same evidence hovs-hallar-nv already relies on - one station legitimately covers both launches on this ridge."
     description: "North-facing advanced Hovs Hallar site; CPS lists 150 m height."
     cps_url: "https://www.cps.to/flygstallen/n-hovshallar/"
 
@@ -603,7 +603,7 @@ sites:
   # -----------------------
 
   - id: ven-n
-    enabled: true
+    enabled: false
     name: Ven nordsidan
     short_name: Ven N
     country: SE
@@ -632,7 +632,7 @@ sites:
     cps_url: "https://www.cps.to/flygstallen/n-ven/"
 
   - id: ven-so
-    enabled: true
+    enabled: false
     name: Ven sydostsidan
     short_name: Ven SO
     country: SE
@@ -661,7 +661,7 @@ sites:
     cps_url: "https://www.cps.to/flygstallen/so-ven/"
 
   - id: ven-sv
-    enabled: true
+    enabled: false
     name: Ven sydvästsidan
     short_name: Ven SV
     country: SE
@@ -690,7 +690,7 @@ sites:
     cps_url: "https://www.cps.to/flygstallen/sv-ven/"
 
   - id: ven-v
-    enabled: true
+    enabled: false
     name: Ven västsidan
     short_name: Ven V
     country: SE
@@ -723,7 +723,7 @@ sites:
   # -----------------------
 
   - id: dk-gilbjerg-hoved
-    enabled: true
+    enabled: false
     name: Gilbjerg Hoved
     short_name: Gilbjerg
     country: DK
@@ -752,7 +752,7 @@ sites:
     cps_url: "https://www.cps.to/flygstallen/danmark-gilbjerg-hoved/"
 
   - id: dk-strandbjerggard
-    enabled: true
+    enabled: false
     name: Strandbjerggård / Rågeleje
     short_name: Rågeleje
     country: DK

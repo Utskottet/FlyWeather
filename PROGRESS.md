@@ -1019,6 +1019,50 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   round 3's subagent-based verification had already missed real gaps
   once. All fixture states match the reference's model visually; zero
   console errors.
-- Deferred / unresolved: none - self-contained. Not yet re-verified
-  against the live production deploy at time of writing (pending
-  push).
+- Re-verified against the live production deploy after pushing: 0/1/2
+  sector counts correct on every fixture, opacity 0.78, ring width
+  ~1.789, no fabricated wedge on the no-sector case, and a real site's
+  detail sheet on the live map showed a correctly transparent
+  semi-opaque wedge with the map visible behind it.
+- Deferred / unresolved: none - self-contained.
+
+## Site catalogue trim + Barsebäck's ViVa live source implemented
+- Status: done
+- User request: disable a named list of 12 sites ("for now this way we
+  have only a few to get right"), and separately: "all of these take
+  thir wind from its owm holify station apdate and check toword
+  m.cps.to if correct wind is being diplsayed .. the only ont that does
+  not ahve holify is barsebäck.. barse bäsk takes it wind from
+  https://viva.sjofartsverket.se/station/25"
+- Definition of Done: [x] 12 named sites (`dk-strandbjerggard`,
+  `dk-gilbjerg-hoved`, `larod`, `ven-n`, `ven-v`, `ven-so`, `ven-sv`,
+  `lernacken`, `brofastet`, `ales-stenar-sv`, `vitemolla`, `vik`) set
+  `enabled: false` in `SITES.md`, verified by id/name against each
+  edit's surrounding diff context (12/24 remain enabled)  [x] new
+  `vivaProvider.ts` implemented for Sjöfartsverket's ViVa API, found by
+  network-capturing the real station page rather than guessing  [x]
+  `barseback`'s `live_sources` updated to `station_id: "25"`,
+  `verified: true`  [x] every remaining enabled site's Holfuy/ViVa
+  station cross-checked against CPS's own authoritative station map
+  (`cps.to/vader/vara-vindmatare/` and `.../vindmatare-viva/`) plus
+  each Holfuy widget's own self-reported `<title>` - all 8 distinct
+  station IDs confirmed correct, no wrong-station/wrong-site bugs found
+  [x] `verified` flags in `SITES.md` updated to reflect the fresh
+  confirmation (`hovs-hallar-n` flipped true; `rokerierna` kept false
+  with a note, since CPS's map has no distinct tile for that name -
+  the 155 sharing is plausible/inferred, not CPS-confirmed for that
+  specific site) [x] `tsc --noEmit` clean, full unit suite green
+  (182/182), real `collect-live.ts` run confirms `barseback` resolves
+  (10/10 configured sources succeed, up from 11/12)
+- Files changed: SITES.md (12 sites disabled, barseback live_sources,
+  2 verified-flag/note updates); src/providers/live/vivaProvider.ts
+  (new); src/providers/live/resolver.ts (registered `viva`);
+  tests/unit/vivaProvider.test.ts (new, real-fixture-based, including a
+  null-input regression test that caught a real crash-on-null bug in
+  the first draft before it shipped); docs/DATA_SOURCE_AUDIT.md (ViVa
+  section rewritten from "not implemented" to documenting the real
+  endpoint/response shape)
+- Deferred / unresolved: `rokerierna`'s station-155 pairing stays
+  unverified (not a bug, just not independently CPS-confirmed for that
+  specific name) - flagged in its own SITES.md note rather than
+  silently upgraded.

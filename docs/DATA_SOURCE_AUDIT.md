@@ -93,12 +93,36 @@ source is `viva`, not `holfuy` — see below, not a Holfuy failure).
 
 ## ViVa
 
-Referenced in `SITES.md` for `barseback` (`provider: viva, station_id:
-null`) but no adapter exists yet — `station_id` isn't even known. Not
-investigated this block; the resolver skips unrecognized provider names
-gracefully (tested in `tests/unit/resolver.test.ts`), so `barseback`
-correctly degrades to "unavailable" rather than crashing anything.
-Flagged as a real gap for a future block, not silently ignored.
+**Implemented.** User supplied the exact station for `barseback`:
+https://viva.sjofartsverket.se/station/25 (Sjöfartsverket - Swedish
+Maritime Administration - station 25, "Barsebäck"). The public site is
+an Angular SPA with no data in its server-rendered HTML; the real
+endpoint was found by loading the station page in a real browser
+(Playwright) and inspecting network requests, not by guessing:
+
+1. The app first fetches `https://viva.sjofartsverket.se/assets/config/config.json`
+   for its API `baseUrl`.
+2. It then calls `{baseUrl}ViVaStationWithDirection/{stationId}?isMVY=false`
+   -> `https://services.viva.sjofartsverket.se/output/vivaoutputservice.svc/ViVaStationWithDirection/25?isMVY=false`.
+   Unauthenticated GET, JSON response, no key/password - same
+   unauthenticated pattern as the Holfuy widget.
+
+The response is a `Samples` array of named readings rather than one
+combined object - confirmed against the real station 25 response:
+`Medelvind` (mean/sustained wind, m/s), `Byvind` (gust, m/s),
+`Vindriktning` (direction, degrees), plus an unrelated `Vattenstånd`
+(water level) sample this app ignores. Speed/gust `Value` strings carry
+a Swedish compass-letter prefix ("V 3.2" = West, 3.2 m/s) - the letter
+is redundant with (and less precise than) `Vindriktning`'s own decimal
+value, so only the trailing number is parsed. Each sample carries its
+own `Quality` field; a non-`"Ok"` quality on any of the three samples
+used is treated as no usable reading, not served silently.
+
+Implemented in `src/providers/live/vivaProvider.ts`, registered in the
+resolver, `SITES.md`'s `barseback` entry updated with `station_id: "25"`,
+`verified: true`. Confirmed end-to-end via a real `collect-live.ts` run:
+`barseback` now resolves (10/10 configured live sources succeed, up
+from 11/12 with `barseback` failing).
 
 ## FindWind and other original station sources
 
@@ -111,7 +135,7 @@ Not investigated this block — no `SITES.md` entry currently names
 |---|---|---|
 | `api.holfuy.com` (official API) | Blocked | Password-gated, 3-station cap for non-owners, requires email approval we don't have. Documented, not bypassed. |
 | `widget.holfuy.com` (public embed) | **In use** | No password required; same mechanism CPS's own public page uses. 11/12 configured stations resolve successfully. |
-| ViVa | Not implemented | `barseback`'s configured source; no station ID known yet. Degrades gracefully. |
+| ViVa (Sjöfartsverket) | **In use** | `barseback`'s configured source; station 25 confirmed. Unauthenticated JSON API, found via network capture. |
 | FindWind | Not investigated | No `SITES.md` entry references it yet. |
 
 ## Open-Meteo regional wind grid (Block 10)
