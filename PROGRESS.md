@@ -1066,3 +1066,68 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   unverified (not a bug, just not independently CPS-confirmed for that
   specific name) - flagged in its own SITES.md note rather than
   silently upgraded.
+
+## Animated wind field: flowing GPU particle layer replaces static arrow markers
+- Status: done
+- User task: "Animated Wind Field" - replace the static regional
+  wind-arrow field with a flowing, Windy-inspired particle animation,
+  explicitly overriding older wording. Not a heatmap. Must not become
+  961 animated DOM markers; must survive RELIEF/TOPO/MAP switches,
+  time-slider changes, and keep site roses dominant/clickable; must
+  respect prefers-reduced-motion with a useful static fallback.
+- Definition of Done: [x] existing static 961-marker field replaced by
+  a flowing animated field  [x] streaks colored by wind speed, smooth
+  gradient matching the existing WindArrow/WindRose palette  [x] no
+  heatmap/raster background - map remains visible underneath, confirmed
+  in RELIEF/TOPO/MAP  [x] wind direction visually obvious (tapered
+  streaks + genuine motion)  [x] time slider changes the animated field
+  (NOW/+6h/+24h/back to NOW all confirmed against real forecast data)
+  [x] site roses stay dominant and clickable (confirmed via e2e -
+  marker click opens the site sheet with the wind layer active)  [x]
+  map-mode switches work (layer re-added via the same `style.load`
+  pattern as Skyways/Airspace, confirmed for all 3 modes)  [x] mobile
+  checked at 360/390/430px, readable, no overflow, controls usable
+  [x] prefers-reduced-motion falls back to a static, subsampled
+  (~121-marker) rendering of the existing WindArrow component, with the
+  animated layer entirely absent (confirmed via `page.emulateMedia`)
+  [x] lint, `tsc -b`, full unit suite (196/196), production build, and
+  the full Playwright e2e suite (17/17, including 4 new focused wind
+  tests) all pass  [x] visually inspected in a real browser and tuned
+  (not accepted as-is on first working render)
+- Files changed: src/domain/windField.ts (new, pure/unit-tested - grid
+  build, bilinear sampling, speed-color ramp); src/components/Map/windParticleLayer.ts
+  (new - the CustomLayerInterface WebGL particle renderer);
+  src/app/usePrefersReducedMotion.ts (new); src/components/Map/MapLibreMap.tsx
+  (wires the layer into the style.load/setStyle lifecycle, same pattern
+  as Skyways/Airspace, plus a data-update effect for slider-driven
+  changes without recreating the layer); src/components/Map/SiteMap.tsx
+  (removed the 961-MapMarker wind-arrow loop for the animated path;
+  reduced-motion path still uses it, stride-3 subsampled);
+  tests/unit/windField.test.ts (new, 14 tests); tests/e2e/wind-particles.spec.ts
+  (new, 4 tests); tests/e2e/site-map.spec.ts (unrelated stale-constant
+  fix - `LOCATED_SITE_COUNT` 24->12, drifted from last session's
+  site-catalogue trim, caught while running the full e2e suite as this
+  task required)
+- **Two real runtime-only bugs found via actual browser runs** (see
+  docs/DECISIONS.md for full detail): `map.getLayer()` returning an
+  internal wrapper, not the layer instance itself; and
+  `modelViewProjectionMatrix` not being the right matrix for raw
+  mercator-space coordinates in this MapLibre version (needed
+  `defaultProjectionData.mainMatrix` instead, found by cross-referencing
+  MapLibre's own current example). Neither was visible to the type
+  checker or lint - both only surfaced by loading the real app in
+  Playwright and looking at (or instrumenting) what actually rendered.
+- **Performance**: particle advection/geometry-building runs in plain
+  CPU JS each frame (not GPU transform feedback) - 500-2200 particles
+  scaled by canvas area, cheap enough on a phone CPU without needing
+  WebGL2 compute complexity. Animation is driven by MapLibre's own
+  `map.triggerRepaint()` mechanism (no separate `requestAnimationFrame`
+  loop to leak) and explicitly pauses on `document.visibilitychange`.
+  No React state updates per frame; all per-particle state lives in
+  typed arrays outside React entirely.
+- Deferred / unresolved: particle count is computed once at layer
+  creation from the canvas size at that moment, not re-evaluated on
+  window resize (minor gap on a mostly-mobile app where resize
+  mid-session is rare). Streak/advection-speed constants are
+  visually-tuned starting points, not derived from a formal study -
+  reasonable, open to further adjustment from real usage feedback.

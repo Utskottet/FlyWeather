@@ -1,0 +1,64 @@
+import { expect, test } from "@playwright/test";
+
+const WIND_LAYER_ID = "wind-particles";
+
+test.describe("Animated wind particle field", () => {
+  test("adds the custom WebGL layer on load and it actually animates (canvas changes over time)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
+    await expect
+      .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
+      .toBe(true);
+
+    const canvas = page.locator('[data-testid="site-map-canvas"] canvas').first();
+    await page.waitForTimeout(1200);
+    const frame1 = await canvas.screenshot();
+    await page.waitForTimeout(1200);
+    const frame2 = await canvas.screenshot();
+    // Particles genuinely moved - two frames a second apart must differ,
+    // not just "the layer exists" (a static/frozen layer would also pass
+    // a presence-only check).
+    expect(Buffer.compare(frame1, frame2)).not.toBe(0);
+  });
+
+  test("survives RELIEF -> TOPO -> MAP switches (re-added each time, no leftover stale layer)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
+    await expect
+      .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
+      .toBe(true);
+
+    for (const label of ["Topo", "Map", "Relief"]) {
+      await page.getByRole("button", { name: label, exact: true }).click();
+      await expect
+        .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
+        .toBe(true);
+    }
+  });
+
+  test("site markers stay clickable with the wind layer active (WebGL layer never intercepts pointer events)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
+    await page.locator(".rose-marker-icon").first().click({ force: true });
+    await expect(page.getByTestId("site-sheet")).toBeVisible();
+  });
+
+  test("prefers-reduced-motion: no animated layer, static arrow markers shown instead", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
+
+    const hasWindLayer = await page.evaluate(
+      (id) => window.__flyweatherMap!.getLayer(id) !== undefined,
+      WIND_LAYER_ID,
+    );
+    expect(hasWindLayer).toBe(false);
+    await expect(page.locator(".wind-arrow-icon").first()).toBeVisible();
+  });
+});

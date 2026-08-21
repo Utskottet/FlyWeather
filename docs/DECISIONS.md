@@ -1429,3 +1429,116 @@ sibling element into the rose's own SVG.
 - Confirmed end-to-end via a real `collect-live.ts` run (not just unit
   tests): 10/10 configured live sources now resolve, up from 11/12
   with `barseback` failing before this change.
+
+## Animated wind field: hand-rolled MapLibre custom WebGL layer, not a library
+- User directive (explicit, overriding older wording): replace the
+  static 961-DOM-marker wind-arrow field with a flowing, Windy-inspired
+  animated particle field - moving tapered streaks colored by speed,
+  NOT a heatmap/raster background, must not become 961 animated DOM
+  markers, must survive map-mode switches, must not block site-rose
+  clicks.
+- **Library research done before writing any renderer** (per the
+  task's explicit requirement): `@astrosat/windgl`/`windgl-js` and
+  `mapbox-exif-layer` all expect a pre-baked GFS-style raster wind
+  texture, not a sparse point grid - this app's data is a 31x31
+  (961-point) lat/lon grid with per-point hourly arrays, not a raster,
+  so every raster-based option needs a custom rasterization step
+  regardless of which is picked. `maplibre-gl-wind` (geoql) accepts
+  point data but pulls in `@deck.gl/core` + `@deck.gl/layers` - a
+  heavy dependency addition for one feature, inconsistent with this
+  project's consistently minimal footprint (no other rendering
+  framework beyond `maplibre-gl` itself). None had confirmed
+  compatibility with this project's MapLibre version (`^6.4.1`, a very
+  recent major - confirmed installed 6.4.1). No candidate was "clearly
+  the best choice" per the task's own bar for using one, so built
+  directly on MapLibre's native `CustomLayerInterface` instead - its
+  first-class, documented WebGL extension point, not a from-scratch
+  reinvention of the underlying technique (encode a vector field,
+  advect particles, render fading streaks) every one of those
+  libraries also uses internally.
+- **Architecture**: `src/domain/windField.ts` (pure, unit-tested -
+  `buildWindFieldGrid`/`sampleWindField`/`speedToColor`, 14 tests)
+  converts the existing `useWindGrid()` 31x31 point data + a slider
+  index into a bilinear-interpolatable flow-vector grid, decomposing
+  each point's meteorological "FROM" direction into a "TOWARD" flow
+  vector (+180, same convention `WindArrow.tsx` already used) so
+  particles flow the direction air actually moves, not backward.
+  `src/components/Map/windParticleLayer.ts` (necessarily untestable
+  GL glue, kept thin) implements `CustomLayerInterface`: a fixed pool
+  of particles (500-2200, scaled by canvas area) advected in plain CPU
+  JS each frame - deliberately NOT a GPU transform-feedback pass, since
+  a few thousand bilinear lookups/frame is trivial on a phone CPU and
+  keeps the simulation debuggable/inspectable, consistent with this
+  project's general preference for the simplest approach that performs
+  adequately over premature GPU-side complexity.
+- **Two real bugs found only by an actual browser run, not by code
+  review** (both would have been invisible to `tsc`/lint/unit tests):
+  (1) `map.getLayer(id)` doesn't return the `CustomLayerInterface`
+  instance passed to `addLayer()` - MapLibre wraps it in an internal
+  `CustomStyleLayer` and exposes the original at `.implementation`
+  (confirmed against the `.d.ts`, not documented in the public guide);
+  a plain cast compiled fine but threw `.setGrid is not a function` at
+  runtime. (2) `options.modelViewProjectionMatrix` - the field every
+  older Mapbox-GL-derived tutorial uses as "the" custom-layer matrix -
+  does NOT map raw `MercatorCoordinate.fromLngLat()` output to clip
+  space in this MapLibre version; a debug triangle built from it never
+  rendered anywhere, even hugely oversized, with zero console errors.
+  Found by fetching MapLibre's own current "add a 3D model" example,
+  which uses `defaultProjectionData.mainMatrix` instead with exactly
+  this coordinate space - switching to that field fixed it completely.
+  Both bugs are recorded as comments at their exact fix sites so a
+  future MapLibre upgrade doesn't silently reintroduce them.
+- **Streak length/width are fixed pixel sizes (scaled by speed), not
+  derived from one frame's real advection distance.** A live debug
+  dump showed real per-frame motion is sub-pixel (~1px/frame at 60fps)
+  - rendering literally-accurate one-frame streaks produced
+  near-invisible specks even at exaggerated 200px/40px debug sizes
+  (which is what first proved the projection-matrix bug above, before
+  this length issue was even visible). The underlying particle
+  simulation still genuinely advects/respawns along the real wind
+  field; only the drawn streak's length is decoupled from it, which
+  also means faster wind reads as a longer streak - a second, free
+  speed cue alongside color.
+- **Reduced-motion fallback reuses the existing, already-tested
+  `WindArrow` component** (`SiteMap.tsx`, stride-3 subsampled to ~121
+  static markers) rather than a second rendering path inside the WebGL
+  layer - the "no 961 animated DOM markers" constraint is specifically
+  about *animated* markers; a one-time-rendered static set is exactly
+  what already existed and was already proven to work, so reusing it
+  was less new surface area than teaching the GL layer a static mode.
+- **Speed-color ramp** (`WIND_SPEED_COLOR_STOPS` in `windField.ts`)
+  reuses `WindArrow.tsx`'s existing blue/green/orange/red anchor colors
+  exactly, interpolated smoothly rather than stepped (reads better for
+  continuously-flowing particles than hard bands do) - same visual
+  language across the animated field, the reduced-motion static
+  arrows, and the site roses' own palette, not a fourth invented scale.
+- **Verified via Playwright against a real local build** (not just
+  that it compiles): particles visibly move between two screenshots
+  taken 1.5s apart (byte-different canvas captures, asserted in
+  `tests/e2e/wind-particles.spec.ts`); the layer survives RELIEF -> TOPO
+  -> MAP style swaps (re-added via the same `"style.load"` idempotent
+  pattern as Skyways/Airspace); site markers stay clickable with the
+  layer active; `prefers-reduced-motion` correctly swaps to the static
+  arrow fallback with the animated layer entirely absent; time-slider
+  moves to +6h/+24h/back to NOW visibly change the flow field
+  (confirmed against real Open-Meteo data, not synthetic fixtures);
+  mobile widths (360/390/430px) checked visually, no overflow, controls
+  usable, wind field readable without overwhelming the site roses.
+- **Visual tuning pass** (per the task's explicit "don't accept the
+  first result" requirement): the first working version's streaks were
+  thin, uniform-width slivers that read as noise rather than clear
+  directional cues at a glance - `STREAK_HEAD_WIDTH_PX` raised
+  3px->4.2px (a more pronounced tail-to-head taper, closer to a
+  "comet/raindrop" shape with a clearly readable head) after a
+  side-by-side close-up comparison; density/opacity/length/speed
+  constants left at their first-pass values after confirming visually
+  they already struck a good balance (roses stayed clearly dominant,
+  map labels stayed legible under the field in MAP mode).
+- Deferred / unresolved: particle count is a static per-viewport-area
+  calculation made once in `onAdd`, not re-evaluated on window resize -
+  a minor gap (resize is rare mid-session on this mostly-mobile app),
+  noted rather than silently ignored. `ADVECT_DEGREES_PER_SEC_PER_MS`
+  and the streak length/width constants are all visually-tuned
+  numbers, not derived from a formal readability study - reasonable
+  starting points, open to further adjustment if real usage reveals a
+  problem.

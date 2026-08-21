@@ -23,6 +23,8 @@ import { buildStyleForMode, type MapMode } from "./mapStyles.ts";
 import { useSiteForecasts } from "../../app/useSiteForecasts.ts";
 import { useLiveData } from "../../app/useLiveData.ts";
 import { useWindGrid } from "../../app/useWindGrid.ts";
+import { usePrefersReducedMotion } from "../../app/usePrefersReducedMotion.ts";
+import { buildWindFieldGrid } from "../../domain/windField.ts";
 
 const MARKER_SIZE = 48;
 const SELECTED_MARKER_SIZE = 60;
@@ -37,7 +39,16 @@ const ARROW_SIZE = 39; // 1.5x the original 26px, per user feedback
 const FORECAST_FRESH_MINUTES = 15;
 const FORECAST_STALE_MINUTES = 60;
 
-/** Non-interactive - never intercepts clicks meant for site markers or the map itself. Takes the slider-indexed single value, not the whole point's hourly arrays. */
+/**
+ * Non-interactive - never intercepts clicks meant for site markers or the
+ * map itself. Takes the slider-indexed single value, not the whole
+ * point's hourly arrays.
+ *
+ * Only used for the prefers-reduced-motion fallback now - the normal
+ * path is the animated WindParticleLayer (windParticleLayer.ts), which
+ * replaced this as the default per-point DOM marker approach (961
+ * animated DOM markers was the thing explicitly ruled out).
+ */
 function buildWindArrowHtml(windDirectionDeg: number | null, windSpeedMs: number | null): string | null {
   if (windDirectionDeg === null || windSpeedMs === null) return null;
   return renderToStaticMarkup(
@@ -45,6 +56,20 @@ function buildWindArrowHtml(windDirectionDeg: number | null, windSpeedMs: number
       <WindArrow windDirectionDeg={windDirectionDeg} windSpeedMs={windSpeedMs} size={ARROW_SIZE} />
     </div>,
   );
+}
+
+// Reduced-motion fallback shows a coarser static field (not the full
+// 961-point density) - it's rendered once as plain static DOM markers
+// (no per-frame updates, so the "no 961 animated DOM markers"
+// constraint doesn't apply here), but the full grid's density was tuned
+// for a flowing particle field, not a static one; a stride keeps the
+// static fallback readable rather than visually noisy.
+const REDUCED_MOTION_STRIDE = 3;
+
+function subsampleForStaticDisplay<T>(points: T[], stride: number): T[] {
+  const side = Math.round(Math.sqrt(points.length));
+  if (side * side !== points.length) return points;
+  return points.filter((_, i) => Math.floor(i / side) % stride === 0 && (i % side) % stride === 0);
 }
 
 interface ForecastPoint {
@@ -182,6 +207,15 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const { forecastsBySiteId, hours, generatedAt: forecastGeneratedAt } = useSiteForecasts(sites);
   const { data: liveData } = useLiveData();
   const { points: windGridPoints, generatedAt: gridGeneratedAt } = useWindGrid();
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const windFieldGrid = useMemo(
+    () => buildWindFieldGrid(windGridPoints, sliderIndex),
+    [windGridPoints, sliderIndex],
+  );
+  const staticWindPoints = useMemo(
+    () => (prefersReducedMotion ? subsampleForStaticDisplay(windGridPoints, REDUCED_MOTION_STRIDE) : []),
+    [prefersReducedMotion, windGridPoints],
+  );
   const isNow = sliderIndex === 0;
 
   // Flag using whichever of the two publish timestamps is OLDER - if
@@ -244,26 +278,32 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         boundsPadding={{ top: 40, bottom: 152, left: 40, right: 40 }}
         maxZoom={12}
         showAirspace={showAirspace}
+        windGrid={windFieldGrid}
+        windMotionEnabled={!prefersReducedMotion}
         className="site-map"
       >
         {(map) => (
           <>
-            {windGridPoints.map((point, i) => {
-              const html = buildWindArrowHtml(point.windDirectionDeg[sliderIndex] ?? null, point.windSpeedMs[sliderIndex] ?? null);
-              if (!html) return null;
-              return (
-                <MapMarker
-                  key={`wind-arrow-${i}`}
-                  map={map}
-                  lng={point.lon}
-                  lat={point.lat}
-                  html={html}
-                  className="wind-arrow-icon"
-                  interactive={false}
-                  zIndex={0}
-                />
-              );
-            })}
+            {prefersReducedMotion &&
+              staticWindPoints.map((point, i) => {
+                const html = buildWindArrowHtml(
+                  point.windDirectionDeg[sliderIndex] ?? null,
+                  point.windSpeedMs[sliderIndex] ?? null,
+                );
+                if (!html) return null;
+                return (
+                  <MapMarker
+                    key={`wind-arrow-${i}`}
+                    map={map}
+                    lng={point.lon}
+                    lat={point.lat}
+                    html={html}
+                    className="wind-arrow-icon"
+                    interactive={false}
+                    zIndex={0}
+                  />
+                );
+              })}
             {visibleSites.map((site) => {
               const { sample, weatherKind } = effectiveSampleFor(site);
               const selected = site.id === selectedId;

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const LOCATED_SITE_COUNT = 24; // all enabled sites now have coordinates as of Block 13 (see docs/SITE_DATA_AUDIT.md)
+const LOCATED_SITE_COUNT = 12; // 12 sites disabled to shrink the working set (see PROGRESS.md's site-catalogue-trim entry) - was 24 pre-trim
 
 test.describe("Site map", () => {
   test("renders the map with one marker per located enabled site", async ({ page }) => {

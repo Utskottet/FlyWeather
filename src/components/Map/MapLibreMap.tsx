@@ -10,6 +10,8 @@ import {
 import "maplibre-gl/dist/maplibre-gl.css";
 import { addSkywaysLayer } from "./skywaysLayer.ts";
 import { addAirspaceLayer, removeAirspaceLayer } from "./airspaceLayer.ts";
+import { addWindParticleLayer, removeWindParticleLayer, updateWindParticleLayer } from "./windParticleLayer.ts";
+import type { WindFieldGrid } from "../../domain/windField.ts";
 
 const AIRSPACE_DATA_URL = `${import.meta.env.BASE_URL}static/airspaces.json`;
 // MapLibre resolves its worker script's URL relative to its own bundled
@@ -43,6 +45,10 @@ export interface MapLibreMapProps {
   maxZoom?: number;
   /** User-toggled (Block 17), off by default - unlike Skyways this fetches a ~700KB file, so it's only added when actually shown. */
   showAirspace?: boolean;
+  /** Current slider-indexed wind vector field for the animated particle layer - null while loading. Updating this does not recreate the layer (smooth transition, per the animated-wind-field spec). */
+  windGrid?: WindFieldGrid | null;
+  /** false when prefers-reduced-motion is on - the animated layer is not added at all in that case (caller renders a static fallback instead). */
+  windMotionEnabled?: boolean;
   className?: string;
   children?: (map: MapLibreGLMap | null) => React.ReactNode;
 }
@@ -60,6 +66,8 @@ export function MapLibreMap({
   boundsPadding = 40,
   maxZoom = 12,
   showAirspace = false,
+  windGrid = null,
+  windMotionEnabled = true,
   className,
   children,
 }: MapLibreMapProps) {
@@ -73,6 +81,16 @@ export function MapLibreMap({
   // itself every time the showAirspace prop changes.
   const showAirspaceRef = useRef(showAirspace);
   showAirspaceRef.current = showAirspace;
+  // Same "style.load" survival problem as airspace/skyways - a custom
+  // WebGL layer's onRemove runs on every setStyle() too, so it must be
+  // fully recreated (new GL resources) on each style load, then
+  // immediately re-supplied with whatever wind data is current via
+  // these refs rather than stale data from whenever the effect closure
+  // was created.
+  const windGridRef = useRef(windGrid);
+  windGridRef.current = windGrid;
+  const windMotionEnabledRef = useRef(windMotionEnabled);
+  windMotionEnabledRef.current = windMotionEnabled;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -99,6 +117,7 @@ export function MapLibreMap({
     instance.on("style.load", () => {
       addSkywaysLayer(instance);
       if (showAirspaceRef.current) addAirspaceLayer(instance, AIRSPACE_DATA_URL);
+      if (windMotionEnabledRef.current) addWindParticleLayer(instance, windGridRef.current);
     });
 
     return () => {
@@ -129,6 +148,28 @@ export function MapLibreMap({
       removeAirspaceLayer(map);
     }
   }, [map, showAirspace]);
+
+  // Adds/removes the animated layer when reduced-motion changes mid-
+  // session (the OS setting can flip while the tab is open) - surviving
+  // an actual style/mode switch is handled by the "style.load" listener
+  // above via windMotionEnabledRef.
+  useEffect(() => {
+    if (!map) return;
+    if (windMotionEnabled) {
+      addWindParticleLayer(map, windGridRef.current);
+    } else {
+      removeWindParticleLayer(map);
+    }
+  }, [map, windMotionEnabled]);
+
+  // Slider moves (new grid data) update the existing layer's data in
+  // place rather than recreating it - no interruption to particle
+  // positions/ages, just a smooth redirect to the new vector field, per
+  // the "do not reset animation unnecessarily" requirement.
+  useEffect(() => {
+    if (!map || !windMotionEnabled) return;
+    updateWindParticleLayer(map, windGrid);
+  }, [map, windGrid, windMotionEnabled]);
 
   return (
     <div ref={containerRef} className={className} data-testid="site-map-canvas">
