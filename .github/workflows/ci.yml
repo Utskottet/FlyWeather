@@ -26,7 +26,7 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Validate SITES.md
+      - name: Validate site catalogue
         run: npm run validate:sites
 
       - name: Unit tests

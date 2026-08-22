@@ -47,7 +47,7 @@ jobs:
       # changing between refresh runs, only the collected live data.
       # `npm run build` already re-runs validate:sites + collect:live
       # (§13.1: "keep the collector fast," avoid unnecessary work).
-      - name: Build (validates SITES.md, collects fresh live data, builds app)
+      - name: Build (validates site catalogue, collects fresh live data, builds app)
         run: npm run build
         env:
           VITE_SOARING_BASE_URL: https://utskottet.github.io/FlyWeather-Soaring
