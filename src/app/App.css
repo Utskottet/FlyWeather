@@ -306,30 +306,53 @@
 }
 
 .time-slider-tick-hour {
-  height: 4px;
+  height: 3px;
 }
 
 .time-slider-tick-six-hour {
-  height: 8px;
+  height: 6px;
   background: #888;
   width: 1.5px;
 }
 
 .time-slider-tick-day {
-  height: 12px;
+  height: 9px;
   background: #444;
   width: 2px;
 }
 
-.time-slider-tick-label {
+/* Day/night/sunrise-sunset indicator - a thin strip sitting in the gap
+   between the tick marks (0-9px) and their labels (18px+) so it never
+   needs to share contrast with either - see domain/skyBand.ts. Deliberately
+   slim, not a decorative banner, per the task's own instruction. */
+.time-slider-sky-band {
   position: absolute;
-  top: 13px;
+  left: 0;
+  right: 0;
+  top: 11px;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.time-slider-tick-label,
+.time-slider-tick-hour-label {
+  position: absolute;
+  top: 18px;
   left: 50%;
   transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.time-slider-tick-label {
   font-size: 9px;
   font-weight: 700;
   color: #444;
-  white-space: nowrap;
+}
+
+.time-slider-tick-hour-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: #888;
 }
 
 /* Real clock position - visually distinct from selected-time (native range

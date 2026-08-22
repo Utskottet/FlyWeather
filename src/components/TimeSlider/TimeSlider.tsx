@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { useNow } from "../../app/useNow.ts";
-import { classifyTick, formatSliderLabel, nowPositionFraction, tickDayLabel } from "../../domain/timeAxis.ts";
+import { classifyTick, formatSliderLabel, nowPositionFraction, tickDayLabel, tickHourLabel } from "../../domain/timeAxis.ts";
+import { SOUTH_SWEDEN_REPRESENTATIVE_LOCATION, buildSkyBandBlocks, skyBandCssGradient } from "../../domain/skyBand.ts";
 
 export interface TimeSliderProps {
   /** Windowed hours, index 0 = NOW (see useSiteForecasts). */
@@ -17,6 +19,12 @@ export function TimeSlider({ hours, selectedIndex, onChange }: TimeSliderProps) 
   const nowFraction = nowPositionFraction(hours, now);
   const selectedDate = hours[selectedIndex] ? new Date(hours[selectedIndex]) : now;
   const label = formatSliderLabel(selectedDate, now, selectedIndex === 0);
+  // Astronomical, not re-sampled every render - only recomputed when the
+  // actual hour range changes (`hours` is stable between NOW-marker ticks).
+  const skyBandGradient = useMemo(
+    () => skyBandCssGradient(buildSkyBandBlocks(hours, SOUTH_SWEDEN_REPRESENTATIVE_LOCATION)),
+    [hours],
+  );
 
   return (
     <div className="time-slider" data-testid="time-slider">
@@ -46,6 +54,11 @@ export function TimeSlider({ hours, selectedIndex, onChange }: TimeSliderProps) 
         data-testid="time-slider-range"
       />
       <div className="time-slider-ticks" data-testid="time-slider-ticks" aria-hidden="true">
+        <div
+          className="time-slider-sky-band"
+          style={{ background: skyBandGradient }}
+          data-testid="time-slider-sky-band"
+        />
         {hours.map((h, i) => {
           const level = classifyTick(new Date(h));
           const leftPercent = maxIndex === 0 ? 0 : (i / maxIndex) * 100;
@@ -57,6 +70,9 @@ export function TimeSlider({ hours, selectedIndex, onChange }: TimeSliderProps) 
               data-testid={`time-slider-tick-${level}`}
             >
               {level === "day" && <span className="time-slider-tick-label">{tickDayLabel(new Date(h))}</span>}
+              {level === "six-hour" && (
+                <span className="time-slider-tick-hour-label">{tickHourLabel(new Date(h))}</span>
+              )}
             </div>
           );
         })}

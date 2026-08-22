@@ -67,6 +67,14 @@ export function tickDayLabel(date: Date): string {
   return stockholmWeekday(date);
 }
 
+/** Local hour-of-day label for a six-hour/hour tick, e.g. "06", "12", "18" -
+ * per the task's explicit "add hours of day directly to the timeline"
+ * requirement. Same Europe/Stockholm + DST-safe formatting as everywhere
+ * else in this module. */
+export function tickHourLabel(date: Date): string {
+  return stockholmHour(date);
+}
+
 /**
  * NOW's fractional position (0..1) along the slider track spanned by
  * `hours` (ascending, assumed hourly) - independent of the selected index.

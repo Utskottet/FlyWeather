@@ -109,3 +109,32 @@ describe("TimeSlider NOW marker", () => {
     expect(queryByTestId("time-slider-now-marker")).toBeNull();
   });
 });
+
+describe("TimeSlider day/night sky band", () => {
+  it("renders a real gradient background, not a flat placeholder", () => {
+    const { getByTestId } = render(
+      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
+    );
+    const band = getByTestId("time-slider-sky-band") as HTMLElement;
+    expect(band.style.background).toContain("linear-gradient");
+  });
+
+  it("renders numeric hour labels at six-hour ticks, e.g. 06/12/18", () => {
+    const { container } = render(
+      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
+    );
+    const hourLabels = Array.from(container.querySelectorAll(".time-slider-tick-hour-label")).map(
+      (el) => el.textContent,
+    );
+    expect(hourLabels.length).toBeGreaterThan(0);
+    for (const label of hourLabels) {
+      expect(label).toMatch(/^\d{2}$/);
+    }
+  });
+
+  it("shows transparent (no band) rather than crashing when there's no hour data", () => {
+    const { getByTestId } = render(<TimeSlider hours={[]} selectedIndex={0} onChange={() => {}} />);
+    const band = getByTestId("time-slider-sky-band") as HTMLElement;
+    expect(band.style.background).toBe("transparent");
+  });
+});

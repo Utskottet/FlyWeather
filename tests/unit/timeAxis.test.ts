@@ -5,6 +5,7 @@ import {
   formatSliderLabel,
   nowPositionFraction,
   tickDayLabel,
+  tickHourLabel,
 } from "../../src/domain/timeAxis.ts";
 
 describe("formatSliderLabel", () => {
@@ -62,6 +63,14 @@ describe("classifyTick (§ time slider graduations, Block 12)", () => {
 describe("tickDayLabel", () => {
   it("returns a short uppercase weekday abbreviation", () => {
     expect(tickDayLabel(new Date("2026-08-18T22:00:00Z"))).toMatch(/^[A-Z]{3}$/);
+  });
+});
+
+describe("tickHourLabel", () => {
+  it("returns a zero-padded local hour, e.g. 06/12/18", () => {
+    expect(tickHourLabel(new Date("2026-08-18T04:00:00Z"))).toBe("06"); // 06:00 Stockholm
+    expect(tickHourLabel(new Date("2026-08-18T10:00:00Z"))).toBe("12"); // 12:00 Stockholm
+    expect(tickHourLabel(new Date("2026-08-18T16:00:00Z"))).toBe("18"); // 18:00 Stockholm
   });
 });
 

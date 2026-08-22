@@ -1297,3 +1297,60 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   real generation run.
 - Next: I3 (timeline hour labels + day/night sky band), then a full
   live-browser pass once all 4 backend products are actually live.
+
+## V2 milestone: I3 - timeline hour labels + astronomical day/night sky band
+
+- Status: done, verified live (screenshot). Lint/typecheck/244 unit tests/
+  build all green.
+- **Real dependency choice**: added `suncalc` (tiny, MIT) rather than
+  hand-rolling the NOAA solar-position algorithm - correctness matters more
+  than saving one small dependency for astronomical math, which is exactly
+  the kind of computation where a hand-rolled bug is hard to self-verify.
+  Real bug caught immediately: `import SunCalc from "suncalc"` (default
+  import) failed at runtime (`Cannot read properties of undefined`) -
+  suncalc 2.0.1 only has named exports; fixed to `import { getTimes }`, and
+  removed the now-redundant/conflicting `@types/suncalc` devDependency
+  (suncalc ships its own types).
+- `domain/skyBand.ts` (new): `classifySkyBand`/`buildSkyBandBlocks` compute
+  *exact* astronomical transition boundaries per real calendar day touched
+  by the slider's range (not a sampled approximation) - hard-edged color
+  blocks (deep blue night / orange 30-min transition / light blue day), not
+  a smooth gradient wash, per the task's own "orange band, not blue→light
+  blue at one exact minute" instruction. The representative coordinate
+  (55.8°N, 13.3°E, central Skåne, as specified) is a plain constant passed
+  into these functions, never read internally by them - a future GPS/site
+  coordinate is a call-site change, not a rewrite, per the task's explicit
+  future-compatibility requirement.
+- Handles the task's explicit edge cases, each with its own test: sunrise
+  before the range starts, sunset after it ends, multi-day overnight spans
+  merged into one continuous night block (not artificially split at each
+  day's own boundary), and both 2026 DST transitions (spring-forward
+  2026-03-29, fall-back 2026-10-25) - SunCalc computes purely from the
+  Date's own epoch instant, never the system/local timezone, so this is
+  DST-safe by construction rather than by careful arithmetic.
+- **Live-verified, and initially second-guessed myself incorrectly**: the
+  first screenshot appeared to show the sunrise transition near the "06"
+  tick, which I first read as ~06:00 UTC - suspiciously late for mid-August
+  sunrise at this latitude. Checked with a real `suncalc` call before
+  concluding anything: real sunrise for 2026-08-23 at this location is
+  03:53 UTC. The "06" tick is Europe/Stockholm *local* time (matching how
+  every other label on this timeline already works, via `classifyTick`'s
+  existing `stockholmHour`), i.e. 06:00 local = ~04:00 UTC - the band's real
+  transition (starting ~03:24 UTC, 30 min before real sunrise) lines up
+  correctly just before that tick. No bug; verified before either declaring
+  success or reporting a false alarm.
+- Numeric hour labels (`tickHourLabel`, new in `domain/timeAxis.ts`) added
+  at six-hour ticks (06/12/18) - day-boundary ticks keep their existing
+  weekday label, the two never collide since a tick only ever gets one
+  `TickLevel`.
+- Files: `src/domain/skyBand.ts` (new), `src/domain/timeAxis.ts`
+  (`tickHourLabel`), `src/components/TimeSlider/TimeSlider.tsx`,
+  `src/app/App.css` (band positioned in the gap between tick marks and
+  their labels so neither ever needs contrast against the band's 3
+  colors), `package.json`/`package-lock.json` (+`suncalc`),
+  `tests/unit/skyBand.test.ts` (new, 15 tests), `tests/unit/timeAxis.test.ts`
+  (+1), `tests/unit/TimeSlider.test.tsx` (+3).
+- Next: I4 - full self-test pass once FlyWeather-Soaring's H3 real
+  full-horizon 4-product generation completes (in progress - a real
+  cloudbase-vs-DMI cross-check discrepancy showed up in that run's live
+  output, being investigated before calling this milestone done).
