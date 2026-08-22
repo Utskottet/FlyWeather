@@ -53,12 +53,12 @@ describe("selectEffectiveSample (§6.1)", () => {
   });
 });
 
-describe("provenanceLine (§ FlyWeather Next UI compact map-level status line)", () => {
-  it("uses the exact mandated string at NOW", () => {
-    expect(provenanceLine(true)).toBe("Live site wind · Forecast map & RASP");
+describe("provenanceLine (§ FlyWeather Interaction Model compact map-level status line)", () => {
+  it("uses the exact mandated string in START/live-site mode", () => {
+    expect(provenanceLine(true)).toBe("Sites: live · Map/RASP: forecast");
   });
 
-  it("uses the exact mandated string for any future hour", () => {
+  it("uses the exact mandated string in Forecast mode", () => {
     expect(provenanceLine(false)).toBe("Sites, map & RASP: forecast");
   });
 });

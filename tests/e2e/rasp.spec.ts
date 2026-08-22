@@ -45,20 +45,22 @@ test.describe("RASP (W* thermal strength) overlay", () => {
     // permanently missing if it was showing before.
   });
 
-  test("survives RELIEF -> TOPO -> MAP switches without duplicating the layer", async ({ page }) => {
+  test("survives ROADS on/off basemap switches without duplicating the layer", async ({ page }) => {
     await page.goto("/");
     await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
     await page.getByTestId("rasp-toggle").click();
     await page.waitForTimeout(500);
 
-    for (const label of ["Topo", "Map", "Relief"]) {
-      await page.getByRole("button", { name: label, exact: true }).click();
+    // ROADS off -> Relief, ROADS on -> Topo (§ FlyWeather Interaction Model) -
+    // two toggles exercise both basemap swaps the old 3-way selector did.
+    // getLayer() would return undefined for a missing layer and a single
+    // object for a present one - MapLibre itself throws on a genuine
+    // duplicate addLayer() call with a reused id, so reaching this point at
+    // all across both style swaps already rules out the "no layer
+    // duplication" failure mode the task calls out.
+    for (let i = 0; i < 2; i++) {
+      await page.getByTestId("roads-toggle").click();
       await page.waitForTimeout(800);
-      // getLayer() would return undefined for a missing layer and a
-      // single object for a present one - MapLibre itself throws on a
-      // genuine duplicate addLayer() call with a reused id, so reaching
-      // this point at all across 3 style swaps already rules out the
-      // "no layer duplication" failure mode the task calls out.
       const raspToggleStillOn = await page.getByTestId("rasp-toggle").getAttribute("aria-pressed");
       expect(raspToggleStillOn).toBe("true");
     }

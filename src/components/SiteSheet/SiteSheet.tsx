@@ -2,7 +2,6 @@ import type { LocatedSite } from "../../domain/sites.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { degreesToCompass16 } from "../../domain/direction.ts";
 import { WindRose } from "../WindRose/index.ts";
-import type { HeightMode } from "../HeightModeToggle/HeightModeToggle.tsx";
 import type { WeatherKind } from "../../domain/weather.ts";
 import type { Freshness } from "../../domain/freshness.ts";
 
@@ -20,8 +19,7 @@ export interface SiteSheetSample {
 export interface SiteSheetProps {
   site: LocatedSite;
   sample: SiteSheetSample;
-  heightMode: HeightMode;
-  /** Height (m AGL) the shown sample actually reflects - null when unsupported. */
+  /** Height (m AGL) the shown sample actually reflects - null when unsupported. May differ from the altitude bar's requested value when it exceeds real data (§ FlyWeather Interaction Model - see AltitudeSlider's own honest-ceiling disclosure). */
   effectiveHeightM: number | null;
   heightSupported: boolean;
   /** ISO-8601 UTC timestamp of the currently-selected slider time. */
@@ -48,7 +46,6 @@ function sourceLabel(sample: SiteSheetSample): string {
 export function SiteSheet({
   site,
   sample,
-  heightMode,
   effectiveHeightM,
   heightSupported,
   selectedTimestamp,
@@ -98,8 +95,7 @@ export function SiteSheet({
       </p>
       {!heightSupported && (
         <p className="site-sheet-height-warning" data-testid="site-sheet-height-warning">
-          Soaring height not configured for this site - wind aloft is unsupported here, not silently shown as
-          surface wind.
+          No wind-aloft data available for this site at this time - not silently shown as surface wind.
         </p>
       )}
       <ul className="site-sheet-reasons">
@@ -121,8 +117,7 @@ export function SiteSheet({
         </dd>
         <dt>Height</dt>
         <dd data-testid="site-sheet-height">
-          {heightMode === "surface" ? "Surface" : "Soaring height"}
-          {effectiveHeightM !== null ? ` — ${effectiveHeightM.toFixed(0)} m AGL` : " — unsupported"}
+          {effectiveHeightM !== null ? `${effectiveHeightM.toFixed(0)} m AGL` : "unsupported"}
         </dd>
       </dl>
       <p>{site.description}</p>

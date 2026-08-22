@@ -33,36 +33,61 @@ const baseSample = {
   ageMinutes: null,
 };
 
-describe("SiteSheet - height mode (§7, Block 7 DoD)", () => {
-  it("shows the effective height in Surface mode", () => {
+describe("SiteSheet - height display (§ FlyWeather Interaction Model altitude slider)", () => {
+  it("shows the effective height directly at Surface (10m)", () => {
     const { getByTestId } = render(
       <SiteSheet
         site={locatedSite()}
         sample={baseSample}
-        heightMode="surface"
         effectiveHeightM={10}
         heightSupported={true}
         selectedTimestamp={null}
         onClose={() => {}}
       />,
     );
-    expect(getByTestId("site-sheet-height").textContent).toContain("Surface");
-    expect(getByTestId("site-sheet-height").textContent).toContain("10 m AGL");
+    expect(getByTestId("site-sheet-height").textContent).toBe("10 m AGL");
   });
 
-  it("shows unsupported, not a silent surface fallback, when soaring height isn't configured", () => {
+  it("shows the effective height directly for any altitude above Surface", () => {
+    const { getByTestId } = render(
+      <SiteSheet
+        site={locatedSite()}
+        sample={baseSample}
+        effectiveHeightM={150}
+        heightSupported={true}
+        selectedTimestamp={null}
+        onClose={() => {}}
+      />,
+    );
+    expect(getByTestId("site-sheet-height").textContent).toBe("150 m AGL");
+  });
+
+  it("shows a clamped effective height honestly (e.g. 180m real ceiling for a 1200m request) rather than fabricating the requested value", () => {
+    const { getByTestId } = render(
+      <SiteSheet
+        site={locatedSite()}
+        sample={baseSample}
+        effectiveHeightM={180}
+        heightSupported={true}
+        selectedTimestamp={null}
+        onClose={() => {}}
+      />,
+    );
+    expect(getByTestId("site-sheet-height").textContent).toBe("180 m AGL");
+  });
+
+  it("shows unsupported, not a silent fallback, when there is no valid wind-aloft data for this hour", () => {
     const { getByTestId, queryByTestId } = render(
       <SiteSheet
-        site={locatedSite({ soaring_height: { agl_m: null, verified: false } })}
+        site={locatedSite()}
         sample={{ ...baseSample, windDirectionDeg: null, windSpeedMs: null }}
-        heightMode="soaring"
         effectiveHeightM={null}
         heightSupported={false}
         selectedTimestamp={null}
         onClose={() => {}}
       />,
     );
-    expect(getByTestId("site-sheet-height").textContent).toContain("unsupported");
+    expect(getByTestId("site-sheet-height").textContent).toBe("unsupported");
     expect(queryByTestId("site-sheet-height-warning")).not.toBeNull();
   });
 
@@ -71,7 +96,6 @@ describe("SiteSheet - height mode (§7, Block 7 DoD)", () => {
       <SiteSheet
         site={locatedSite()}
         sample={baseSample}
-        heightMode="soaring"
         effectiveHeightM={150}
         heightSupported={true}
         selectedTimestamp={null}

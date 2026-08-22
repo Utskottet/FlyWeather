@@ -396,6 +396,19 @@ For future positions:
 
 # 7. Height mode
 
+> **Current, authoritative design note (FlyWeather Interaction Model
+> milestone):** The binary Surface/Soaring-height switch below is
+> **obsolete** - replaced by a single nonlinear altitude slider running
+> Surface -> 1500 m AGL (`AltitudeSlider.tsx` / `domain/altitudeAxis.ts`),
+> shared globally across sites rather than each site's own
+> `soaring_height.agl_m`. The underlying principles below still hold
+> (Surface uses live/10m-model wind, other altitudes interpolate model
+> data, never silently show surface wind as wind aloft) - only the *control
+> shape* and *per-site vs. global* height source changed. Also see the new
+> START button: moving the altitude slider above Surface now auto-enters
+> Forecast mode, and START is the only way back to Surface + live wind
+> together (superseding the standalone NOW button in §15.1 below).
+
 Global two-state control:
 
 `[ Surface ] [ Soaring height ]`
@@ -668,6 +681,21 @@ No heavy backend framework in V1.
 ---
 
 # 15. Main mobile UI
+
+> **Current, authoritative design note (FlyWeather Interaction Model
+> milestone):** The layout below is **obsolete** - there is no top control
+> area at all now (kept clean per the new interaction model), and controls
+> live in a compact two-row area directly above the timeline instead:
+> row 1 is RIDGE/WINCH + single-label RASP/AIRSPACE/WIND/ROADS toggles +
+> the live/forecast provenance line; row 2 is the START button + the
+> Surface-1500m altitude slider (§7 as updated). The per-site
+> Surface/Soaring segmented control and the standalone NOW button are both
+> gone - START now resets time + altitude + live wind together in one tap,
+> and is the app's only way back to live mode (moving either slider away
+> from its START value auto-enters Forecast, and never auto-reverts even
+> if the sliders happen to scrub back to their start values). The 3-way
+> Relief/Topo/Map basemap selector introduced in a later block is also
+> gone, replaced by a single ROADS toggle (off = Relief, on = Topo).
 
 ## 15.1 Initial screen
 

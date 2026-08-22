@@ -29,15 +29,10 @@ export function TimeSlider({ hours, selectedIndex, onChange }: TimeSliderProps) 
   return (
     <div className="time-slider" data-testid="time-slider">
       <div className="time-slider-top">
-        <button
-          type="button"
-          className="time-slider-now-button"
-          onClick={() => onChange(0)}
-          disabled={selectedIndex === 0}
-          data-testid="time-slider-now-button"
-        >
-          NOW
-        </button>
+        {/* The old in-timeline NOW button (time-only reset) is superseded
+            by the global START button, which resets time+altitude+live-wind
+            together (§ FlyWeather Interaction Model) - keeping both would be
+            redundant. This label-only row still shows the selected time. */}
         <div className="time-slider-label" data-testid="time-slider-label">
           {label}
         </div>

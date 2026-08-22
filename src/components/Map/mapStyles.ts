@@ -2,8 +2,6 @@ import { addProtocol } from "maplibre-gl";
 import type { FilterSpecification, StyleSpecification } from "maplibre-gl";
 import mlcontour from "maplibre-contour";
 
-export type MapMode = "relief" | "topo" | "map";
-
 const OPENFREEMAP_VECTOR_URL = "https://tiles.openfreemap.org/planet";
 const OPENFREEMAP_ATTRIBUTION =
   '&copy; <a href="https://openfreemap.org">OpenFreeMap</a> ' +
@@ -74,10 +72,7 @@ export function buildReliefStyle(): StyleSpecification {
         "source-layer": "water",
         filter: WATER_FILTER,
         // Gray per user feedback (was a light blue, #a9cfe3) - applies to
-        // RELIEF and TOPO (TOPO spreads RELIEF's layers, see below). MAP
-        // mode's sea color isn't ours to change - it's OpenFreeMap's
-        // externally hosted positron style (Block 14c), not an inline
-        // spec built here.
+        // both RELIEF and TOPO (TOPO spreads RELIEF's layers, see below).
         paint: { "fill-color": "#8c94a1" },
       },
       {
@@ -193,27 +188,12 @@ export function buildTopoStyle(): StyleSpecification {
   };
 }
 
-// OpenFreeMap's own hosted Positron-equivalent style: roads, buildings,
-// water, boundaries, place labels at every zoom, no hillshade at all -
-// exactly the "conventional clean orientation map... hillshade reduced
-// or removed" the user asked for. Pointing at it directly (MapLibre
-// accepts a style URL as well as an inline spec) rather than hand-
-// copying its ~55 layers into this file, since OpenFreeMap maintains and
-// updates it themselves.
-const OPENFREEMAP_POSITRON_STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
-
-/** MAP: conventional orientation map, no terrain layer at all (per spec). */
-export function buildMapModeStyle(): string {
-  return OPENFREEMAP_POSITRON_STYLE_URL;
-}
-
-export function buildStyleForMode(mode: MapMode): StyleSpecification | string {
-  switch (mode) {
-    case "relief":
-      return buildReliefStyle();
-    case "topo":
-      return buildTopoStyle();
-    case "map":
-      return buildMapModeStyle();
-  }
+/**
+ * ROADS off/on (§ FlyWeather Interaction Model) - the old 3rd "Map" mode
+ * (a plain OpenFreeMap-hosted orientation style, no terrain) is removed;
+ * ROADS is literally today's Relief/Topo choice, since buildTopoStyle()
+ * already is "Relief + roads/contours/labels" layered on top.
+ */
+export function buildStyleForRoads(showRoads: boolean): StyleSpecification {
+  return showRoads ? buildTopoStyle() : buildReliefStyle();
 }

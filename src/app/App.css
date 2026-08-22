@@ -19,26 +19,40 @@
   pointer-events: none;
 }
 
-/* Single compact bar immediately above the timeline (§ FlyWeather Next UI) -
-   replaces the old top-right .top-controls stack. flex-wrap lets it degrade
-   gracefully at 360-430px instead of overflowing the viewport. */
-.control-bar {
+/* Two-row control area immediately above the timeline (§ FlyWeather
+   Interaction Model) - .bottom-controls is the sole absolutely-positioned
+   anchor (its measured height drives --bottom-controls-height, read by
+   .site-sheet/.rasp-legend below); .control-bar and .altitude-bar are its
+   two plain-flow rows. flex-wrap on .control-bar lets it degrade gracefully
+   at 360-430px instead of overflowing the viewport. */
+.bottom-controls {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 112px;
   z-index: 1000;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  flex-direction: column;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.1);
 }
 
-.height-mode-toggle,
-.map-mode-toggle,
+.control-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+}
+
+.altitude-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 .site-mode-toggle,
 .rasp-param-selector {
   display: inline-flex;
@@ -48,8 +62,6 @@
   overflow: hidden;
 }
 
-.height-mode-toggle button,
-.map-mode-toggle button,
 .site-mode-toggle button,
 .rasp-param-selector button {
   border: none;
@@ -61,18 +73,61 @@
   color: #444;
 }
 
-.height-mode-toggle button.active,
-.map-mode-toggle button.active,
 .site-mode-toggle button.active,
 .rasp-param-selector button.active {
   background: #1565c0;
   color: #fff;
 }
 
-.map-mode-toggle button:disabled,
 .rasp-param-selector button:disabled {
   color: #bbb;
   cursor: not-allowed;
+}
+
+/* One-tap reset to START (§ FlyWeather Interaction Model) - visually the
+   most prominent control in the bar, since it's the app's single way back
+   to live mode. Disabled (not hidden) once already in START state, mirroring
+   the old NOW button's convention. */
+.start-button {
+  border: none;
+  background: #1565c0;
+  color: #fff;
+  border-radius: 999px;
+  min-height: 40px;
+  padding: 0 18px;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.start-button:disabled {
+  background: #eee;
+  color: #aaa;
+}
+
+/* Nonlinear Surface-1500m slider (§ FlyWeather Interaction Model) - fills
+   the remaining width next to START; label is fixed-width-ish via
+   white-space:nowrap so the range input doesn't jitter as the label text
+   length changes between "Surface" and "1500 m AGL". */
+.altitude-slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.altitude-slider-range {
+  flex: 1;
+  min-width: 0;
+}
+
+.altitude-slider-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  white-space: nowrap;
 }
 
 /* 4 options need to fit narrow mobile widths where the 2-3 option toggles
@@ -169,11 +224,12 @@
 
 .rasp-legend {
   position: absolute;
-  /* Anchored above the control bar (real height measured in SiteMap.tsx,
-     same --control-bar-height variable as .site-sheet) rather than a fixed
-     128px - the bar wraps to multiple rows on narrow phones, which used to
-     grow tall enough to sit behind/hide this legend entirely. */
-  bottom: calc(112px + var(--control-bar-height, 0px) + 8px);
+  /* Anchored above the bottom controls (real height measured in
+     SiteMap.tsx, same --bottom-controls-height variable as .site-sheet)
+     rather than a fixed 128px - the bar wraps to multiple rows on narrow
+     phones, which used to grow tall enough to sit behind/hide this legend
+     entirely. */
+  bottom: calc(112px + var(--bottom-controls-height, 0px) + 8px);
   left: 12px;
   z-index: 500;
   background: rgba(255, 255, 255, 0.95);
@@ -244,11 +300,11 @@
   position: absolute;
   left: 0;
   right: 0;
-  /* Anchored above the control bar (its real height is measured in
+  /* Anchored above the bottom controls (their real height is measured in
      SiteMap.tsx, since it varies with content) rather than directly above
      the timeline - otherwise the sheet's z-index would either bury the
-     bar's controls or the bar would sit as a dead strip over the sheet. */
-  bottom: calc(112px + var(--control-bar-height, 0px));
+     controls or they'd sit as a dead strip over the sheet. */
+  bottom: calc(112px + var(--bottom-controls-height, 0px));
   max-height: 55%;
   overflow-y: auto;
   background: #fff;
@@ -313,21 +369,6 @@
 .time-slider-label {
   font-weight: 700;
   font-size: 15px;
-}
-
-.time-slider-now-button {
-  border: 1px solid #1565c0;
-  color: #1565c0;
-  background: #fff;
-  border-radius: 999px;
-  min-height: 44px;
-  padding: 0 18px;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.time-slider-now-button:disabled {
-  opacity: 0.4;
 }
 
 .time-slider-range {

@@ -10,10 +10,12 @@ import { selectEffectiveSample, provenanceLine, type EffectiveSample } from "../
 import { interpolateWindAtHeight } from "../../domain/heightInterpolation.ts";
 import { WindRose } from "../WindRose/index.ts";
 import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
-import { HeightModeToggle, type HeightMode } from "../HeightModeToggle/HeightModeToggle.tsx";
+import { AltitudeSlider } from "../AltitudeSlider/AltitudeSlider.tsx";
+import { StartButton } from "../StartButton/StartButton.tsx";
 import { SiteModeToggle, type SiteMode } from "../SiteModeToggle/SiteModeToggle.tsx";
 import { AirspaceToggle } from "../AirspaceToggle/AirspaceToggle.tsx";
 import { WindToggle } from "../WindToggle/WindToggle.tsx";
+import { RoadsToggle } from "../RoadsToggle/RoadsToggle.tsx";
 import { RaspToggle } from "../RaspToggle/RaspToggle.tsx";
 import { RaspParamSelector } from "../RaspParamSelector/RaspParamSelector.tsx";
 import { ParameterLegend } from "../ParameterLegend/ParameterLegend.tsx";
@@ -22,8 +24,7 @@ import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
 import { MapLibreMap } from "./MapLibreMap.tsx";
 import { MapMarker } from "./MapMarker.tsx";
-import { MapModeToggle } from "./MapModeToggle.tsx";
-import { buildStyleForMode, type MapMode } from "./mapStyles.ts";
+import { buildStyleForRoads } from "./mapStyles.ts";
 import { useSiteForecasts } from "../../app/useSiteForecasts.ts";
 import { useLiveData } from "../../app/useLiveData.ts";
 import { useWindGrid } from "../../app/useWindGrid.ts";
@@ -35,6 +36,7 @@ import { findNearestValidTime, findFileForValidTime, RASP_PARAM_KEYS, type RaspP
 const MARKER_SIZE = 48;
 const SELECTED_MARKER_SIZE = 60;
 const SURFACE_HEIGHT_M = 10;
+const SURFACE_ALTITUDE_M = 0;
 const ARROW_SIZE = 39; // 1.5x the original 26px, per user feedback
 
 // Forecast/wind-grid data is now published every ~5 minutes by
@@ -88,18 +90,15 @@ interface ForecastPoint {
 }
 
 /**
- * Surface mode always reads the 10m series. Soaring mode interpolates
- * across the discrete model heights to the site's configured
- * soaring_height.agl_m (§7.2); a site with no configured height shows
- * unsupported (null data), never silently falling back to surface (§7.2,
- * Block 7 DoD).
+ * altitudeM === 0 (Surface) always reads the 10m series. Any other value
+ * interpolates across the discrete model heights (§ FlyWeather Interaction
+ * Model - replaces the old per-site soaring_height.agl_m gate with one
+ * global altitude shared by every site). heightSupported now reflects
+ * genuine data availability for this hour, not a per-site curation flag -
+ * `interpolateWindAtHeight` already clamps non-extrapolating and reports
+ * the real effective height when altitudeM exceeds the data's real ceiling.
  */
-function forecastPointAt(
-  forecast: SiteForecast | undefined,
-  index: number,
-  mode: HeightMode,
-  soaringHeightAglM: number | null,
-): ForecastPoint {
+function forecastPointAt(forecast: SiteForecast | undefined, index: number, altitudeM: number): ForecastPoint {
   const weatherKind = forecast?.weatherKind[index] ?? "unknown";
 
   if (!forecast || index < 0 || index >= forecast.hours.length) {
@@ -109,11 +108,11 @@ function forecastPointAt(
       windGustMs: null,
       weatherKind,
       effectiveHeightM: null,
-      heightSupported: mode === "surface",
+      heightSupported: altitudeM === SURFACE_ALTITUDE_M,
     };
   }
 
-  if (mode === "surface") {
+  if (altitudeM === SURFACE_ALTITUDE_M) {
     return {
       windDirectionDeg: forecast.heights[SURFACE_HEIGHT_M].windDirectionDeg[index] ?? null,
       windSpeedMs: forecast.heights[SURFACE_HEIGHT_M].windSpeedMs[index] ?? null,
@@ -124,30 +123,19 @@ function forecastPointAt(
     };
   }
 
-  if (soaringHeightAglM === null) {
-    return {
-      windDirectionDeg: null,
-      windSpeedMs: null,
-      windGustMs: null,
-      weatherKind,
-      effectiveHeightM: null,
-      heightSupported: false,
-    };
-  }
-
   const samples = MODEL_HEIGHTS_M.map((h) => ({
     heightM: h,
     windDirectionDeg: forecast.heights[h].windDirectionDeg[index] ?? null,
     windSpeedMs: forecast.heights[h].windSpeedMs[index] ?? null,
   }));
-  const interpolated = interpolateWindAtHeight(soaringHeightAglM, samples);
+  const interpolated = interpolateWindAtHeight(altitudeM, samples);
   return {
     windDirectionDeg: interpolated.windDirectionDeg,
     windSpeedMs: interpolated.windSpeedMs,
     windGustMs: null, // gust isn't modeled at height, only at surface
     weatherKind,
     effectiveHeightM: interpolated.effectiveHeightM,
-    heightSupported: true,
+    heightSupported: interpolated.effectiveHeightM !== null,
   };
 }
 
@@ -191,40 +179,61 @@ export interface SiteMapProps {
 export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sliderIndex, setSliderIndex] = useState(0);
-  const [heightMode, setHeightMode] = useState<HeightMode>("surface");
-  const [mapMode, setMapMode] = useState<MapMode>("relief");
+  const [altitudeM, setAltitudeM] = useState(SURFACE_ALTITUDE_M);
+  // Sticky, not derived: the task is explicit that scrubbing the sliders
+  // back to their start values does NOT re-enter live mode on its own -
+  // only pressing START does. See handleStart/handleTimeChange/
+  // handleAltitudeChange below.
+  const [isLiveMode, setIsLiveMode] = useState(true);
   const [siteMode, setSiteMode] = useState<SiteMode>("soaring");
   const [showAirspace, setShowAirspace] = useState(false);
   const [showWind, setShowWind] = useState(true);
+  const [showRoads, setShowRoads] = useState(false);
   const [showRasp, setShowRasp] = useState(false);
   const [selectedRaspParam, setSelectedRaspParam] = useState<RaspParamKey>("wstar");
-  // The control bar's real height varies (RASP param selector appearing,
-  // provenance text wrapping to its own line on narrow screens) - measured
-  // rather than guessed so SiteSheet can anchor itself just above it
-  // instead of sliding underneath and becoming unclickable (found via an
-  // E2E diagnostic: height-mode.spec.ts's "toggle height mode while the
-  // sheet is open" flow silently failed once both moved to the same
-  // bottom-of-screen area, § FlyWeather Next UI).
-  const controlBarRef = useRef<HTMLDivElement>(null);
-  const [controlBarHeight, setControlBarHeight] = useState(0);
+  // The bottom controls' real height varies (RASP param selector
+  // appearing, provenance text wrapping to its own line on narrow
+  // screens) - measured rather than guessed so SiteSheet/ParameterLegend
+  // can anchor themselves just above it instead of sliding underneath and
+  // becoming unclickable (found via an E2E diagnostic in the prior
+  // milestone; this wrapper now covers both control rows).
+  const bottomControlsRef = useRef<HTMLDivElement>(null);
+  const [bottomControlsHeight, setBottomControlsHeight] = useState(0);
   useEffect(() => {
-    const el = controlBarRef.current;
+    const el = bottomControlsRef.current;
     if (!el) return;
-    const observer = new ResizeObserver((entries) => setControlBarHeight(entries[0].contentRect.height));
+    const observer = new ResizeObserver((entries) => setBottomControlsHeight(entries[0].contentRect.height));
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  function handleTimeChange(index: number) {
+    setSliderIndex(index);
+    if (index !== 0) setIsLiveMode(false);
+  }
+
+  function handleAltitudeChange(m: number) {
+    setAltitudeM(m);
+    if (m !== SURFACE_ALTITUDE_M) setIsLiveMode(false);
+  }
+
+  function handleStart() {
+    setIsLiveMode(true);
+    setSliderIndex(0);
+    setAltitudeM(SURFACE_ALTITUDE_M);
+  }
+
   // Bounds/fit are computed from the full located set regardless of
-  // siteMode, same "no map jump" principle as heightMode/mapMode -
-  // switching to Winch never recenters the map just because that set is
-  // currently empty (neither winch-brandstad nor winch-urasa has a
-  // usable coordinate yet - see docs/SITE_DATA_AUDIT.md).
+  // siteMode, same "no map jump" principle as altitude/roads - switching
+  // to Winch never recenters the map just because that set is currently
+  // empty (neither winch-brandstad nor winch-urasa has a usable
+  // coordinate yet - see docs/SITE_DATA_AUDIT.md).
   const bounds = useMemo(() => computeSiteBounds(sites), [sites]);
   const visibleSites = useMemo(
     () => sites.filter((s) => (siteMode === "winch" ? s.type === "winch" : s.type !== "winch")),
     [sites, siteMode],
   );
-  const mapStyle = useMemo(() => buildStyleForMode(mapMode), [mapMode]);
+  const mapStyle = useMemo(() => buildStyleForRoads(showRoads), [showRoads]);
   // Scoped to visibleSites, not the full sites list, so a selection from
   // the other siteMode's marker set doesn't leave a stale sheet open
   // for a site no longer shown on the map.
@@ -241,7 +250,6 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
     () => (prefersReducedMotion ? subsampleForStaticDisplay(windGridPoints, REDUCED_MOTION_STRIDE) : []),
     [prefersReducedMotion, windGridPoints],
   );
-  const isNow = sliderIndex === 0;
 
   const { manifest: soaringManifest, loading: soaringLoading, error: soaringError } = useSoaringManifest();
   // Whichever of the 4 RASP parameters is currently selected - the manifest
@@ -288,13 +296,14 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   ];
 
   function effectiveSampleFor(site: LocatedSite) {
-    const point = forecastPointAt(forecastsBySiteId[site.id], sliderIndex, heightMode, site.soaring_height.agl_m);
+    const point = forecastPointAt(forecastsBySiteId[site.id], sliderIndex, altitudeM);
     const liveEntry = liveData?.sites[site.id];
-    // A surface anemometer never stands in for wind aloft (§7.2) - live
-    // observations only apply in Surface mode.
+    // A surface anemometer never stands in for wind aloft (§7.2), and live
+    // observations only ever apply once the user is actually in START/live
+    // mode - not merely because the slider happens to be back at index 0.
     const liveSample: WindSample | null =
-      heightMode === "surface" && liveEntry?.status === "ok" ? liveEntry.sample : null;
-    const sample = selectEffectiveSample(isNow, liveSample, point, new Date(), freshMinutes, staleMinutes);
+      altitudeM === SURFACE_ALTITUDE_M && isLiveMode && liveEntry?.status === "ok" ? liveEntry.sample : null;
+    const sample = selectEffectiveSample(isLiveMode, liveSample, point, new Date(), freshMinutes, staleMinutes);
     const effectiveHeightM = sample.sourceKind === "observation" ? SURFACE_HEIGHT_M : point.effectiveHeightM;
     return { sample, weatherKind: point.weatherKind, effectiveHeightM, heightSupported: point.heightSupported };
   }
@@ -305,24 +314,29 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
     <div
       className="site-map-container"
       data-testid="site-map"
-      style={{ "--control-bar-height": `${controlBarHeight}px` } as React.CSSProperties}
+      style={{ "--bottom-controls-height": `${bottomControlsHeight}px` } as React.CSSProperties}
     >
-      <div className="control-bar" data-testid="control-bar" ref={controlBarRef}>
-        <MapModeToggle mode={mapMode} onChange={setMapMode} availableModes={["relief", "topo", "map"]} />
-        <HeightModeToggle mode={heightMode} onChange={setHeightMode} />
-        <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
-        <AirspaceToggle show={showAirspace} onChange={setShowAirspace} />
-        <WindToggle show={showWind} onChange={setShowWind} />
-        <RaspToggle show={showRasp} onChange={setShowRasp} />
-        {showRasp && (
-          <RaspParamSelector
-            selected={selectedRaspParam}
-            onChange={setSelectedRaspParam}
-            availableParams={availableRaspParams}
-          />
-        )}
-        <div className="control-bar-provenance" data-testid="provenance-line">
-          {provenanceLine(isNow)}
+      <div className="bottom-controls" data-testid="bottom-controls" ref={bottomControlsRef}>
+        <div className="control-bar" data-testid="control-bar">
+          <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
+          <RaspToggle show={showRasp} onChange={setShowRasp} />
+          <AirspaceToggle show={showAirspace} onChange={setShowAirspace} />
+          <WindToggle show={showWind} onChange={setShowWind} />
+          <RoadsToggle show={showRoads} onChange={setShowRoads} />
+          {showRasp && (
+            <RaspParamSelector
+              selected={selectedRaspParam}
+              onChange={setSelectedRaspParam}
+              availableParams={availableRaspParams}
+            />
+          )}
+          <div className="control-bar-provenance" data-testid="provenance-line">
+            {provenanceLine(isLiveMode)}
+          </div>
+        </div>
+        <div className="altitude-bar" data-testid="altitude-bar">
+          <StartButton isLiveMode={isLiveMode} onStart={handleStart} />
+          <AltitudeSlider altitudeM={altitudeM} onChange={handleAltitudeChange} />
         </div>
       </div>
       {visibleSites.length === 0 && (
@@ -355,13 +369,14 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         style={mapStyle}
         bounds={maplibreBounds}
         // Bottom padding keeps fitted markers clear of the persistent
-        // 112px time-slider bar PLUS the compact control bar now sitting
-        // directly above it (App.css's .time-slider/.control-bar heights)
-        // so they never land unclickable behind either - found via an E2E
-        // diagnostic during the MapLibre port (112px case) and again when
-        // the control bar moved from top-right to bottom (§ FlyWeather
-        // Next UI), not just a cosmetic choice.
-        boundsPadding={{ top: 40, bottom: 210, left: 40, right: 40 }}
+        // 112px time-slider bar PLUS the two-row bottom controls now
+        // sitting directly above it (App.css's .time-slider/.bottom-controls
+        // heights) so they never land unclickable behind either - found via
+        // an E2E diagnostic during the MapLibre port (112px case) and again
+        // when the control bar moved from top-right to bottom (§ FlyWeather
+        // Next UI), not just a cosmetic choice. The bar grew a second row
+        // this milestone (altitude slider), so the reserve grew with it.
+        boundsPadding={{ top: 40, bottom: 260, left: 40, right: 40 }}
         maxZoom={12}
         showAirspace={showAirspace}
         raspOverlay={raspOverlay}
@@ -416,14 +431,13 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         <SiteSheet
           site={selectedSite}
           sample={{ ...selectedResult.sample, weatherKind: selectedResult.weatherKind }}
-          heightMode={heightMode}
           effectiveHeightM={selectedResult.effectiveHeightM}
           heightSupported={selectedResult.heightSupported}
           selectedTimestamp={hours[sliderIndex] ?? null}
           onClose={() => setSelectedId(null)}
         />
       )}
-      <TimeSlider hours={hours} selectedIndex={sliderIndex} onChange={setSliderIndex} />
+      <TimeSlider hours={hours} selectedIndex={sliderIndex} onChange={handleTimeChange} />
     </div>
   );
 }

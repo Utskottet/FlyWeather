@@ -23,7 +23,7 @@ test.describe("Animated wind particle field", () => {
     expect(Buffer.compare(frame1, frame2)).not.toBe(0);
   });
 
-  test("survives RELIEF -> TOPO -> MAP switches (re-added each time, no leftover stale layer)", async ({
+  test("survives ROADS on/off basemap switches (re-added each time, no leftover stale layer)", async ({
     page,
   }) => {
     await page.goto("/");
@@ -32,8 +32,10 @@ test.describe("Animated wind particle field", () => {
       .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
       .toBe(true);
 
-    for (const label of ["Topo", "Map", "Relief"]) {
-      await page.getByRole("button", { name: label, exact: true }).click();
+    // ROADS off -> Relief, ROADS on -> Topo (§ FlyWeather Interaction Model) -
+    // two toggles exercise both basemap swaps the old 3-way selector did.
+    for (let i = 0; i < 2; i++) {
+      await page.getByTestId("roads-toggle").click();
       await expect
         .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
         .toBe(true);

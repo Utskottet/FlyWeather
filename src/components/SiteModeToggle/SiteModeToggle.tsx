@@ -14,7 +14,7 @@ export function SiteModeToggle({ mode, onChange }: SiteModeToggleProps) {
         onClick={() => onChange("soaring")}
         data-testid="site-mode-soaring"
       >
-        Soaring
+        Ridge
       </button>
       <button
         type="button"

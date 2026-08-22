@@ -19,7 +19,6 @@ describe("TimeSlider", () => {
       <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
     );
     expect(getByTestId("time-slider-label").textContent).toBe("NOW");
-    expect((getByTestId("time-slider-now-button") as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("calls onChange with the new index when the range input moves", () => {
@@ -29,15 +28,6 @@ describe("TimeSlider", () => {
     );
     fireEvent.change(getByTestId("time-slider-range"), { target: { value: "6" } });
     expect(onChange).toHaveBeenCalledWith(6);
-  });
-
-  it("jumps back to index 0 when the NOW button is clicked", () => {
-    const onChange = vi.fn();
-    const { getByTestId } = render(
-      <TimeSlider hours={hoursFromNow(73)} selectedIndex={10} onChange={onChange} />,
-    );
-    fireEvent.click(getByTestId("time-slider-now-button"));
-    expect(onChange).toHaveBeenCalledWith(0);
   });
 
   it("caps the range input's max at the available hours", () => {

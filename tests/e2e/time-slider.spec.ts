@@ -59,7 +59,7 @@ test.describe("Time slider", () => {
     // no additional forecast-file requests should have fired for slider movement alone
     expect(forecastFileRequestCount).toBe(countAfterLoad);
 
-    await page.getByTestId("time-slider-now-button").click();
+    await page.getByTestId("start-button").click();
     await expect(label).toHaveText("NOW");
   });
 
