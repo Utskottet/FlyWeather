@@ -23,16 +23,19 @@ test.describe("Altitude slider + START (§ FlyWeather Interaction Model)", () =>
     const startButton = page.getByTestId("start-button");
     const altitudeLabel = page.getByTestId("altitude-slider-label");
     const provenance = page.getByTestId("provenance-line");
-    await expect(startButton).toBeDisabled();
+    // Never disabled (§ FlyWeather Mobile UI Correction) - START stays
+    // clickable at all times; aria-pressed conveys "you are here now".
+    await expect(startButton).toBeEnabled();
+    await expect(startButton).toHaveAttribute("aria-pressed", "true");
     await expect(altitudeLabel).toHaveText("Surface");
     await expect(provenance).toHaveText("Sites: live · Map/RASP: forecast");
 
-    // f=0.5 round-trips to exactly 150m (tests/unit/altitudeAxis.test.ts).
-    await page.getByTestId("altitude-slider-range").fill("0.5");
-    await expect(altitudeLabel).toHaveText("150 m AGL");
+    // f=0.55 round-trips to exactly 70m (tests/unit/altitudeAxis.test.ts).
+    await page.getByTestId("altitude-slider-range").fill("0.55");
+    await expect(altitudeLabel).toHaveText("70 m AGL");
     await expect(heightFact).not.toContainText("10 m AGL");
     await expect(provenance).toHaveText("Sites, map & RASP: forecast");
-    await expect(startButton).toBeEnabled();
+    await expect(startButton).toHaveAttribute("aria-pressed", "false");
 
     const viewAfter = await page.evaluate(() => {
       const m = window.__flyweatherMap!;
@@ -45,7 +48,19 @@ test.describe("Altitude slider + START (§ FlyWeather Interaction Model)", () =>
     await expect(altitudeLabel).toHaveText("Surface");
     await expect(heightFact).toContainText("10 m AGL");
     await expect(provenance).toHaveText("Sites: live · Map/RASP: forecast");
-    await expect(startButton).toBeDisabled();
+    await expect(startButton).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("altitude slider never offers a value above the real 180m data ceiling", async ({ page }) => {
+    await page.goto("/");
+    const markers = page.locator(".rose-marker-icon");
+    await markers.first().waitFor();
+    await page.waitForTimeout(1500);
+
+    const range = page.getByTestId("altitude-slider-range");
+    await expect(range).toHaveAttribute("max", "1");
+    await range.fill("1"); // the slider's own max
+    await expect(page.getByTestId("altitude-slider-label")).toHaveText("180 m AGL");
   });
 
   test("START also resets time, and moving time alone exits live mode", async ({ page }) => {
@@ -55,16 +70,16 @@ test.describe("Altitude slider + START (§ FlyWeather Interaction Model)", () =>
 
     const startButton = page.getByTestId("start-button");
     const provenance = page.getByTestId("provenance-line");
-    await expect(startButton).toBeDisabled();
+    await expect(startButton).toHaveAttribute("aria-pressed", "true");
 
     await range.fill("6");
     await expect(page.getByTestId("time-slider-label")).not.toHaveText("NOW");
     await expect(provenance).toHaveText("Sites, map & RASP: forecast");
-    await expect(startButton).toBeEnabled();
+    await expect(startButton).toHaveAttribute("aria-pressed", "false");
 
     await startButton.click();
     await expect(page.getByTestId("time-slider-label")).toHaveText("NOW");
     await expect(provenance).toHaveText("Sites: live · Map/RASP: forecast");
-    await expect(startButton).toBeDisabled();
+    await expect(startButton).toHaveAttribute("aria-pressed", "true");
   });
 });

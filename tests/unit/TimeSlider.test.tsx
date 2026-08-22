@@ -16,7 +16,7 @@ function hoursFromNow(count: number): string[] {
 describe("TimeSlider", () => {
   it("shows NOW at index 0", () => {
     const { getByTestId } = render(
-      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
+      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} statusText="Sites: live · Map/RASP: forecast" />,
     );
     expect(getByTestId("time-slider-label").textContent).toBe("NOW");
   });
@@ -24,7 +24,7 @@ describe("TimeSlider", () => {
   it("calls onChange with the new index when the range input moves", () => {
     const onChange = vi.fn();
     const { getByTestId } = render(
-      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={onChange} />,
+      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={onChange} statusText="Sites: live · Map/RASP: forecast" />,
     );
     fireEvent.change(getByTestId("time-slider-range"), { target: { value: "6" } });
     expect(onChange).toHaveBeenCalledWith(6);
@@ -32,21 +32,21 @@ describe("TimeSlider", () => {
 
   it("caps the range input's max at the available hours", () => {
     const { getByTestId } = render(
-      <TimeSlider hours={hoursFromNow(10)} selectedIndex={0} onChange={() => {}} />,
+      <TimeSlider hours={hoursFromNow(10)} selectedIndex={0} onChange={() => {}} statusText="Sites: live · Map/RASP: forecast" />,
     );
     expect(getByTestId("time-slider-range").getAttribute("max")).toBe("9");
   });
 
   it("renders one graduation tick per hour across the full range (Block 12)", () => {
     const { container } = render(
-      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
+      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} statusText="Sites: live · Map/RASP: forecast" />,
     );
     expect(container.querySelectorAll(".time-slider-tick")).toHaveLength(73);
   });
 
   it("renders at least one day-boundary tick with a weekday label across 73 hours", () => {
     const { getByTestId, container } = render(
-      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
+      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} statusText="Sites: live · Map/RASP: forecast" />,
     );
     expect(getByTestId("time-slider-ticks")).toBeTruthy();
     const dayTicks = container.querySelectorAll(".time-slider-tick-day");
@@ -63,14 +63,14 @@ describe("TimeSlider NOW marker", () => {
     const hours = hoursFromNow(73); // built from the faked "now", so hours[0] = 12:00Z
 
     const { getByTestId, rerender } = render(
-      <TimeSlider hours={hours} selectedIndex={0} onChange={() => {}} />,
+      <TimeSlider hours={hours} selectedIndex={0} onChange={() => {}} statusText="Sites: live · Map/RASP: forecast" />,
     );
     const marker = () => (getByTestId("time-slider-now-marker") as HTMLElement).style.left;
     expect(marker()).toBe("0%"); // now == hours[0] exactly
 
     // Moving the selection alone must never move the NOW marker - it's a
     // real-clock position, not a function of what's selected.
-    rerender(<TimeSlider hours={hours} selectedIndex={40} onChange={() => {}} />);
+    rerender(<TimeSlider hours={hours} selectedIndex={40} onChange={() => {}} statusText="Sites: live · Map/RASP: forecast" />);
     expect(marker()).toBe("0%");
   });
 
@@ -80,7 +80,7 @@ describe("TimeSlider NOW marker", () => {
     const hours = hoursFromNow(73);
     const onChange = vi.fn();
 
-    const { getByTestId } = render(<TimeSlider hours={hours} selectedIndex={5} onChange={onChange} />);
+    const { getByTestId } = render(<TimeSlider hours={hours} selectedIndex={5} onChange={onChange} statusText="Sites: live · Map/RASP: forecast" />);
     const markerLeft = () => parseFloat((getByTestId("time-slider-now-marker") as HTMLElement).style.left);
     const initial = markerLeft();
     expect(initial).toBeCloseTo(0, 5);
@@ -95,7 +95,7 @@ describe("TimeSlider NOW marker", () => {
   });
 
   it("does not render a NOW marker when there's no hour data yet", () => {
-    const { queryByTestId } = render(<TimeSlider hours={[]} selectedIndex={0} onChange={() => {}} />);
+    const { queryByTestId } = render(<TimeSlider hours={[]} selectedIndex={0} onChange={() => {}} statusText="Sites: live · Map/RASP: forecast" />);
     expect(queryByTestId("time-slider-now-marker")).toBeNull();
   });
 });
@@ -103,7 +103,7 @@ describe("TimeSlider NOW marker", () => {
 describe("TimeSlider day/night sky band", () => {
   it("renders a real gradient background, not a flat placeholder", () => {
     const { getByTestId } = render(
-      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
+      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} statusText="Sites: live · Map/RASP: forecast" />,
     );
     const band = getByTestId("time-slider-sky-band") as HTMLElement;
     expect(band.style.background).toContain("linear-gradient");
@@ -111,7 +111,7 @@ describe("TimeSlider day/night sky band", () => {
 
   it("renders numeric hour labels at six-hour ticks, e.g. 06/12/18", () => {
     const { container } = render(
-      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
+      <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} statusText="Sites: live · Map/RASP: forecast" />,
     );
     const hourLabels = Array.from(container.querySelectorAll(".time-slider-tick-hour-label")).map(
       (el) => el.textContent,
@@ -123,7 +123,7 @@ describe("TimeSlider day/night sky band", () => {
   });
 
   it("shows transparent (no band) rather than crashing when there's no hour data", () => {
-    const { getByTestId } = render(<TimeSlider hours={[]} selectedIndex={0} onChange={() => {}} />);
+    const { getByTestId } = render(<TimeSlider hours={[]} selectedIndex={0} onChange={() => {}} statusText="Sites: live · Map/RASP: forecast" />);
     const band = getByTestId("time-slider-sky-band") as HTMLElement;
     expect(band.style.background).toBe("transparent");
   });

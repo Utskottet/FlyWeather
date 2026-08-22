@@ -17,7 +17,6 @@ import { AirspaceToggle } from "../AirspaceToggle/AirspaceToggle.tsx";
 import { WindToggle } from "../WindToggle/WindToggle.tsx";
 import { RoadsToggle } from "../RoadsToggle/RoadsToggle.tsx";
 import { RaspToggle } from "../RaspToggle/RaspToggle.tsx";
-import { RaspParamSelector } from "../RaspParamSelector/RaspParamSelector.tsx";
 import { ParameterLegend } from "../ParameterLegend/ParameterLegend.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { WindArrow } from "../WindArrowField/index.ts";
@@ -323,16 +322,6 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
           <AirspaceToggle show={showAirspace} onChange={setShowAirspace} />
           <WindToggle show={showWind} onChange={setShowWind} />
           <RoadsToggle show={showRoads} onChange={setShowRoads} />
-          {showRasp && (
-            <RaspParamSelector
-              selected={selectedRaspParam}
-              onChange={setSelectedRaspParam}
-              availableParams={availableRaspParams}
-            />
-          )}
-          <div className="control-bar-provenance" data-testid="provenance-line">
-            {provenanceLine(isLiveMode)}
-          </div>
         </div>
         <div className="altitude-bar" data-testid="altitude-bar">
           <StartButton isLiveMode={isLiveMode} onStart={handleStart} />
@@ -363,6 +352,11 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
           unit={selectedParameter.unit}
           colorScale={selectedParameter.colorScale}
           provenance={`${soaringManifest.source.provider} ${soaringManifest.source.model} · model run ${new Date(soaringManifest.source.modelRun).toISOString().slice(0, 16).replace("T", " ")}Z`}
+          paramSelector={{
+            selected: selectedRaspParam,
+            onChange: setSelectedRaspParam,
+            availableParams: availableRaspParams,
+          }}
         />
       )}
       <MapLibreMap
@@ -437,7 +431,12 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
           onClose={() => setSelectedId(null)}
         />
       )}
-      <TimeSlider hours={hours} selectedIndex={sliderIndex} onChange={handleTimeChange} />
+      <TimeSlider
+        hours={hours}
+        selectedIndex={sliderIndex}
+        onChange={handleTimeChange}
+        statusText={provenanceLine(isLiveMode)}
+      />
     </div>
   );
 }

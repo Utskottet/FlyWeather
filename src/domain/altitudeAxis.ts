@@ -2,17 +2,22 @@ import { MODEL_HEIGHTS_M } from "./types.ts";
 
 /**
  * The real ceiling of per-site wind-at-height data (Open-Meteo's hourly
- * API only exposes 10/80/120/180m AGL - see openMeteoProvider.ts). The
- * altitude slider intentionally goes higher than this (to 1500m, per the
- * task's own suggested breakpoints) so requests above this must be
- * honestly disclosed as clamped, never silently fabricated.
+ * API only exposes 10/80/120/180m AGL - see openMeteoProvider.ts).
+ *
+ * The slider's own max (below) is capped at exactly this value (§
+ * FlyWeather Mobile UI Correction) - a prior version let the slider run to
+ * 1500m and silently/verbosely fell back to 180m data above that, which
+ * the task called out as misleading. There is nothing above this to
+ * select until real DMI vertical-wind products exist, so it's simply not
+ * offered.
  */
 export const ALTITUDE_MAX_REAL_DATA_M = Math.max(...MODEL_HEIGHTS_M);
 
 /** 0 = Surface, the slider's special endpoint - never passed through the piecewise segments below. */
 export const SURFACE_ALTITUDE_M = 0;
 
-export const ALTITUDE_SLIDER_MAX_M = 1500;
+/** The slider never offers more than genuinely exists - see ALTITUDE_MAX_REAL_DATA_M above. */
+export const ALTITUDE_SLIDER_MAX_M = ALTITUDE_MAX_REAL_DATA_M;
 
 interface AltitudeSegment {
   fFrom: number;
@@ -22,16 +27,17 @@ interface AltitudeSegment {
 }
 
 /**
- * Nonlinear slider mapping (§ FlyWeather Interaction Model): low altitudes
- * get a large physical portion of the slider for fine control (40/50/70/
- * 100m must all be easily dialable), higher altitudes compress into a
- * smaller portion. Segments meet exactly at their shared boundaries so the
- * mapping is continuous, not just piecewise-plausible.
+ * Nonlinear slider mapping (§ FlyWeather Interaction Model, re-tuned for
+ * the 180m cap in the Mobile UI Correction pass): low altitudes get a
+ * large physical portion of the slider for fine control (40/50/70m must
+ * all be easily dialable), the 120/180m end of the real range compresses
+ * into a smaller portion. Segments meet exactly at their shared boundaries
+ * so the mapping is continuous, not just piecewise-plausible.
  */
 const SEGMENTS: AltitudeSegment[] = [
-  { fFrom: 0.0, fTo: 0.5, mFrom: 0, mTo: 150 },
-  { fFrom: 0.5, fTo: 0.8, mFrom: 150, mTo: 500 },
-  { fFrom: 0.8, fTo: 1.0, mFrom: 500, mTo: ALTITUDE_SLIDER_MAX_M },
+  { fFrom: 0.0, fTo: 0.55, mFrom: 0, mTo: 70 },
+  { fFrom: 0.55, fTo: 0.8, mFrom: 70, mTo: 120 },
+  { fFrom: 0.8, fTo: 1.0, mFrom: 120, mTo: ALTITUDE_SLIDER_MAX_M },
 ];
 
 const ALTITUDE_ROUNDING_M = 5;

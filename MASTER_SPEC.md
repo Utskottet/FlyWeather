@@ -186,15 +186,28 @@ The map marker and expanded rose must use the same underlying component / geomet
 
 ## 2.5 Adaptive weather/speed placement (current, authoritative)
 
+> **Correction (§ FlyWeather Mobile UI Correction milestone):** the
+> FlyWeather Next UI milestone's original version of this section placed
+> the weather graphic at a **continuous** angle (`sectorMidpointDeg(sector)
+> + 180°`, anywhere on the ring). Follow-up feedback was that this reads as
+> an object "orbiting" the rose rather than a deliberately designed marker.
+> The rule below is corrected: weather now snaps to the **nearest of 4
+> fixed diagonal presets** (upper-right/lower-right/lower-left/upper-left -
+> `WEATHER_ANGLE_PRESETS = [45, 135, 225, 315]` in `WindRose.tsx`), chosen
+> by which of those 4 corners is closest to the old continuous target
+> angle. Do not re-introduce continuous/free-angle placement.
+
 Added in the FlyWeather Next UI milestone, on top of the single-sector
 model in the note at the top of §2 - this is the current source of truth
 for where the weather graphic and speed number sit inside the rose.
 
-- The weather graphic is centered at `sectorMidpointDeg(sector) + 180°`
-  (the point on the ring farthest from the colored sector) - computed via
-  `src/domain/direction.ts`'s existing wraparound-safe
-  `sectorMidpointDeg`/`polarToCartesian` helpers, not new angle math.
-  It is **translated only, never rotated**.
+- The weather graphic's *candidate* angle is `sectorMidpointDeg(sector) +
+  180°` (the point on the ring farthest from the colored sector), computed
+  via `src/domain/direction.ts`'s existing wraparound-safe
+  `sectorMidpointDeg`/`polarToCartesian` helpers - but the graphic is then
+  placed at whichever of the 4 fixed presets above is nearest that
+  candidate angle, not the candidate angle itself. It is **translated
+  only, never rotated**.
 - With no sector configured (`sector === null`), it falls back to the
   original fixed above-center position - there is nothing to avoid.
 - The graphic is sized to roughly 35-40% of the rose's diameter (bold,
@@ -211,7 +224,7 @@ for where the weather graphic and speed number sit inside the rose.
 - Reference: `uploads/wind-sector-rose.html` is the visual authority for
   the rose's transparency/sector/pointer/weather+speed *composition*, but
   its fixed weather-above/speed-below placement is superseded by the
-  adaptive placement described here.
+  adaptive (preset-based) placement described here.
 
 ---
 
@@ -397,17 +410,26 @@ For future positions:
 # 7. Height mode
 
 > **Current, authoritative design note (FlyWeather Interaction Model
-> milestone):** The binary Surface/Soaring-height switch below is
-> **obsolete** - replaced by a single nonlinear altitude slider running
-> Surface -> 1500 m AGL (`AltitudeSlider.tsx` / `domain/altitudeAxis.ts`),
-> shared globally across sites rather than each site's own
-> `soaring_height.agl_m`. The underlying principles below still hold
-> (Surface uses live/10m-model wind, other altitudes interpolate model
-> data, never silently show surface wind as wind aloft) - only the *control
-> shape* and *per-site vs. global* height source changed. Also see the new
-> START button: moving the altitude slider above Surface now auto-enters
-> Forecast mode, and START is the only way back to Surface + live wind
-> together (superseding the standalone NOW button in §15.1 below).
+> milestone, altitude cap corrected in FlyWeather Mobile UI Correction):**
+> The binary Surface/Soaring-height switch below is **obsolete** - replaced
+> by a single nonlinear altitude slider (`AltitudeSlider.tsx` /
+> `domain/altitudeAxis.ts`), shared globally across sites rather than each
+> site's own `soaring_height.agl_m`. The slider's max is capped at
+> **exactly 180 m AGL** (`ALTITUDE_MAX_REAL_DATA_M`, Open-Meteo's real
+> data ceiling) - an earlier version of this slider ran to 1500m and
+> silently/verbosely fell back to 180m data above that, which was
+> corrected as misleading; there is nothing above 180m to select until
+> real DMI vertical-wind products exist, so don't offer it. The underlying
+> principles below still hold (Surface uses live/10m-model wind, other
+> altitudes interpolate model data, never silently show surface wind as
+> wind aloft) - only the *control shape*, *per-site vs. global* height
+> source, and *max altitude* changed. Also see the new START button:
+> moving the altitude slider above Surface now auto-enters Forecast mode,
+> and START is the only way back to Surface + live wind together
+> (superseding the standalone NOW button in §15.1 below). START is never
+> disabled - it shows an active/pressed state at Surface+NOW and stays
+> tappable (a no-op) the rest of the time, per the FlyWeather Mobile UI
+> Correction milestone.
 
 Global two-state control:
 
@@ -683,19 +705,38 @@ No heavy backend framework in V1.
 # 15. Main mobile UI
 
 > **Current, authoritative design note (FlyWeather Interaction Model
-> milestone):** The layout below is **obsolete** - there is no top control
-> area at all now (kept clean per the new interaction model), and controls
-> live in a compact two-row area directly above the timeline instead:
-> row 1 is RIDGE/WINCH + single-label RASP/AIRSPACE/WIND/ROADS toggles +
-> the live/forecast provenance line; row 2 is the START button + the
-> Surface-1500m altitude slider (§7 as updated). The per-site
-> Surface/Soaring segmented control and the standalone NOW button are both
-> gone - START now resets time + altitude + live wind together in one tap,
-> and is the app's only way back to live mode (moving either slider away
-> from its START value auto-enters Forecast, and never auto-reverts even
-> if the sliders happen to scrub back to their start values). The 3-way
-> Relief/Topo/Map basemap selector introduced in a later block is also
-> gone, replaced by a single ROADS toggle (off = Relief, on = Topo).
+> milestone, compacted in FlyWeather Mobile UI Correction):** The layout
+> below is **obsolete** - there is no top control area at all now (kept
+> clean per the new interaction model), and controls live in a compact
+> two-row area directly above the timeline instead. Both rows target a
+> genuinely compact ~32-34px control height, not just "smaller than
+> before" - **minimizing vertical map obstruction is this area's primary
+> design goal**, more important than fitting every control's label at full
+> size. Row 1 is RIDGE/WINCH (a visually distinct segmented control, never
+> styled like the overlay toggles) + single-label RASP/AIRSPACE/WIND/ROADS
+> press-toggles, in one non-wrapping row on 360-430px phones (a hit-area
+> pseudo-element pads the actual tap target beyond the visual pill, per
+> `App.css`'s `.press-toggle::before` etc. - do not just make the buttons
+> visually 40px+ tall again to satisfy touch-target sizing). Row 2 is the
+> START button + the Surface-180m altitude slider (§7 as updated). The
+> live/forecast provenance line lives in the timeline's own top row
+> (`TimeSlider.tsx`'s `statusText` prop), not in either toolbar row - it
+> must never consume toolbar width or force an extra row. The RASP
+> parameter selector (Thermals/Thermal top/Usable height/Cloudbase) is
+> **not** a permanent toolbar row - it opens as a small popover from the
+> RASP legend's own title (`ParameterLegend.tsx`'s `paramSelector` prop),
+> only once RASP is on and showing real data; adding it back as 4 always-
+> visible buttons in the primary toolbar is exactly the regression this
+> milestone corrected. The per-site Surface/Soaring segmented control and
+> the standalone NOW button are both gone - START now resets time +
+> altitude + live wind together in one tap, and is the app's only way back
+> to live mode (moving either slider away from its START value
+> auto-enters Forecast, and never auto-reverts even if the sliders happen
+> to scrub back to their start values). START itself is never disabled -
+> it shows an active/pressed state at Surface+NOW, not a grayed-out one.
+> The 3-way Relief/Topo/Map basemap selector introduced in a later block
+> is also gone, replaced by a single ROADS toggle (off = Relief, on =
+> Topo).
 
 ## 15.1 Initial screen
 

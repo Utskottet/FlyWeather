@@ -8,9 +8,15 @@ export interface TimeSliderProps {
   hours: string[];
   selectedIndex: number;
   onChange: (index: number) => void;
+  /**
+   * Live/forecast provenance line (§ FlyWeather Mobile UI Correction) -
+   * lives in the timeline's own top row rather than the primary toolbar, so
+   * it never consumes toolbar width or forces an extra row.
+   */
+  statusText: string;
 }
 
-export function TimeSlider({ hours, selectedIndex, onChange }: TimeSliderProps) {
+export function TimeSlider({ hours, selectedIndex, onChange, statusText }: TimeSliderProps) {
   // Ticks every minute so the NOW marker below visibly drifts between
   // hourly ticks as real time passes - independent of `selectedIndex`,
   // which only changes when the user actually moves the slider.
@@ -35,6 +41,9 @@ export function TimeSlider({ hours, selectedIndex, onChange }: TimeSliderProps) 
             redundant. This label-only row still shows the selected time. */}
         <div className="time-slider-label" data-testid="time-slider-label">
           {label}
+        </div>
+        <div className="time-slider-status" data-testid="provenance-line">
+          {statusText}
         </div>
       </div>
       <input

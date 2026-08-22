@@ -233,7 +233,9 @@ describe("WindRose - size handling (§29.11, §29.12)", () => {
   });
 });
 
-describe("WindRose - adaptive weather placement (FlyWeather Next UI: weather translates opposite the sector, never rotates, per the task's mandated sector cases)", () => {
+describe("WindRose - adaptive weather placement (§ FlyWeather Mobile UI Correction: weather snaps to one of 4 deliberate diagonal presets, never orbits continuously, per the task's mandated sector cases)", () => {
+  const PRESETS = [45, 135, 225, 315];
+
   it.each<[string, number, number]>([
     ["0-40deg", 0, 40],
     ["70-120deg", 70, 120],
@@ -243,17 +245,46 @@ describe("WindRose - adaptive weather placement (FlyWeather Next UI: weather tra
     ["very narrow (100-105deg)", 100, 105],
     ["very wide (20-300deg)", 20, 300],
     ["wraparound north (330-30deg)", 330, 30],
-  ])("%s sector: places weather near the ring's far side from the sector midpoint", (_label, fromDeg, toDeg) => {
+  ])("%s sector: places weather at the preset nearest the ring's far side from the sector midpoint", (_label, fromDeg, toDeg) => {
     const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg, toDeg }} weatherKind="rain" />);
     const iconCenter = iconCenterOf(container);
     expect(iconCenter).not.toBeNull();
 
-    const expectedAngle = normalizeDeg(sectorMidpointDeg(fromDeg, toDeg) + 180);
+    const farSide = normalizeDeg(sectorMidpointDeg(fromDeg, toDeg) + 180);
+    const expectedPreset = PRESETS.reduce((best, preset) => {
+      const diff = Math.min(Math.abs(farSide - preset), 360 - Math.abs(farSide - preset));
+      const bestDiff = Math.min(Math.abs(farSide - best), 360 - Math.abs(farSide - best));
+      return diff < bestDiff ? preset : best;
+    });
     const actualAngle = angleOfPoint(CENTER, CENTER, iconCenter!.x, iconCenter!.y);
-    // Compare via the shorter angular distance so e.g. 359.9 vs 0.1 counts as close.
-    const angularDiff = Math.min(Math.abs(actualAngle - expectedAngle), 360 - Math.abs(actualAngle - expectedAngle));
+    const angularDiff = Math.min(
+      Math.abs(actualAngle - expectedPreset),
+      360 - Math.abs(actualAngle - expectedPreset),
+    );
     expect(angularDiff).toBeLessThan(0.5);
   });
+
+  it.each<[string, number, number]>([
+    ["0-40deg", 0, 40],
+    ["70-120deg", 70, 120],
+    ["150-210deg", 150, 210],
+    ["240-300deg", 240, 300],
+    ["310-350deg", 310, 350],
+    ["very narrow (100-105deg)", 100, 105],
+    ["very wide (20-300deg)", 20, 300],
+    ["wraparound north (330-30deg)", 330, 30],
+  ])(
+    "%s sector: weather lands on exactly one of the 4 fixed diagonal presets, never a free/orbital angle",
+    (_label, fromDeg, toDeg) => {
+      const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg, toDeg }} weatherKind="rain" />);
+      const iconCenter = iconCenterOf(container)!;
+      const actualAngle = angleOfPoint(CENTER, CENTER, iconCenter.x, iconCenter.y);
+      const closestPresetDiff = Math.min(
+        ...PRESETS.map((preset) => Math.min(Math.abs(actualAngle - preset), 360 - Math.abs(actualAngle - preset))),
+      );
+      expect(closestPresetDiff).toBeLessThan(0.5);
+    },
+  );
 
   it("translates the weather icon without rotating it (no rotate() in its transform)", () => {
     const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg: 70, toDeg: 120 }} weatherKind="rain" />);

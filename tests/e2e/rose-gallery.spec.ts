@@ -38,6 +38,18 @@ function sectorMidpointPlus180(fromDeg: number, toDeg: number): number {
   return normalizeDeg(normalizeDeg(fromDeg) + positiveSweep / 2 + 180);
 }
 
+// Mirrors WindRose.tsx's own WEATHER_ANGLE_PRESETS/nearestPreset (§
+// FlyWeather Mobile UI Correction) - weather snaps to the nearest of these
+// 4 fixed diagonal positions rather than the continuous far-side angle.
+const WEATHER_ANGLE_PRESETS = [45, 135, 225, 315];
+function nearestPreset(angle: number): number {
+  return WEATHER_ANGLE_PRESETS.reduce((best, preset) => {
+    const diff = Math.min(Math.abs(angle - preset), 360 - Math.abs(angle - preset));
+    const bestDiff = Math.min(Math.abs(angle - best), 360 - Math.abs(angle - best));
+    return diff < bestDiff ? preset : best;
+  });
+}
+
 const ADAPTIVE_CASES: { slug: string; fromDeg: number; toDeg: number }[] = [
   { slug: "adaptive-0-40", fromDeg: 0, toDeg: 40 },
   { slug: "adaptive-70-120", fromDeg: 70, toDeg: 120 },
@@ -96,7 +108,7 @@ test.describe("WindRose gallery", () => {
     await marker64.screenshot({ path: "test-results/rose-gallery/marker-64.png" });
   });
 
-  test("mandated sector cases (§ FlyWeather Next UI item 14): weather sits opposite the sector, sector stays unobscured, pointer independent", async ({
+  test("mandated sector cases (§ FlyWeather Mobile UI Correction): weather sits at the deliberate preset opposite the sector, sector stays unobscured, pointer independent", async ({
     page,
   }) => {
     await page.goto("/gallery.html");
@@ -109,12 +121,19 @@ test.describe("WindRose gallery", () => {
       // (bigger, protruding) weather graphic.
       await expect(figure.getByTestId("sector")).toBeVisible();
 
-      // Weather graphic lands at sector-midpoint + 180deg, within a small
-      // tolerance for floating point/geometry rounding.
+      // Weather graphic lands at the diagonal preset nearest sector-midpoint
+      // + 180deg, within a small tolerance for floating point/geometry
+      // rounding - never a free/continuous angle.
       const actualAngle = await weatherIconAngleDeg(page, slug);
-      const expectedAngle = sectorMidpointPlus180(fromDeg, toDeg);
+      const expectedAngle = nearestPreset(sectorMidpointPlus180(fromDeg, toDeg));
       const diff = Math.min(Math.abs(actualAngle - expectedAngle), 360 - Math.abs(actualAngle - expectedAngle));
       expect(diff, `${slug}: expected weather near ${expectedAngle}deg, got ${actualAngle}deg`).toBeLessThan(1);
+      const closestPresetDiff = Math.min(
+        ...WEATHER_ANGLE_PRESETS.map((preset) =>
+          Math.min(Math.abs(actualAngle - preset), 360 - Math.abs(actualAngle - preset)),
+        ),
+      );
+      expect(closestPresetDiff, `${slug}: weather angle ${actualAngle}deg is not one of the fixed presets`).toBeLessThan(1);
 
       // Wind pointer geometry is untouched by sector/weather placement -
       // still renders independently.

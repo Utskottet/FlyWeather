@@ -78,20 +78,42 @@ const NORTH_TICK_OUTER_R = OUTER_R;
 const NORTH_TICK_INNER_R = OUTER_R - 4;
 const NORTH_LABEL_R = OUTER_R - 11;
 
-// Adaptive weather/speed layout (FlyWeather Next UI milestone): the
+// Adaptive weather/speed layout (§ FlyWeather Mobile UI Correction,
+// replacing the FlyWeather Next UI milestone's continuous version): the
 // reference's weather-above/speed-below placement is fixed regardless of
 // sector position, which covers the colored sector whenever it points
-// upward. Instead, weather is placed at the sector's midpoint + 180deg (the
-// point on the ring farthest from the sector), translated only - never
-// rotated, per the task's explicit instruction - and speed nudges to
-// whichever vertical half the weather ISN'T in, staying horizontally
-// centered and near the ring's center where any pie-slice sector wedge is
-// narrowest. With no sector configured there's nothing to avoid, so the
-// angle defaults to 0 (north/up), reproducing the same relative
-// composition as before - just bigger, per the task's core "weather is too
-// small on phones" complaint applying universally, not only when a sector
-// exists.
+// upward. A first pass placed weather at a continuous angle (sector
+// midpoint + 180deg, anywhere on the ring), which read as an "orbiting"
+// object rather than a deliberately designed marker - explicit follow-up
+// feedback. Weather now snaps to the nearest of 4 fixed diagonal presets
+// (upper-right/lower-right/lower-left/upper-left), translated only - never
+// rotated - and speed nudges to whichever vertical half the weather ISN'T
+// in, staying horizontally centered and near the ring's center where any
+// pie-slice sector wedge is narrowest. With no sector configured there's
+// nothing to avoid, so the angle defaults to 0 (north/up), reproducing the
+// same relative composition as the original reference.
 const DEFAULT_WEATHER_ANGLE = 0;
+
+// The only 4 positions weather is ever placed at when a sector exists -
+// compass bearings for upper-right/lower-right/lower-left/upper-left
+// (0=north/up, clockwise, matching polarToCartesian). A small, fixed set
+// reads as a deliberately designed marker; continuous rotation around the
+// full 360deg ring does not.
+const WEATHER_ANGLE_PRESETS = [45, 135, 225, 315];
+
+/** Nearest of WEATHER_ANGLE_PRESETS to `angle`, by shortest circular distance. */
+function nearestPreset(angle: number): number {
+  let best = WEATHER_ANGLE_PRESETS[0];
+  let bestDiff = Infinity;
+  for (const preset of WEATHER_ANGLE_PRESETS) {
+    const diff = Math.min(Math.abs(angle - preset), 360 - Math.abs(angle - preset));
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = preset;
+    }
+  }
+  return best;
+}
 
 // ~39% of the ring's own diameter (2*OUTER_R) - within the task's
 // documented 35-40%-of-rose-diameter target for the weather graphic
@@ -111,14 +133,15 @@ const ICON_PLACEMENT_R = OUTER_R * (1 + ICON_PROTRUSION_FRACTION) - ICON_SIZE / 
 // adaptive.
 const SPEED_OFFSET = OUTER_R * (54 / 90);
 
-/** Sector midpoint + 180deg (wraparound-safe via the existing
- * sectorMidpointDeg helper) - the point on the ring farthest from the
- * sector, where the weather graphic reads clearest without covering it.
- * Returns the reference's own fixed "up" angle when there's no sector to
- * avoid. */
+/** Nearest deliberate diagonal preset to "sector midpoint + 180deg"
+ * (wraparound-safe via the existing sectorMidpointDeg helper) - the corner
+ * of the ring farthest from the sector, where the weather graphic reads
+ * clearest without covering it. Returns the reference's own fixed "up"
+ * angle when there's no sector to avoid. */
 function weatherAngleFor(sector: RoseSector | null): number {
   if (!sector) return DEFAULT_WEATHER_ANGLE;
-  return normalizeDeg(sectorMidpointDeg(sector.fromDeg, sector.toDeg) + 180);
+  const farSide = normalizeDeg(sectorMidpointDeg(sector.fromDeg, sector.toDeg) + 180);
+  return nearestPreset(farSide);
 }
 
 /** Split-tail wind pointer, per the reference. Tip points toward the compass direction wind is coming FROM (§29.3). */

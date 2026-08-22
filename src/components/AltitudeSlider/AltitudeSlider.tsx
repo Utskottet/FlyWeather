@@ -1,9 +1,4 @@
-import {
-  ALTITUDE_MAX_REAL_DATA_M,
-  altitudeFractionToM,
-  altitudeMToFraction,
-  formatAltitudeLabel,
-} from "../../domain/altitudeAxis.ts";
+import { altitudeFractionToM, altitudeMToFraction, formatAltitudeLabel } from "../../domain/altitudeAxis.ts";
 
 export interface AltitudeSliderProps {
   altitudeM: number;
@@ -16,15 +11,13 @@ export interface AltitudeSliderProps {
  * source of truth; the range input's own position is always derived from
  * it via altitudeMToFraction, never tracked separately.
  *
- * Above ALTITUDE_MAX_REAL_DATA_M (180m, Open-Meteo's real ceiling) there is
- * no genuine per-site wind data - the label discloses this honestly rather
- * than silently showing 180m data as if it were the requested altitude.
+ * Capped at ALTITUDE_SLIDER_MAX_M (== ALTITUDE_MAX_REAL_DATA_M, 180m) - §
+ * FlyWeather Mobile UI Correction removed the old 1500m range and its
+ * "requested - showing 180m" fallback disclosure entirely, since nothing
+ * above the real data ceiling is selectable anymore.
  */
 export function AltitudeSlider({ altitudeM, onChange }: AltitudeSliderProps) {
-  const isClamped = altitudeM > ALTITUDE_MAX_REAL_DATA_M;
-  const label = isClamped
-    ? `${formatAltitudeLabel(altitudeM)} requested - showing ${formatAltitudeLabel(ALTITUDE_MAX_REAL_DATA_M)} (highest available)`
-    : formatAltitudeLabel(altitudeM);
+  const label = formatAltitudeLabel(altitudeM);
 
   return (
     <div className="altitude-slider" data-testid="altitude-slider">
