@@ -1,9 +1,8 @@
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parse as parseYaml } from "yaml";
-import { sitesDataSchema, locatedEnabledSites } from "../src/domain/sites.ts";
-import { extractYamlBlock } from "./parse-sites.ts";
+import { locatedEnabledSites } from "../src/domain/sites.ts";
+import { buildCatalogue } from "./build-sites-catalogue.ts";
 import { fetchSitesForecastBatch } from "../src/providers/forecast/openMeteoProvider.ts";
 import { fetchWindGrid } from "../src/providers/forecast/openMeteoGridProvider.ts";
 import { buildWindGrid } from "../src/domain/windGrid.ts";
@@ -33,7 +32,6 @@ const PUBLISHED_BASE_URL = "https://utskottet.github.io/FlyWeather";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
-const sitesMdPath = resolve(repoRoot, "SITES.md");
 const sitesOutPath = resolve(repoRoot, "public/generated/forecast-sites.json");
 const gridOutPath = resolve(repoRoot, "public/generated/forecast-wind-grid.json");
 
@@ -79,10 +77,8 @@ function isCompatibleGridFile(data: unknown): data is GeneratedWindGridFile {
 }
 
 async function main() {
-  const markdown = readFileSync(sitesMdPath, "utf-8");
-  const raw = parseYaml(extractYamlBlock(markdown));
-  const parsed = sitesDataSchema.parse(raw);
-  const sites = locatedEnabledSites(parsed.sites);
+  const catalogue = buildCatalogue();
+  const sites = locatedEnabledSites(catalogue.sites);
 
   // --- Site forecasts ---
   let sitesFile: GeneratedForecastSitesFile;

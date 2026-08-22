@@ -1,0 +1,13 @@
+schema_version: 2
+id: winch-brandstad
+name: Vinschfält Brandstad
+coordinates:
+  lat: null
+  lon: null
+  verified: false
+wind:
+  verified: false
+description: CPS page for this field states 'DETTA FÄLT ANVÄNDS FÖR NÄRVARANDE INTE' (this field is currently not in use), repeated multiple times - kept disabled because the source itself reports it inactive, not just pending winch-specific rules. Reached via Väg 13 from Hörby, turn at 'Krokhuset' sign near Brandstad; runway E/W and N/S; ~90m elevation. No coordinates published; contacts listed are Johan Svärd or Trisse.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/vinschfalt-brandstad/

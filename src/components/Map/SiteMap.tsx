@@ -145,15 +145,13 @@ function buildRoseHtml(
   weatherKind: SiteForecast["weatherKind"][number],
 ): { html: string; size: number } {
   const size = selected ? SELECTED_MARKER_SIZE : MARKER_SIZE;
-  const green = site.rose.green[0];
-  const sector = green ? { fromDeg: green.from_deg, toDeg: green.to_deg } : null;
+  const sector = site.sector ? { fromDeg: site.sector.from_deg, toDeg: site.sector.to_deg } : null;
   const { state } = evaluateFlyability(
     sample.windDirectionDeg,
     sample.windSpeedMs,
     sample.windGustMs,
-    site.rose.green,
-    site.rose.orange,
-    site.wind_speed,
+    site.sector ?? null,
+    site.wind,
   );
 
   const html = renderToStaticMarkup(
@@ -230,7 +228,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   // coordinate yet - see docs/SITE_DATA_AUDIT.md).
   const bounds = useMemo(() => computeSiteBounds(sites), [sites]);
   const visibleSites = useMemo(
-    () => sites.filter((s) => (siteMode === "winch" ? s.type === "winch" : s.type !== "winch")),
+    () => sites.filter((s) => (siteMode === "winch" ? s.group === "winch" : s.group !== "winch")),
     [sites, siteMode],
   );
   const mapStyle = useMemo(() => buildStyleForRoads(showRoads), [showRoads]);
@@ -420,6 +418,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
                   className="rose-marker-icon"
                   zIndex={selected ? 1000 : 10}
                   onClick={() => setSelectedId(site.id)}
+                  testId={`site-marker-${site.id}`}
                 />
               );
             })}

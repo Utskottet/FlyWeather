@@ -1,0 +1,26 @@
+schema_version: 2
+id: kaseberga-s
+name: Kåseberga Sydhanget
+short_name: Kåseberga
+coordinates:
+  lat: 55.387096
+  lon: 14.065681
+  verified: false
+  source: OSM Nominatim place-name lookup ("Kåseberga" hamlet) - village-level approximation, not the exact launch point
+sector:
+  from_deg: 168.75
+  to_deg: 191.25
+  verified: false
+wind:
+  verified: false
+station:
+  provider: holfuy
+  station_id: "155"
+  verified: true
+ridge_height_m: 50
+description: South-facing Kåseberga ridge; CPS describes it as an accessible training/soaring site with important local restrictions.
+warnings:
+  - Show CPS site-specific restrictions prominently in detail view.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/s-kaseberga/

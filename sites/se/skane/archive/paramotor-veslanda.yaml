@@ -1,0 +1,13 @@
+schema_version: 2
+id: paramotor-veslanda
+name: Paramotor Veslanda
+coordinates:
+  lat: null
+  lon: null
+  verified: false
+wind:
+  verified: false
+description: CPS catalogue entry; disabled until paramotor-specific semantics are designed.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/

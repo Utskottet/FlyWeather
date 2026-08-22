@@ -1,0 +1,19 @@
+schema_version: 2
+id: ven-so
+name: Ven sydostsidan
+short_name: Ven SO
+coordinates:
+  lat: 55.905804
+  lon: 12.70271
+  verified: false
+  source: OSM Nominatim place-name lookup ("Ven" island, general) - island-level approximation only; unlike ven-n/ven-sv/ven-v this site has no CPS-stated coordinates, so this is coarser than its siblings and does not target the southeast side specifically
+sector:
+  from_deg: 90
+  to_deg: 135
+  verified: false
+wind:
+  verified: false
+description: Southeast/east side of Ven; CPS lists it as advanced.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/so-ven/

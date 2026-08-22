@@ -1,0 +1,23 @@
+schema_version: 2
+id: vik
+name: Vik
+short_name: Vik
+coordinates:
+  lat: 55.613949
+  lon: 14.2893
+  verified: false
+  source: OSM Nominatim place-name lookup ("Vik" village, Simrishamns kommun - disambiguated by kommun since Vik is a common Swedish place name) - village-level approximation, not the exact launch point
+sector:
+  from_deg: 78.75
+  to_deg: 101.25
+  verified: false
+wind:
+  verified: false
+station:
+  provider: holfuy
+  station_id: "596"
+  verified: true
+description: East-facing advanced coastal site; CPS explicitly describes it as very advanced.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/o-vik/

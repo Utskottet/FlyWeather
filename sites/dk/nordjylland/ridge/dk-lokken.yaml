@@ -1,0 +1,22 @@
+schema_version: 2
+id: dk-lokken
+name: Løkken
+short_name: Løkken
+coordinates:
+  lat: 57.370486
+  lon: 9.71125
+  verified: false
+  source: OSM Nominatim place-name lookup ("Løkken" village, Hjørring Kommune - disambiguated from a same-named hamlet in Syddjurs Kommune) - village-level approximation, not the exact launch point
+sector:
+  from_deg: 270
+  to_deg: 315
+  verified: false
+wind:
+  verified: false
+ridge_height_m: 25
+description: Long Danish west-coast ridge system; CPS gives W–NW and roughly 15–25 m ridge height.
+warnings:
+  - "CPS: avoid top-landing due to rotor at the ridge crest; be careful not to drift backward over Rubjerg Knude (a 90 m cliff at the site's edge)."
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/danmark-lokken-vnv/

@@ -1,0 +1,26 @@
+schema_version: 2
+id: molle
+name: Kullaberg / Mölle
+short_name: Mölle
+coordinates:
+  lat: 56.282747
+  lon: 12.498323
+  verified: false
+  source: OSM Nominatim place-name lookup ("Mölle" village, Höganäs kommun) - village-level approximation, not the exact launch point on Kullaberg
+sector:
+  from_deg: 202.5
+  to_deg: 247.5
+  verified: false
+wind:
+  verified: false
+station:
+  provider: holfuy
+  station_id: "597"
+  verified: true
+ridge_height_m: 80
+description: Advanced Kullaberg/Mölle ridge; CPS gives SSW–WSW orientation and about 80 m site height.
+warnings:
+  - Landing area is on private land within a nature reserve; respect posted signs and reserve personnel instructions. CPS warns of strong currents near the landing beach with a history of drowning incidents - pilots typically fly out over water to lose altitude before final approach.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/172-2/

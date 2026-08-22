@@ -1,0 +1,22 @@
+schema_version: 2
+id: dk-dokkedal
+name: Dokkedal
+short_name: Dokkedal
+coordinates:
+  lat: 56.903551
+  lon: 10.253543
+  verified: false
+  source: OSM Nominatim place-name lookup ("Dokkedal" village, Aalborg Kommune) - village-level approximation, not the exact launch point
+sector:
+  from_deg: 78.75
+  to_deg: 101.25
+  verified: false
+wind:
+  verified: false
+ridge_height_m: 48
+description: 48 m east-facing Danish site; CPS notes it can be thermic.
+warnings:
+  - "CPS: flying is not permitted on the small practice slope (skolbacken) roughly May through September. The area to the right of the road is fenced off due to livestock."
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/danmark-dokkedal-o/

@@ -1,15 +1,13 @@
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parse as parseYaml } from "yaml";
-import { sitesDataSchema } from "../src/domain/sites.ts";
-import { extractYamlBlock } from "./parse-sites.ts";
+import { buildCatalogue } from "./build-sites-catalogue.ts";
 import { resolveLiveSample } from "../src/providers/live/resolver.ts";
+import type { SiteLiveSource } from "../src/providers/live/types.ts";
 import type { WindSample } from "../src/domain/types.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
-const sitesMdPath = resolve(repoRoot, "SITES.md");
 const outPath = resolve(repoRoot, "public/generated/live.json");
 
 interface LiveEntry {
@@ -17,15 +15,20 @@ interface LiveEntry {
   sample: WindSample | null;
 }
 
-async function main() {
-  const markdown = readFileSync(sitesMdPath, "utf-8");
-  const raw = parseYaml(extractYamlBlock(markdown));
-  // SITES.md's schema is already enforced by `npm run validate:sites`
-  // earlier in the pipeline; re-parsing here is cheap and keeps this
-  // script runnable standalone too.
-  const parsed = sitesDataSchema.parse(raw);
+/**
+ * Adapts a site's single `station` (§ FlyWeather Site Catalogue
+ * Migration) back into the ordered array resolveLiveSample expects -
+ * every site in the current catalogue has at most one station, so this
+ * is always a 0- or 1-element array, never a lossy truncation.
+ */
+function stationAsSources(station: { provider: string; station_id?: string | null; verified: boolean } | null | undefined): SiteLiveSource[] {
+  if (!station) return [];
+  return [{ provider: station.provider, station_id: station.station_id ?? undefined, priority: 1, verified: station.verified }];
+}
 
-  const candidates = parsed.sites.filter((s) => s.enabled && s.live_sources.length > 0);
+async function main() {
+  const catalogue = buildCatalogue();
+  const candidates = catalogue.sites.filter((s) => s.enabled && s.station);
 
   let sourcesOk = 0;
   let sourcesFailed = 0;
@@ -33,7 +36,7 @@ async function main() {
 
   for (const site of candidates) {
     try {
-      const sample = await resolveLiveSample(site.live_sources);
+      const sample = await resolveLiveSample(stationAsSources(site.station));
       if (sample) {
         sourcesOk++;
         sites[site.id] = { status: "ok", sample };

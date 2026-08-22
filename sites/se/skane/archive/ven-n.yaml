@@ -1,0 +1,20 @@
+schema_version: 2
+id: ven-n
+name: Ven nordsidan
+short_name: Ven N
+coordinates:
+  lat: 55.927778
+  lon: 12.690278
+  verified: true
+  source: CPS
+sector:
+  from_deg: 348.75
+  to_deg: 11.25
+  verified: false
+wind:
+  verified: false
+ridge_height_m: 15
+description: "North side of Ven. CPS page's wind field is still blank/malformed (just \"Vind: 15m\" with no direction), but the page text confirms this is Ven's north shore, corroborating the N label; exact sector boundaries remain unverified."
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/n-ven/

@@ -10,10 +10,12 @@ export interface MapMarkerProps {
   zIndex?: number;
   interactive?: boolean;
   onClick?: () => void;
+  /** Purely for automated testing - no visual effect. Lets a specific marker be targeted deterministically instead of relying on array/DOM order, which is not meaningful (e.g. sites/**\/*.yaml discovery order). */
+  testId?: string;
 }
 
 /** Imperatively manages one maplibre-gl Marker - mirrors the previous Leaflet divIcon pattern (an HTML string per marker). */
-export function MapMarker({ map, lng, lat, html, className, zIndex, interactive = true, onClick }: MapMarkerProps) {
+export function MapMarker({ map, lng, lat, html, className, zIndex, interactive = true, onClick, testId }: MapMarkerProps) {
   const markerRef = useRef<Marker | null>(null);
   const elRef = useRef<HTMLDivElement | null>(null);
   const onClickRef = useRef(onClick);
@@ -24,6 +26,7 @@ export function MapMarker({ map, lng, lat, html, className, zIndex, interactive 
 
     const el = document.createElement("div");
     if (className) el.className = className;
+    if (testId) el.dataset.testid = testId;
     if (!interactive) {
       el.style.pointerEvents = "none";
     } else {

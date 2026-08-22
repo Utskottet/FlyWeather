@@ -1,0 +1,26 @@
+schema_version: 2
+id: hovs-hallar-nv
+name: Hovs Hallar NV
+short_name: Hovet NV
+coordinates:
+  lat: 56.46379
+  lon: 12.70863
+  verified: false
+  source: OSM Nominatim place-name lookup ("Hovs Hallar" nature reserve) - shared with hovs-hallar-n since both are launch points at/near the same nature reserve; imprecise, does not distinguish the two
+sector:
+  from_deg: 315
+  to_deg: 337.5
+  verified: false
+wind:
+  verified: false
+station:
+  provider: holfuy
+  station_id: "127"
+  verified: true
+ridge_height_m: 25
+description: NW–NNW Hovs Hallar coastal ridge; CPS lists intermediate/advanced use.
+warnings:
+  - "CPS: bring pruning shears (pilots have gotten entangled in bushes); do not launch to the right of the inn; do not land on the field above launch (risk of dislodging stones from the boundary wall) - land on the beach instead."
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/nv-hovshallar/

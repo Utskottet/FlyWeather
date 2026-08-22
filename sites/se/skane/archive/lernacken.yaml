@@ -1,0 +1,23 @@
+schema_version: 2
+id: lernacken
+name: Lernacken
+short_name: Lernacken
+coordinates:
+  lat: 55.56576
+  lon: 12.90804
+  verified: false
+  source: OSM Nominatim place-name lookup ("Lernacken", tagged as a railway/site POI near the Öresund bridge's Swedish landfall) - moderate confidence, not a pilot-confirmed launch coordinate
+sector:
+  from_deg: 157.5
+  to_deg: 202.5
+  verified: false
+wind:
+  verified: false
+  notes: CPS mentions 6–7 m/s SSW for flying the low ridge toward the bridge; do not generalize this into full-site safe limits without review.
+ridge_height_m: 20
+description: South-facing Malmö/Lernacken ridge with orientation-dependent low-ridge behavior.
+warnings:
+  - Site sits within a nature reserve; CPS warns of hidden hazards in the reed beds below the ridge (old scrap/debris), electric fencing in lower landing areas, and advises avoiding the eastern Stenören section and bird nesting areas.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/s-lernacken/

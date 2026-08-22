@@ -5,16 +5,19 @@ test.describe("Live data at NOW", () => {
     page,
   }) => {
     await page.goto("/");
-    // hammar is first in SITES.md order among located sites, and has a
-    // configured (and currently working, per docs/DATA_SOURCE_AUDIT.md)
-    // Holfuy source.
-    const markers = page.locator(".rose-marker-icon");
-    await markers.first().waitFor();
+    // hammar has a configured (and currently working, per
+    // docs/DATA_SOURCE_AUDIT.md) Holfuy source. Targeted by its own stable
+    // testid rather than marker position/order - the generated catalogue's
+    // site order is just alphabetical by sites/**/*.yaml path (§ FlyWeather
+    // Site Catalogue Migration), not meaningful, and shouldn't be a test
+    // dependency.
+    const hammarMarker = page.getByTestId("site-marker-hammar");
+    await hammarMarker.first().waitFor();
     await page.waitForTimeout(1500); // let both forecast + live fetches settle
-    // force: true - with all 24 sites located (Block 13), some cluster
-    // closely enough to visually overlap at this zoom (known, deferred
-    // §16 gap, not exercised by this test).
-    await markers.first().click({ force: true });
+    // force: true - with all sites located, some cluster closely enough to
+    // visually overlap at this zoom (known, deferred §16 gap, not
+    // exercised by this test).
+    await hammarMarker.first().click({ force: true });
 
     const badge = page.getByTestId("site-sheet-source");
     await expect(badge).toBeVisible();

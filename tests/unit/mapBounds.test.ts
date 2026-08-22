@@ -7,13 +7,11 @@ function locatedSite(lat: number, lon: number): LocatedSite {
     id: "test",
     enabled: true,
     name: "Test",
-    country: "SE",
-    type: "hang",
+    country: "se",
+    region: "skane",
+    group: "ridge",
     coordinates: { lat, lon, verified: true },
-    rose: { verified: false, green: [], orange: [] },
-    wind_speed: { verified: false },
-    soaring_height: { agl_m: null, verified: false },
-    live_sources: [],
+    wind: { verified: false },
     description: "test",
   } as LocatedSite;
 }

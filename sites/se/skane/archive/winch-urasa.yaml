@@ -1,0 +1,13 @@
+schema_version: 2
+id: winch-urasa
+name: Vinschfält Uråsa
+coordinates:
+  lat: null
+  lon: null
+  verified: false
+wind:
+  verified: false
+description: "Active winch field (2.5km N-S runway, release altitude 400-600m) ~20km SE of Växjö off väg 30, between Ingelstad and Väckelsång, behind a locked gate. Kept disabled: CPS page publishes no coordinates, only driving directions plus a phone contact (Anders Bergqvist) for precise location - geocoding the nearest named places would place the marker several km from the actual field, which is worse than an honest gap. Needs a direct GPS reading or club-supplied coordinates."
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/vinschfalt-urasa/

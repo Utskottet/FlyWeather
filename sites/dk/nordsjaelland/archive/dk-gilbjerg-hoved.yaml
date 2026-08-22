@@ -1,0 +1,20 @@
+schema_version: 2
+id: dk-gilbjerg-hoved
+name: Gilbjerg Hoved
+short_name: Gilbjerg
+coordinates:
+  lat: 56.124417
+  lon: 12.312449
+  verified: false
+  source: OSM Nominatim place-name lookup - "Gilbjerg Hoved" itself returned no results; using "Gilleleje" (the nearby town the site is described as being between Gilleleje and Smidstrup) as a coarse fallback
+sector:
+  from_deg: 326.25
+  to_deg: 348.75
+  verified: false
+wind:
+  verified: false
+ridge_height_m: 33
+description: NNW-facing 33 m ridge near Gilleleje; CPS lists intermediate use.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/danmark-gilbjerg-hoved/

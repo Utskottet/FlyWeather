@@ -1,0 +1,20 @@
+schema_version: 2
+id: larod
+name: Larödbaden
+short_name: Laröd
+coordinates:
+  lat: 56.092192
+  lon: 12.655801
+  verified: false
+  source: OSM Nominatim place-name lookup ("Laröd" village, Helsingborgs kommun) - village-level approximation, not the exact launch point
+sector:
+  from_deg: 213.75
+  to_deg: 236.25
+  verified: false
+wind:
+  verified: false
+ridge_height_m: 35
+description: 35 m southwest-facing ridge in a built-up area; CPS asks pilots to consider nearby residents.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/sv-larod/

@@ -1,0 +1,26 @@
+schema_version: 2
+id: barseback
+name: Barsebäck camping
+short_name: Barsebäck
+coordinates:
+  lat: 55.771661
+  lon: 12.956366
+  verified: false
+  source: OSM Nominatim place-name lookup ("Barsebäck" village, Kävlinge kommun) - village-level approximation, not the exact launch point
+sector:
+  from_deg: 292.5
+  to_deg: 337.5
+  verified: false
+wind:
+  verified: false
+  notes: 'CPS: "no point coming here unless it blows at least 8 m/s" - strong-wind site requiring fast gliders and very good launch technique; treat as a hard practical minimum, not a full verified speed band.'
+station:
+  provider: viva
+  station_id: "25"
+  verified: true
+  note: Sjöfartsverket ViVa station 25 (Barsebäck), confirmed by name/coordinates match against https://viva.sjofartsverket.se/station/25.
+ridge_height_m: 10
+description: Low coastal ridge; CPS gives WNW–NNW as the usable direction range and lists it as advanced.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/vnv-nnv-barseback/

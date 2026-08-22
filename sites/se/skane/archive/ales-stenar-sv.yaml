@@ -1,0 +1,25 @@
+schema_version: 2
+id: ales-stenar-sv
+name: Ales stenar / Stenarna
+short_name: Stenarna
+coordinates:
+  lat: 55.382654
+  lon: 14.054412
+  verified: false
+  source: OSM Nominatim place-name lookup ("Ales stenar" tourist attraction) - the monument itself is well-mapped, so this is a closer approximation than most in this batch, but still not a pilot-confirmed launch coordinate
+sector:
+  from_deg: 213.75
+  to_deg: 236.25
+  verified: false
+wind:
+  verified: false
+station:
+  provider: holfuy
+  station_id: "214"
+  verified: false
+  note: Nearby proxy candidate; verify.
+ridge_height_m: 30
+description: Southwest-facing ridge near Ales stenar; CPS lists it as intermediate.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/sv-alestenar/

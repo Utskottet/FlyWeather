@@ -251,6 +251,29 @@ Non-soaring CPS entries (winch fields, paramotor fields, school hills) may live 
 
 # 4. `SITES.md` is the human authority
 
+> **Current, authoritative design note (FlyWeather Site Catalogue
+> Migration milestone):** `SITES.md`'s single fenced YAML block is
+> **obsolete** as the live data source - superseded by one YAML file per
+> site under `sites/<country>/<region>/<ridge|winch|archive>/<id>.yaml`
+> (schema in `src/domain/siteFile.ts`). `SITES.md` itself is kept in the
+> repo, unmodified, purely as a historical/rollback reference (see
+> `SITE_MIGRATION_REPORT.md` for the full old-to-new field mapping and
+> proof of zero data loss) - do not edit it expecting it to affect the
+> live app, and do not delete it without explicit instruction. The build
+> tool is `scripts/build-sites-catalogue.ts` (recursive `sites/**/*.yaml`
+> discovery, replacing `scripts/parse-sites.ts`'s single-block extraction,
+> which itself still exists only for rollback and writes to a
+> non-conflicting `sites.legacy.json`). Country/region/site-group
+> (ridge/winch) and active-vs-archived status are now derived from each
+> file's own path, not authored as fields inside it (§4.1 below still
+> describes the general validate-then-generate strategy correctly, just
+> against many files instead of one). A generated `sites-index.csv` /
+> `SITES_INDEX.md` (via `scripts/generate-sites-index.ts`) gives a
+> sortable human overview - generated views only, never authoritative.
+> The old `rose.green[]/orange[]` two-array direction system is also
+> obsolete - see §5.2 below and `domain/flyability.ts` for the current
+> single-`sector`-plus-derived-padding model.
+
 `SITES.md` is the canonical, human-editable source defining what flying sites exist in this application.
 
 A scraper must NEVER automatically create production map sites just because an external page contains them.
@@ -308,9 +331,18 @@ For a site and selected time:
 
 ## 5.2 Direction result
 
-- inside green sector -> `direction = good`
-- inside orange sector -> `direction = maybe`
-- outside all usable sectors -> `direction = bad`
+> **Current, authoritative design note (FlyWeather Site Catalogue
+> Migration milestone):** Sites no longer author a separate orange
+> "marginal" sector - see `SITE_MIGRATION_REPORT.md`, which verified that
+> every site's old orange range was an exact ±11.25deg padding around its
+> green range, with zero exceptions. `domain/flyability.ts` now derives
+> that padding automatically from the single authored `sector` via the
+> `MARGINAL_SECTOR_PADDING_DEG` constant, so direction-fit *behavior* is
+> unchanged even though the schema only stores one sector per site.
+
+- inside the site's sector -> `direction = good`
+- within `MARGINAL_SECTOR_PADDING_DEG` of either edge -> `direction = maybe`
+- outside the sector and its padding -> `direction = bad`
 - sector data missing -> `direction = unknown`
 
 Boundary behavior must be deterministic and unit tested.
@@ -846,20 +878,28 @@ Future feature: miniature 24 h strip for this site.
 
 ---
 
-# 17. `SITES.md` maintenance UI philosophy
+# 17. Site catalogue maintenance UI philosophy
+
+> **Current, authoritative design note (FlyWeather Site Catalogue
+> Migration milestone):** editing is now one YAML file per site under
+> `sites/**/*.yaml`, not a single `SITES.md` block (§4). `npm run
+> validate:sites` now runs `scripts/build-sites-catalogue.ts`. Archiving/
+> restoring a site is a file move (into or out of an `archive/` folder),
+> not an `enabled: true/false` edit inside the file.
 
 The app does not need a graphical site editor in V1.
 
-`SITES.md` is intentionally easy to edit in Git.
+The site catalogue is intentionally easy to edit in Git.
 
 Create:
 - schema validation;
-- human-friendly CI error messages;
+- human-friendly CI error messages (naming the exact file);
 - `npm run validate:sites`;
-- generated `public/generated/sites.json`.
+- generated `public/generated/sites.json`;
+- generated `sites-index.csv` / `SITES_INDEX.md` overview (`npm run sites:index`).
 
 When adding a site:
-1. edit `SITES.md`;
+1. add a new YAML file under `sites/<country>/<region>/<ridge|winch>/<id>.yaml`;
 2. validate;
 3. build;
 4. map updates automatically.

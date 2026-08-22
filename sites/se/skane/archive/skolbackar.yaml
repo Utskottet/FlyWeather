@@ -1,0 +1,13 @@
+schema_version: 2
+id: skolbackar
+name: Skolbackar
+coordinates:
+  lat: null
+  lon: null
+  verified: false
+wind:
+  verified: false
+description: CPS catalogue entry; preserved but disabled until the individual school-hill locations and semantics are defined.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/

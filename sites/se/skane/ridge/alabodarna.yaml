@@ -1,0 +1,26 @@
+schema_version: 2
+id: alabodarna
+name: Ålabodarna
+short_name: Ålabodarna
+coordinates:
+  lat: 55.939428
+  lon: 12.773736
+  verified: false
+  source: OSM Nominatim place-name lookup ("Hamnkiosken på Ålabodarna", a kiosk directly at Ålabodstranden beach) - closer than most in this batch since it's at the beach itself, but still not a pilot-confirmed launch coordinate
+sector:
+  from_deg: 225
+  to_deg: 270
+  verified: false
+wind:
+  verified: false
+station:
+  provider: holfuy
+  station_id: "216"
+  verified: true
+ridge_height_m: 15
+description: 15 m west-to-southwest-facing coastal ridge near Glumslöv.
+warnings:
+  - "CPS: do not use the adjacent field for launch/landing during the agricultural growing season; use the beach/cliff edge instead."
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/v-sv-alabodarna/

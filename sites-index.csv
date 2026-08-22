@@ -1,0 +1,30 @@
+active,country,region,group,short_name,name,sector_degrees,station,pilot_level,coordinates_verified,sector_verified
+yes,dk,nordjylland,ridge,Dokkedal,Dokkedal,78.75–101.25,,,no,no
+yes,dk,nordjylland,ridge,Løkken,Løkken,270–315,,,no,no
+no,dk,nordsjaelland,,Gilbjerg,Gilbjerg Hoved,326.25–348.75,,,no,no
+no,dk,nordsjaelland,,Rågeleje,Strandbjerggård / Rågeleje,303.75–326.25,,,no,no
+yes,se,skane,ridge,Ålabodarna,Ålabodarna,225–270,holfuy #216,,no,no
+yes,se,skane,ridge,Barsebäck,Barsebäck camping,292.5–337.5,viva #25,,no,no
+yes,se,skane,ridge,Hammar,Hammars backar,213.75–236.25,holfuy #214,,yes,no
+yes,se,skane,ridge,Höganäs,Höganäs Strandbaden,281.25–303.75,holfuy #128,,no,no
+yes,se,skane,ridge,Hovet N,Hovs Hallar N,348.75–11.25,holfuy #127,,no,no
+yes,se,skane,ridge,Hovet NV,Hovs Hallar NV,315–337.5,holfuy #127,,no,no
+yes,se,skane,ridge,Kåseberga,Kåseberga Sydhanget,168.75–191.25,holfuy #155,,no,no
+yes,se,skane,ridge,Mölle,Kullaberg / Mölle,202.5–247.5,holfuy #597,,no,no
+yes,se,skane,ridge,Ravlunda,Ravlunda / Haväng,78.75–101.25,holfuy #126,,yes,no
+yes,se,skane,ridge,Rökerierna,Rökerierna Kåseberga,123.75–146.25,holfuy #155,,no,no
+no,se,skane,,Stenarna,Ales stenar / Stenarna,213.75–236.25,holfuy #214,,no,no
+no,se,skane,,Brofästet,Brofästet,258.75–281.25,,,no,no
+no,se,skane,,Laröd,Larödbaden,213.75–236.25,,,no,no
+no,se,skane,,Lernacken,Lernacken,157.5–202.5,,,no,no
+no,se,skane,,,Paramotor Dalhäll,,,,no,
+no,se,skane,,,Paramotor Veslanda,,,,no,
+no,se,skane,,,Skolbackar,,,,no,
+no,se,skane,,Ven N,Ven nordsidan,348.75–11.25,,,yes,no
+no,se,skane,,Ven SO,Ven sydostsidan,90–135,,,no,no
+no,se,skane,,Ven SV,Ven sydvästsidan,223.75–246.25,,,yes,no
+no,se,skane,,Ven V,Ven västsidan,258.75–281.25,,,yes,no
+no,se,skane,,Vik,Vik,78.75–101.25,holfuy #596,,no,no
+no,se,skane,,,Vinschfält Brandstad,,,,no,
+no,se,skane,,,Vinschfält Uråsa,,,,no,
+no,se,skane,,Vitemölla,Vitemölla,56.25–78.75,,,no,no

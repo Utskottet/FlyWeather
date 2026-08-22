@@ -1,0 +1,22 @@
+schema_version: 2
+id: vitemolla
+name: Vitemölla
+short_name: Vitemölla
+coordinates:
+  lat: 55.699224
+  lon: 14.205015
+  verified: false
+  source: OSM Nominatim place-name lookup ("Vitemölla" village) - village-level approximation, not the exact launch point
+sector:
+  from_deg: 56.25
+  to_deg: 78.75
+  verified: false
+wind:
+  verified: false
+ridge_height_m: 25
+description: ENE-facing 25 m site; CPS describes mixed hang/back-gliding use and notes advanced/novice context.
+warnings:
+  - "[HARD] Länsstyrelsen prohibits flying at Vitemölla backar 1 April through 31 July to protect sensitive vegetation and bird habitats (in effect from 2024)."
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/ono-vitemolla/

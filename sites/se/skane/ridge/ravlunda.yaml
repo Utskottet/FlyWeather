@@ -1,0 +1,26 @@
+schema_version: 2
+id: ravlunda
+name: Ravlunda / Haväng
+short_name: Ravlunda
+coordinates:
+  lat: 55.731167
+  lon: 14.194
+  verified: true
+  source: CPS
+sector:
+  from_deg: 78.75
+  to_deg: 101.25
+  verified: false
+wind:
+  verified: false
+station:
+  provider: holfuy
+  station_id: "126"
+  verified: true
+ridge_height_m: 20
+description: East-facing Ravlunda/Haväng coastal ridge. CPS specifically warns about local wind behavior ('Ravlunda effect') and military-range availability.
+warnings:
+  - "[HARD] Flying availability depends on Ravlunda firing-range activity; weather green must not imply the site is open."
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/o-ravlunda/

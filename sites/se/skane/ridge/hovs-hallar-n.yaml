@@ -1,0 +1,25 @@
+schema_version: 2
+id: hovs-hallar-n
+name: Hovs Hallar N
+short_name: Hovet N
+coordinates:
+  lat: 56.46379
+  lon: 12.70863
+  verified: false
+  source: OSM Nominatim place-name lookup ("Hovs Hallar" nature reserve) - shared with hovs-hallar-nv since both are launch points at/near the same nature reserve; imprecise, does not distinguish the two
+sector:
+  from_deg: 348.75
+  to_deg: 11.25
+  verified: false
+wind:
+  verified: false
+station:
+  provider: holfuy
+  station_id: "127"
+  verified: true
+  note: Confirmed against CPS's station map (cps.to/vader/vara-vindmatare/, single generic "Hovs Hallar" tile -> station 127) and the Holfuy widget's own title ("Hovs hallar NW"), same evidence hovs-hallar-nv already relies on - one station legitimately covers both launches on this ridge.
+ridge_height_m: 150
+description: North-facing advanced Hovs Hallar site; CPS lists 150 m height.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/n-hovshallar/

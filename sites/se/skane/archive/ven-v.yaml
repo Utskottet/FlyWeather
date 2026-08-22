@@ -1,0 +1,20 @@
+schema_version: 2
+id: ven-v
+name: Ven västsidan
+short_name: Ven V
+coordinates:
+  lat: 55.916667
+  lon: 12.670833
+  verified: true
+  source: CPS
+sector:
+  from_deg: 258.75
+  to_deg: 281.25
+  verified: false
+wind:
+  verified: false
+ridge_height_m: 15
+description: West/northwest corner of Ven; CPS lists west wind and advanced use.
+links:
+  - label: CPS listing
+    url: https://www.cps.to/flygstallen/v-ven/

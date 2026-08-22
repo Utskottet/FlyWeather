@@ -51,15 +51,13 @@ export function SiteSheet({
   selectedTimestamp,
   onClose,
 }: SiteSheetProps) {
-  const green = site.rose.green[0];
-  const sector = green ? { fromDeg: green.from_deg, toDeg: green.to_deg } : null;
+  const sector = site.sector ? { fromDeg: site.sector.from_deg, toDeg: site.sector.to_deg } : null;
   const { state, reasons } = evaluateFlyability(
     sample.windDirectionDeg,
     sample.windSpeedMs,
     sample.windGustMs,
-    site.rose.green,
-    site.rose.orange,
-    site.wind_speed,
+    site.sector ?? null,
+    site.wind,
   );
 
   const timeLabel = selectedTimestamp
@@ -121,18 +119,23 @@ export function SiteSheet({
         </dd>
       </dl>
       <p>{site.description}</p>
-      {site.restrictions && site.restrictions.length > 0 && (
+      {site.warnings && site.warnings.length > 0 && (
         <ul className="site-sheet-restrictions">
-          {site.restrictions.map((r, i) => (
-            <li key={i}>{r.message}</li>
+          {site.warnings.map((w, i) => (
+            <li key={i}>{w}</li>
           ))}
         </ul>
       )}
-      {site.cps_url && (
+      {site.links && site.links.length > 0 && (
         <p>
-          <a href={site.cps_url} target="_blank" rel="noreferrer">
-            View on CPS
-          </a>
+          {site.links.map((l, i) => (
+            <span key={l.url}>
+              {i > 0 ? " · " : ""}
+              <a href={l.url} target="_blank" rel="noreferrer">
+                {l.label}
+              </a>
+            </span>
+          ))}
         </p>
       )}
     </div>
