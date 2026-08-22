@@ -1187,7 +1187,7 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   not yet fetched/used anywhere in FlyWeather - only the raster is
   consumed this milestone, per the task's own "one clean backend + one
   real W\* layer" scope. `VITE_SOARING_BASE_URL` still points at a local
-  dev copy (`public/soaring-dev/`, gitignored) - no live hosted URL exists
-  yet since `Utskottet/FlyWeather-Soaring` isn't on GitHub yet (see that
-  repo's own PROGRESS.md - still pending the one external repo-creation
-  action).
+  dev copy (`public/soaring-dev/`, gitignored) - `Utskottet/FlyWeather-Soaring`
+  is now live on GitHub, but its CI hasn't been manually triggered yet, so
+  there's still no live *hosted products* URL to switch to (see that repo's
+  own PROGRESS.md).
