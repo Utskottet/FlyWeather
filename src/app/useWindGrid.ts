@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { findNowIndex } from "../domain/timeAxis.ts";
+import { SLIDER_STEPS, findNowIndex } from "../domain/timeAxis.ts";
 import type { GeneratedWindGridFile, WindGridPoint } from "../domain/types.ts";
 
 const GRID_URL = `${import.meta.env.BASE_URL}generated/forecast-wind-grid.json`;
-const SLIDER_STEPS = 72; // NOW + 72 hourly steps, matching useSiteForecasts.ts / MASTER_SPEC.md §6
 
 interface WindGridState {
   /** Each point's arrays are already windowed to [NOW..+72h] - index 0 is always NOW, same as SiteForecast. */

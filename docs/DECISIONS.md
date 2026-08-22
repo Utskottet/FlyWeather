@@ -1598,3 +1598,20 @@ sibling element into the rose's own SVG.
   subsequent slider-hour change cost exactly 1 request / ~7KB (just the
   new raster) - no duplicate fetches, no manifest re-fetch per slider
   move, no runaway request growth.
+
+## Block 19 (efficient-forecast milestone)
+
+- **Regional wind grid stays on Open-Meteo - the DMI-sourced "B3" wind
+  product was skipped, by user decision, not a technical blocker.**
+  FlyWeather-Soaring's EDR pipeline (built for this same milestone, see
+  that repo's PROGRESS.md Milestones 5-7) exposes `wind-10m-u`/`wind-10m-v`
+  and could technically produce a compact regional wind product the same
+  way it now produces W\*. Deliberately not built: the existing Open-Meteo
+  wind grid is already tested, already looks good (per this repo's own
+  `wind-particles.spec.ts` visual-regression coverage), and migrating it
+  carries real risk of degrading a working feature for a provider swap
+  that wasn't the actual ask - the milestone's real goals (efficient RASP
+  fetch, full 3-day horizon, expanded region, an honest time slider) don't
+  require it. If DMI-sourced wind is wanted later, `dmi/edr.py`'s
+  `_WIND_PARAMETER_NAMES` constant already exists as a starting point on
+  the backend side, unused, waiting for that future decision.

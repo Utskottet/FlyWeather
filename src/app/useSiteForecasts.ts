@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { findNowIndex } from "../domain/timeAxis.ts";
+import { SLIDER_STEPS, findNowIndex } from "../domain/timeAxis.ts";
 import { MODEL_HEIGHTS_M } from "../domain/types.ts";
 import type { LocatedSite } from "../domain/sites.ts";
 import type { GeneratedForecastSitesFile, SiteForecast } from "../domain/types.ts";
 
-const SLIDER_STEPS = 72; // NOW + 72 hourly steps, per MASTER_SPEC.md §6
 const FORECAST_URL = `${import.meta.env.BASE_URL}generated/forecast-sites.json`;
 
 interface SiteForecastsState {

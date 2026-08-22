@@ -306,6 +306,31 @@
   white-space: nowrap;
 }
 
+/* Real clock position - visually distinct from selected-time (native range
+   thumb) and from hour/day ticks (gray/black), so the two concepts never
+   get confused at a glance. Sits above the tick row so it never overlaps
+   the day-boundary labels below the ticks. */
+.time-slider-now-marker {
+  position: absolute;
+  top: -3px;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 23px;
+  background: #e64a19;
+  pointer-events: none;
+}
+
+.time-slider-now-marker-label {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  font-weight: 700;
+  color: #e64a19;
+  white-space: nowrap;
+}
+
 .site-sheet-close {
   position: absolute;
   top: 4px;

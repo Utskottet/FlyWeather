@@ -1191,3 +1191,67 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   is now live on GitHub, but its CI hasn't been manually triggered yet, so
   there's still no live *hosted products* URL to switch to (see that repo's
   own PROGRESS.md).
+
+## Production wired to the live FlyWeather-Soaring backend (fixes stale note above)
+
+- FlyWeather-Soaring's CI has since run for real (see that repo's PROGRESS.md
+  Milestone 4+) - `VITE_SOARING_BASE_URL` is now set at build time in both
+  `pages.yml` and `weather-refresh.yml` (both rebuild/redeploy this site, so
+  both needed it - setting only one would flip RASP on/off every 5 minutes
+  as the other's build overwrote the deployment without it) to
+  `https://utskottet.github.io/FlyWeather-Soaring` - confirmed correct by
+  fetching the real live `manifest.json` there (no `/v1` suffix, unlike
+  `.env.example`'s original wrong guess, also fixed). Verified live: the
+  deployed bundle actually contains the URL string, and `pages.yml` had
+  already redeployed successfully with it before this was recorded here.
+
+## Efficient-forecast milestone (F1/F2): full-horizon consumption + honest time slider
+
+- Status: F1 (consume expanded/full-horizon backend) verified by code
+  inspection - no changes needed. F2 (NOW marker + slider dedup) done,
+  lint/typecheck/unit/e2e all green.
+- **F1**: `findNearestValidTime`/`findFileForValidTime`
+  (`src/domain/soaring.ts`) were already fully generic linear scans over
+  `validTimes`/`files` with no hardcoded length/index assumptions -
+  confirmed by direct code inspection, not just "probably fine." They
+  handle FlyWeather-Soaring's new 60-entry `validTimes` array (vs. the
+  original 6) with zero changes. B3 (a DMI-sourced regional wind product)
+  was skipped by user decision, not a technical blocker - Open-Meteo wind
+  stays as-is (see `docs/DECISIONS.md` Block 19), so no non-square-grid
+  work was needed either.
+- **F2 real gap found**: the slider's `hours[]` array was windowed once at
+  fetch time so index 0 = "now then" - real NOW silently drifted off
+  index 0 within a session (no re-window on a timer), and there was no
+  visual representation of NOW independent of the selected index at all.
+  Fixed with a small, deliberately narrow-scope addition: `useNow()`
+  (`src/app/useNow.ts`, a 60s-interval clock tick, separate from the
+  data-fetching hooks which correctly capture `now` once per fetch) and
+  `nowPositionFraction(hours, now)` (`src/domain/timeAxis.ts`, pure,
+  works in UTC epoch time throughout so DST can't cause it to go
+  backwards - regression-tested across both the 2026 spring-forward and
+  fall-back transitions even though today isn't near either). Neither
+  `sliderIndex` semantics nor any RASP/wind/forecast timestamp-matching
+  code was touched - the marker is a purely visual overlay computed
+  independently, per the plan's own "don't disturb what's already
+  timestamp-correct" decision.
+- Also deduplicated `SLIDER_STEPS = 72` (previously copy-pasted in both
+  `useSiteForecasts.ts` and `useWindGrid.ts`) into one shared constant in
+  `domain/timeAxis.ts` - already comfortably covers DMI's real ~60h
+  horizon, so the value itself didn't need to change, just its ownership.
+- **Verified in a real browser (Playwright), not just unit tests**: NOW
+  marker visible on load; moving the selected-time thumb to +24h leaves
+  the marker's pixel position provably unchanged; a mocked-clock unit test
+  confirms the marker itself moves as real time advances; no horizontal
+  overflow and slider height stays under 160px at 360/390/430px mobile
+  widths (screenshots in `test-results/time-slider/`).
+- Files: `src/app/useNow.ts` (new), `src/domain/timeAxis.ts`
+  (`SLIDER_STEPS`, `nowPositionFraction`), `src/app/useSiteForecasts.ts`,
+  `src/app/useWindGrid.ts` (both now import the shared constant),
+  `src/components/TimeSlider/TimeSlider.tsx`, `src/app/App.css`,
+  `tests/unit/timeAxis.test.ts` (+9 tests), `tests/unit/TimeSlider.test.tsx`
+  (+3 tests), `tests/e2e/time-slider.spec.ts` (+5 tests, including the 3
+  mobile-width checks).
+- Next: F3 - full self-test pass across both the new work and the
+  full-horizon backend once its live data is confirmed (currently
+  regenerating in production - see FlyWeather-Soaring's Milestones 5-7),
+  plus updating this file's final numbers.

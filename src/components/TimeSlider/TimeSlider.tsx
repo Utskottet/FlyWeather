@@ -1,4 +1,5 @@
-import { classifyTick, formatSliderLabel, tickDayLabel } from "../../domain/timeAxis.ts";
+import { useNow } from "../../app/useNow.ts";
+import { classifyTick, formatSliderLabel, nowPositionFraction, tickDayLabel } from "../../domain/timeAxis.ts";
 
 export interface TimeSliderProps {
   /** Windowed hours, index 0 = NOW (see useSiteForecasts). */
@@ -8,8 +9,12 @@ export interface TimeSliderProps {
 }
 
 export function TimeSlider({ hours, selectedIndex, onChange }: TimeSliderProps) {
-  const now = new Date();
+  // Ticks every minute so the NOW marker below visibly drifts between
+  // hourly ticks as real time passes - independent of `selectedIndex`,
+  // which only changes when the user actually moves the slider.
+  const now = useNow();
   const maxIndex = Math.max(0, hours.length - 1);
+  const nowFraction = nowPositionFraction(hours, now);
   const selectedDate = hours[selectedIndex] ? new Date(hours[selectedIndex]) : now;
   const label = formatSliderLabel(selectedDate, now, selectedIndex === 0);
 
@@ -55,6 +60,13 @@ export function TimeSlider({ hours, selectedIndex, onChange }: TimeSliderProps) 
             </div>
           );
         })}
+        {nowFraction !== null && (
+          // Real clock position - deliberately separate from the selected-time
+          // thumb above. Moving the slider never moves this; only real time does.
+          <div className="time-slider-now-marker" style={{ left: `${nowFraction * 100}%` }} data-testid="time-slider-now-marker">
+            <span className="time-slider-now-marker-label">NOW</span>
+          </div>
+        )}
       </div>
     </div>
   );

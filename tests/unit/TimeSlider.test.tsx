@@ -1,8 +1,11 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { TimeSlider } from "../../src/components/TimeSlider/TimeSlider.tsx";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 function hoursFromNow(count: number): string[] {
   const start = new Date();
@@ -60,5 +63,49 @@ describe("TimeSlider", () => {
     // 73 hours always spans at least one local midnight
     expect(dayTicks.length).toBeGreaterThanOrEqual(1);
     expect(dayTicks[0].querySelector(".time-slider-tick-label")?.textContent).toMatch(/^[A-Z]{3}$/);
+  });
+});
+
+describe("TimeSlider NOW marker", () => {
+  it("positions the NOW marker independently of the selected index", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-18T12:00:00.000Z")); // exactly on an hourly tick
+    const hours = hoursFromNow(73); // built from the faked "now", so hours[0] = 12:00Z
+
+    const { getByTestId, rerender } = render(
+      <TimeSlider hours={hours} selectedIndex={0} onChange={() => {}} />,
+    );
+    const marker = () => (getByTestId("time-slider-now-marker") as HTMLElement).style.left;
+    expect(marker()).toBe("0%"); // now == hours[0] exactly
+
+    // Moving the selection alone must never move the NOW marker - it's a
+    // real-clock position, not a function of what's selected.
+    rerender(<TimeSlider hours={hours} selectedIndex={40} onChange={() => {}} />);
+    expect(marker()).toBe("0%");
+  });
+
+  it("moves the NOW marker as real time passes, without touching the selection", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-18T12:00:00.000Z"));
+    const hours = hoursFromNow(73);
+    const onChange = vi.fn();
+
+    const { getByTestId } = render(<TimeSlider hours={hours} selectedIndex={5} onChange={onChange} />);
+    const markerLeft = () => parseFloat((getByTestId("time-slider-now-marker") as HTMLElement).style.left);
+    const initial = markerLeft();
+    expect(initial).toBeCloseTo(0, 5);
+
+    act(() => {
+      vi.setSystemTime(new Date("2026-08-18T13:30:00.000Z")); // +90 minutes
+      vi.advanceTimersByTime(60_000); // fires useNow's interval tick
+    });
+
+    expect(markerLeft()).toBeGreaterThan(initial);
+    expect(onChange).not.toHaveBeenCalled(); // advancing the clock never selects anything
+  });
+
+  it("does not render a NOW marker when there's no hour data yet", () => {
+    const { queryByTestId } = render(<TimeSlider hours={[]} selectedIndex={0} onChange={() => {}} />);
+    expect(queryByTestId("time-slider-now-marker")).toBeNull();
   });
 });
