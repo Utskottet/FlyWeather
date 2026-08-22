@@ -96,9 +96,20 @@ export interface GeneratedWindGridFile {
   points: WindGridPoint[];
 }
 
+/**
+ * `heights` mirrors SiteForecast's own per-height shape (§ FlyWeather GUI
+ * Reorganization + Coherent Height Wind) - the regional animated wind
+ * field used to only ever carry 10m wind, so changing HEIGHT moved the
+ * site roses but not the map animation. Publishing the same
+ * MODEL_HEIGHTS_M set here lets the frontend interpolate the animated
+ * field to whatever altitude is selected, the same way it already does
+ * for site roses (domain/heightInterpolation.ts). A schema version
+ * bumped from the old flat-array shape - see collect-forecasts.ts's
+ * isCompatibleGridFile, which must reject the old shape rather than
+ * silently misreading it as multi-height.
+ */
 export interface WindGridPoint {
   lat: number;
   lon: number;
-  windDirectionDeg: (number | null)[]; // aligned to GeneratedWindGridFile.hours
-  windSpeedMs: (number | null)[]; // aligned to GeneratedWindGridFile.hours
+  heights: Record<ModelHeightM, HeightWindSeries>; // each series aligned to GeneratedWindGridFile.hours
 }

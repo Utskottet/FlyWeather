@@ -1,5 +1,5 @@
 import type { GridPoint } from "../../domain/windGrid.ts";
-import type { WindGridPoint } from "../../domain/types.ts";
+import { MODEL_HEIGHTS_M, type ModelHeightM, type WindGridPoint } from "../../domain/types.ts";
 
 const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
 // Same window as site forecasts (openMeteoProvider.ts) - guarantees the
@@ -8,14 +8,21 @@ const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
 // forecast horizon.
 const FORECAST_DAYS = 5;
 
+// Same 4 discrete heights site forecasts already request (openMeteoProvider.ts's
+// HOURLY_VARS) - § FlyWeather GUI Reorganization + Coherent Height Wind:
+// the animated regional field used to only ever carry 10m wind, so
+// changing HEIGHT moved the site roses but not the map. Requesting the
+// same heights here lets both use the same interpolation logic.
+const HOURLY_VARS = MODEL_HEIGHTS_M.flatMap((h) => [`wind_speed_${h}m`, `wind_direction_${h}m`]);
+
+type OpenMeteoGridHourly = { time: string[] } & Partial<
+  Record<`wind_speed_${ModelHeightM}m` | `wind_direction_${ModelHeightM}m`, (number | null)[]>
+>;
+
 interface OpenMeteoHourlyGridEntry {
   latitude: number;
   longitude: number;
-  hourly?: {
-    time: string[];
-    wind_speed_10m?: (number | null)[];
-    wind_direction_10m?: (number | null)[];
-  };
+  hourly?: OpenMeteoGridHourly;
 }
 
 /**
@@ -29,7 +36,7 @@ export function buildGridUrl(points: GridPoint[]): string {
   const params = new URLSearchParams({
     latitude: points.map((p) => p.lat.toFixed(4)).join(","),
     longitude: points.map((p) => p.lon.toFixed(4)).join(","),
-    hourly: "wind_speed_10m,wind_direction_10m",
+    hourly: HOURLY_VARS.join(","),
     wind_speed_unit: "ms",
     timezone: "UTC",
     forecast_days: String(FORECAST_DAYS),
@@ -52,14 +59,19 @@ export interface WindGridBatch {
  */
 export function normalizeGridResponse(points: GridPoint[], raw: OpenMeteoHourlyGridEntry[]): WindGridBatch {
   const hours = raw.find((e) => e.hourly)?.hourly?.time ?? [];
+  const nulls = () => hours.map(() => null);
   const gridPoints = points.map((point, i) => {
     const hourly = raw[i]?.hourly;
-    return {
-      lat: point.lat,
-      lon: point.lon,
-      windDirectionDeg: hourly?.wind_direction_10m ?? hours.map(() => null),
-      windSpeedMs: hourly?.wind_speed_10m ?? hours.map(() => null),
-    };
+    const heights = Object.fromEntries(
+      MODEL_HEIGHTS_M.map((h) => [
+        h,
+        {
+          windDirectionDeg: hourly?.[`wind_direction_${h}m`] ?? nulls(),
+          windSpeedMs: hourly?.[`wind_speed_${h}m`] ?? nulls(),
+        },
+      ]),
+    ) as WindGridPoint["heights"];
+    return { lat: point.lat, lon: point.lon, heights };
   });
   return { hours, points: gridPoints };
 }

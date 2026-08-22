@@ -51,7 +51,7 @@ test.describe("Animated wind particle field", () => {
     await expect(page.getByTestId("site-sheet")).toBeVisible();
   });
 
-  test("WIND toggle removes the animated layer entirely, not just pauses it, and restores it when re-enabled (§ FlyWeather Next UI)", async ({
+  test("animated wind is always on - no WIND toggle exists to hide it (§ FlyWeather GUI Reorganization + Coherent Height Wind item 1)", async ({
     page,
   }) => {
     await page.goto("/");
@@ -59,17 +59,31 @@ test.describe("Animated wind particle field", () => {
     await expect
       .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
       .toBe(true);
-    await expect(page.getByTestId("wind-toggle")).toHaveAttribute("aria-pressed", "true"); // on by default
+    await expect(page.getByTestId("wind-toggle")).toHaveCount(0);
+  });
 
-    await page.getByTestId("wind-toggle").click();
-    await expect
-      .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
-      .toBe(false);
+  test("HEIGHT changes the animated wind field's actual data, not just the site roses (§ item 9/13)", async ({
+    page,
+  }) => {
+    // Reduced motion swaps the continuously-animating WebGL layer for
+    // static DOM arrow markers (prefers-reduced-motion.spec below) - using
+    // that path here makes a before/after screenshot diff deterministic
+    // (nothing else is moving on screen), unlike diffing the live
+    // particle animation which changes every frame regardless of HEIGHT.
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
+    const arrow = page.locator(".wind-arrow-icon").first();
+    await expect(arrow).toBeVisible();
+    await page.waitForTimeout(300);
+    const before = await arrow.screenshot();
 
-    await page.getByTestId("wind-toggle").click();
-    await expect
-      .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
-      .toBe(true);
+    await page.getByTestId("height-control-button").click();
+    await page.getByTestId("altitude-slider-range").fill("1"); // 180m - the far end from Surface/10m
+    await page.waitForTimeout(300);
+
+    const after = await arrow.screenshot();
+    expect(Buffer.compare(before, after)).not.toBe(0);
   });
 
   test("prefers-reduced-motion: no animated layer, static arrow markers shown instead", async ({ page }) => {

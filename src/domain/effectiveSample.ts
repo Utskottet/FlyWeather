@@ -56,14 +56,3 @@ export function selectEffectiveSample(
     ageMinutes: null,
   };
 }
-
-/**
- * Compact map-level provenance line (§ FlyWeather Interaction Model) -
- * distinct from SiteSheet's per-site LIVE/FORECAST badge (live-data.spec.ts,
- * untouched). Driven by the app's sticky `isLiveMode` flag (START vs
- * Forecast state), not by whether the selected time happens to equal now -
- * exact wording mandated by the task; do not alter punctuation.
- */
-export function provenanceLine(isLiveMode: boolean): string {
-  return isLiveMode ? "Sites: live · Map/RASP: forecast" : "Sites, map & RASP: forecast";
-}

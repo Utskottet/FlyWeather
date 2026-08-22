@@ -6,17 +6,17 @@ import type { SiteForecast, WindSample } from "../../domain/types.ts";
 import { MODEL_HEIGHTS_M } from "../../domain/types.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { classifyFreshness } from "../../domain/freshness.ts";
-import { selectEffectiveSample, provenanceLine, type EffectiveSample } from "../../domain/effectiveSample.ts";
+import { selectEffectiveSample, type EffectiveSample } from "../../domain/effectiveSample.ts";
 import { interpolateWindAtHeight } from "../../domain/heightInterpolation.ts";
 import { WindRose } from "../WindRose/index.ts";
 import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
-import { AltitudeSlider } from "../AltitudeSlider/AltitudeSlider.tsx";
 import { StartButton } from "../StartButton/StartButton.tsx";
+import { SourceStatus } from "../SourceStatus/SourceStatus.tsx";
 import { SiteModeToggle, type SiteMode } from "../SiteModeToggle/SiteModeToggle.tsx";
 import { AirspaceToggle } from "../AirspaceToggle/AirspaceToggle.tsx";
-import { WindToggle } from "../WindToggle/WindToggle.tsx";
 import { RoadsToggle } from "../RoadsToggle/RoadsToggle.tsx";
-import { RaspToggle } from "../RaspToggle/RaspToggle.tsx";
+import { RaspControl } from "../RaspControl/RaspControl.tsx";
+import { HeightControl } from "../HeightControl/HeightControl.tsx";
 import { ParameterLegend } from "../ParameterLegend/ParameterLegend.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { WindArrow } from "../WindArrowField/index.ts";
@@ -29,7 +29,7 @@ import { useLiveData } from "../../app/useLiveData.ts";
 import { useWindGrid } from "../../app/useWindGrid.ts";
 import { usePrefersReducedMotion } from "../../app/usePrefersReducedMotion.ts";
 import { useSoaringManifest, resolveSoaringUrl } from "../../app/useSoaringManifest.ts";
-import { buildWindFieldGrid } from "../../domain/windField.ts";
+import { buildWindFieldGrid, windGridPointAtHeight } from "../../domain/windField.ts";
 import { findNearestValidTime, findFileForValidTime, RASP_PARAM_KEYS, type RaspParamKey } from "../../domain/soaring.ts";
 
 const MARKER_SIZE = 48;
@@ -186,22 +186,23 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const [isLiveMode, setIsLiveMode] = useState(true);
   const [siteMode, setSiteMode] = useState<SiteMode>("soaring");
   const [showAirspace, setShowAirspace] = useState(false);
-  const [showWind, setShowWind] = useState(true);
   const [showRoads, setShowRoads] = useState(false);
   const [showRasp, setShowRasp] = useState(false);
   const [selectedRaspParam, setSelectedRaspParam] = useState<RaspParamKey>("wstar");
-  // The bottom controls' real height varies (RASP param selector
-  // appearing, provenance text wrapping to its own line on narrow
-  // screens) - measured rather than guessed so SiteSheet/ParameterLegend
-  // can anchor themselves just above it instead of sliding underneath and
-  // becoming unclickable (found via an E2E diagnostic in the prior
-  // milestone; this wrapper now covers both control rows).
-  const bottomControlsRef = useRef<HTMLDivElement>(null);
-  const [bottomControlsHeight, setBottomControlsHeight] = useState(0);
+  // The source-status bar's real height varies (RASP badge appearing,
+  // text wrapping on narrow screens) - measured rather than guessed so
+  // SiteSheet/ParameterLegend can anchor themselves just above it instead
+  // of sliding underneath and becoming unclickable (found via an E2E
+  // diagnostic in an earlier milestone). The top-left tool stack is
+  // positioned independently and never anchors against this - only the
+  // bottom chrome (source-status bar + timeline) does (§ FlyWeather GUI
+  // Reorganization + Coherent Height Wind item 21).
+  const sourceStatusBarRef = useRef<HTMLDivElement>(null);
+  const [sourceStatusBarHeight, setSourceStatusBarHeight] = useState(0);
   useEffect(() => {
-    const el = bottomControlsRef.current;
+    const el = sourceStatusBarRef.current;
     if (!el) return;
-    const observer = new ResizeObserver((entries) => setBottomControlsHeight(entries[0].contentRect.height));
+    const observer = new ResizeObserver((entries) => setSourceStatusBarHeight(entries[0].contentRect.height));
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
@@ -242,8 +243,8 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const { points: windGridPoints, generatedAt: gridGeneratedAt } = useWindGrid();
   const prefersReducedMotion = usePrefersReducedMotion();
   const windFieldGrid = useMemo(
-    () => buildWindFieldGrid(windGridPoints, sliderIndex),
-    [windGridPoints, sliderIndex],
+    () => buildWindFieldGrid(windGridPoints, sliderIndex, altitudeM),
+    [windGridPoints, sliderIndex, altitudeM],
   );
   const staticWindPoints = useMemo(
     () => (prefersReducedMotion ? subsampleForStaticDisplay(windGridPoints, REDUCED_MOTION_STRIDE) : []),
@@ -313,20 +314,30 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
     <div
       className="site-map-container"
       data-testid="site-map"
-      style={{ "--bottom-controls-height": `${bottomControlsHeight}px` } as React.CSSProperties}
+      style={{ "--source-status-height": `${sourceStatusBarHeight}px` } as React.CSSProperties}
     >
-      <div className="bottom-controls" data-testid="bottom-controls" ref={bottomControlsRef}>
-        <div className="control-bar" data-testid="control-bar">
-          <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
-          <RaspToggle show={showRasp} onChange={setShowRasp} />
-          <AirspaceToggle show={showAirspace} onChange={setShowAirspace} />
-          <WindToggle show={showWind} onChange={setShowWind} />
-          <RoadsToggle show={showRoads} onChange={setShowRoads} />
-        </div>
-        <div className="altitude-bar" data-testid="altitude-bar">
-          <StartButton isLiveMode={isLiveMode} onStart={handleStart} />
-          <AltitudeSlider altitudeM={altitudeM} onChange={handleAltitudeChange} />
-        </div>
+      {/* Top-left tool stack (§ FlyWeather GUI Reorganization + Coherent
+          Height Wind items 2-8): site selection, map overlays, and the
+          collapsible HEIGHT control - a deliberate hierarchy, not one
+          generic button row. Never anchors against the bottom chrome. */}
+      <div className="tool-stack" data-testid="tool-stack">
+        <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
+        <RoadsToggle show={showRoads} onChange={setShowRoads} />
+        <AirspaceToggle show={showAirspace} onChange={setShowAirspace} />
+        <RaspControl
+          show={showRasp}
+          onChange={setShowRasp}
+          selectedParam={selectedRaspParam}
+          onParamChange={setSelectedRaspParam}
+          availableParams={availableRaspParams}
+        />
+        <HeightControl altitudeM={altitudeM} onChange={handleAltitudeChange} />
+      </div>
+      {/* Bottom chrome: forecast navigation + data provenance only (item
+          21) - Roads/Airspace/RASP/Ridge/Winch never live down here. */}
+      <div className="source-status-bar" data-testid="source-status-bar" ref={sourceStatusBarRef}>
+        <StartButton isLiveMode={isLiveMode} onStart={handleStart} />
+        <SourceStatus sitesMeasured={isLiveMode} raspOn={showRasp} />
       </div>
       {visibleSites.length === 0 && (
         <div className="site-mode-empty-notice">
@@ -352,41 +363,35 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
           unit={selectedParameter.unit}
           colorScale={selectedParameter.colorScale}
           provenance={`${soaringManifest.source.provider} ${soaringManifest.source.model} · model run ${new Date(soaringManifest.source.modelRun).toISOString().slice(0, 16).replace("T", " ")}Z`}
-          paramSelector={{
-            selected: selectedRaspParam,
-            onChange: setSelectedRaspParam,
-            availableParams: availableRaspParams,
-          }}
         />
       )}
       <MapLibreMap
         style={mapStyle}
         bounds={maplibreBounds}
         // Bottom padding keeps fitted markers clear of the persistent
-        // 112px time-slider bar PLUS the two-row bottom controls now
-        // sitting directly above it (App.css's .time-slider/.bottom-controls
+        // 98px time-slider bar PLUS the source-status bar now sitting
+        // directly above it (App.css's .time-slider/.source-status-bar
         // heights) so they never land unclickable behind either - found via
-        // an E2E diagnostic during the MapLibre port (112px case) and again
-        // when the control bar moved from top-right to bottom (§ FlyWeather
-        // Next UI), not just a cosmetic choice. The bar grew a second row
-        // this milestone (altitude slider), so the reserve grew with it.
-        boundsPadding={{ top: 40, bottom: 260, left: 40, right: 40 }}
+        // an E2E diagnostic during the MapLibre port, revisited each time
+        // the bottom chrome's shape changed since.
+        boundsPadding={{ top: 40, bottom: 200, left: 40, right: 40 }}
         maxZoom={12}
         showAirspace={showAirspace}
         raspOverlay={raspOverlay}
         windGrid={windFieldGrid}
-        windMotionEnabled={showWind && !prefersReducedMotion}
+        // Animated wind is now always on (§ FlyWeather GUI Reorganization +
+        // Coherent Height Wind item 1) - the only remaining condition is
+        // the accessibility one, prefers-reduced-motion, which was never a
+        // user-facing toggle.
+        windMotionEnabled={!prefersReducedMotion}
         className="site-map"
       >
         {(map) => (
           <>
-            {showWind &&
-              prefersReducedMotion &&
+            {prefersReducedMotion &&
               staticWindPoints.map((point, i) => {
-                const html = buildWindArrowHtml(
-                  point.windDirectionDeg[sliderIndex] ?? null,
-                  point.windSpeedMs[sliderIndex] ?? null,
-                );
+                const { windDirectionDeg, windSpeedMs } = windGridPointAtHeight(point, sliderIndex, altitudeM);
+                const html = buildWindArrowHtml(windDirectionDeg, windSpeedMs);
                 if (!html) return null;
                 return (
                   <MapMarker
@@ -431,12 +436,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
           onClose={() => setSelectedId(null)}
         />
       )}
-      <TimeSlider
-        hours={hours}
-        selectedIndex={sliderIndex}
-        onChange={handleTimeChange}
-        statusText={provenanceLine(isLiveMode)}
-      />
+      <TimeSlider hours={hours} selectedIndex={sliderIndex} onChange={handleTimeChange} />
     </div>
   );
 }

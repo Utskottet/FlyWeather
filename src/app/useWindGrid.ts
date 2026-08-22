@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { SLIDER_STEPS, findNowIndex } from "../domain/timeAxis.ts";
+import { MODEL_HEIGHTS_M } from "../domain/types.ts";
 import type { GeneratedWindGridFile, WindGridPoint } from "../domain/types.ts";
 
 const GRID_URL = `${import.meta.env.BASE_URL}generated/forecast-wind-grid.json`;
@@ -46,11 +47,18 @@ export function useWindGrid(): WindGridState {
 
         const nowIdx = findNowIndex(data.hours, now);
         const end = nowIdx + SLIDER_STEPS + 1;
-        const points = data.points.map((p) => ({
+        const points: WindGridPoint[] = data.points.map((p) => ({
           lat: p.lat,
           lon: p.lon,
-          windDirectionDeg: p.windDirectionDeg.slice(nowIdx, end),
-          windSpeedMs: p.windSpeedMs.slice(nowIdx, end),
+          heights: Object.fromEntries(
+            MODEL_HEIGHTS_M.map((h) => [
+              h,
+              {
+                windDirectionDeg: p.heights[h].windDirectionDeg.slice(nowIdx, end),
+                windSpeedMs: p.heights[h].windSpeedMs.slice(nowIdx, end),
+              },
+            ]),
+          ) as WindGridPoint["heights"],
         }));
 
         setState({ points, generatedAt: data.generatedAt, loading: false, error: null });

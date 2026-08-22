@@ -430,6 +430,23 @@ For future positions:
 > disabled - it shows an active/pressed state at Surface+NOW and stays
 > tappable (a no-op) the rest of the time, per the FlyWeather Mobile UI
 > Correction milestone.
+>
+> **Further corrected (FlyWeather GUI Reorganization + Coherent Height Wind
+> milestone):** HEIGHT is no longer a permanently-visible bottom bar row -
+> it's a collapsible control (`HeightControl.tsx`) in the top-left tool
+> stack (§15.1 as further updated below). Tapping it reveals the same
+> `AltitudeSlider`; collapsing it again never resets the selected altitude,
+> only START does. The button's own label discloses the active altitude
+> ("HEIGHT 70m") so the selection stays visible while collapsed. Also -
+> critically - HEIGHT now drives BOTH the site roses AND the regional
+> animated wind field, not just the roses: `windGrid` points publish wind
+> at all of `MODEL_HEIGHTS_M` (10/80/120/180m), not only 10m, and
+> `buildWindFieldGrid`/`windGridPointAtHeight` (`domain/windField.ts`)
+> interpolate the animated field to the same altitude the roses use, via
+> the same `interpolateWindAtHeight` helper. Before this correction,
+> changing HEIGHT moved the roses but left the animated map stuck at 10m
+> forever - do not regress this; the two must never show different
+> altitudes for the same HEIGHT selection.
 
 Global two-state control:
 
@@ -493,6 +510,16 @@ Do not clutter the rose interior with the weather glyph if it reduces wind reada
 ---
 
 # 9. Regional wind indication
+
+> **Current, authoritative design note (FlyWeather GUI Reorganization +
+> Coherent Height Wind milestone):** The animated particle field shipped
+> well past V1 and is now a permanent, always-on part of the app - the
+> "must be hideable" requirement below is **obsolete**. The user-facing
+> WIND toggle was removed entirely; `windMotionEnabled` now only turns
+> false for `prefers-reduced-motion` (an accessibility fallback to static
+> arrow markers, never a user preference toggle). It also now follows the
+> HEIGHT control (§7) - the field is built from wind at every
+> `MODEL_HEIGHTS_M` height, not just 10m.
 
 Do NOT make Windy-style animated particles a V1 blocker.
 
@@ -704,39 +731,61 @@ No heavy backend framework in V1.
 
 # 15. Main mobile UI
 
-> **Current, authoritative design note (FlyWeather Interaction Model
-> milestone, compacted in FlyWeather Mobile UI Correction):** The layout
-> below is **obsolete** - there is no top control area at all now (kept
-> clean per the new interaction model), and controls live in a compact
-> two-row area directly above the timeline instead. Both rows target a
-> genuinely compact ~32-34px control height, not just "smaller than
-> before" - **minimizing vertical map obstruction is this area's primary
-> design goal**, more important than fitting every control's label at full
-> size. Row 1 is RIDGE/WINCH (a visually distinct segmented control, never
-> styled like the overlay toggles) + single-label RASP/AIRSPACE/WIND/ROADS
-> press-toggles, in one non-wrapping row on 360-430px phones (a hit-area
-> pseudo-element pads the actual tap target beyond the visual pill, per
-> `App.css`'s `.press-toggle::before` etc. - do not just make the buttons
-> visually 40px+ tall again to satisfy touch-target sizing). Row 2 is the
-> START button + the Surface-180m altitude slider (§7 as updated). The
-> live/forecast provenance line lives in the timeline's own top row
-> (`TimeSlider.tsx`'s `statusText` prop), not in either toolbar row - it
-> must never consume toolbar width or force an extra row. The RASP
-> parameter selector (Thermals/Thermal top/Usable height/Cloudbase) is
-> **not** a permanent toolbar row - it opens as a small popover from the
-> RASP legend's own title (`ParameterLegend.tsx`'s `paramSelector` prop),
-> only once RASP is on and showing real data; adding it back as 4 always-
-> visible buttons in the primary toolbar is exactly the regression this
-> milestone corrected. The per-site Surface/Soaring segmented control and
-> the standalone NOW button are both gone - START now resets time +
-> altitude + live wind together in one tap, and is the app's only way back
-> to live mode (moving either slider away from its START value
-> auto-enters Forecast, and never auto-reverts even if the sliders happen
-> to scrub back to their start values). START itself is never disabled -
-> it shows an active/pressed state at Surface+NOW, not a grayed-out one.
-> The 3-way Relief/Topo/Map basemap selector introduced in a later block
-> is also gone, replaced by a single ROADS toggle (off = Relief, on =
+> **Current, authoritative design note (FlyWeather GUI Reorganization +
+> Coherent Height Wind milestone - supersedes both the FlyWeather
+> Interaction Model and FlyWeather Mobile UI Correction milestones' notes
+> below, which described a horizontal bottom toolbar that no longer
+> exists):** The layout below is **obsolete**. Controls are now split
+> across two regions with a deliberate hierarchy, not one generic button
+> row:
+>
+> - **Top-left tool stack** (`.tool-stack`, positioned below MapLibre's own
+>   zoom control): site selection and map overlays, top to bottom -
+>   RIDGE/WINCH (`SiteModeToggle`, a visually distinct segmented control,
+>   never styled like the overlay toggles), ROADS, AIRSPACE, RASP, HEIGHT.
+>   RASP and HEIGHT are compact/collapsible, not permanently-expanded rows:
+>   RASP's parameter selector (Thermals/Thermal top/Usable height/
+>   Cloudbase) appears directly under the RASP button the moment RASP is
+>   switched on (`RaspControl.tsx`) and disappears the moment it's off -
+>   never 4 permanent buttons in the toolbar. HEIGHT
+>   (`HeightControl.tsx`) is collapsed by default; tapping it reveals the
+>   `AltitudeSlider` (§7), and collapsing it again never resets the
+>   selected altitude - only START does. The button's own label discloses
+>   the active altitude ("HEIGHT 70m") while collapsed. There is no WIND
+>   toggle anymore (§9) - animated wind is unconditional now.
+> - **Bottom chrome**: forecast navigation and data provenance only - the
+>   START button, the compact SITES/WIND FIELD/RASP source-status strip
+>   (`SourceStatus.tsx`, §16 below), and the timeline. Roads/Airspace/
+>   RASP/Ridge/Winch never live down here - putting them back here is
+>   exactly the regression this milestone corrected (the prior
+>   Mobile-UI-Correction pass's 2-row horizontal toolbar). START itself is
+>   never disabled - it shows an active/pressed state at Surface+NOW, not a
+>   grayed-out one - and remains the app's only way back to live mode
+>   (moving time or altitude away from START auto-enters Forecast, and
+>   never auto-reverts even if the sliders happen to scrub back to their
+>   start values). Pressing START resets time + altitude + site-source, but
+>   deliberately does **not** touch Roads/Airspace/RASP - those are
+>   standing map-tool preferences, not forecast-navigation state.
+>
+> The per-site Surface/Soaring segmented control and the standalone NOW
+> button are both still gone (superseded by the global altitude slider and
+> START, respectively). The 3-way Relief/Topo/Map basemap selector is also
+> still gone, replaced by the single ROADS toggle (off = Relief, on =
 > Topo).
+>
+> **Source-status strip (current, authoritative):**
+>
+> Replaces the single prose provenance sentence from earlier milestones.
+> Lives in the bottom chrome (above), not the top-left tool stack. Shows,
+> as plain readable words (never color-only): `SITES` MEASURED at
+> Surface+NOW, FORECAST otherwise; `WIND FIELD` always FORECAST, even at
+> START - the regional animated field is always model data, it never
+> becomes a live observation, unlike site roses which do have a real live
+> station behind them at Surface+NOW. `RASP` shows FORECAST only while the
+> RASP overlay is on; the chip is omitted entirely (not merely dimmed) while
+> RASP is off, so it never wastes space on an irrelevant status. A green LED
+> means measured/live, blue means forecast/model - the LED is a redundant
+> visual cue on top of the text, never the only signal.
 
 ## 15.1 Initial screen
 

@@ -19,40 +19,78 @@
   pointer-events: none;
 }
 
-/* Two-row control area immediately above the timeline (§ FlyWeather Mobile
-   UI Correction - re-tuned for a much smaller footprint than the prior
-   pass). .bottom-controls is the sole absolutely-positioned anchor (its
-   measured height drives --bottom-controls-height, read by
-   .site-sheet/.rasp-legend below); .control-bar and .altitude-bar are its
-   two plain-flow rows. Both rows target a compact ~32-34px control height
-   so the map regains vertical space; flex-wrap on .control-bar is a safety
-   net, not the expected layout, at 360-430px. */
-.bottom-controls {
+/* Top-left vertical tool stack (§ FlyWeather GUI Reorganization + Coherent
+   Height Wind items 2-8) - site selection, map overlays, and the
+   collapsible HEIGHT control in one deliberate hierarchy, replacing the
+   old single horizontal control-bar row entirely. Sits below MapLibre's
+   own top-left zoom control (NavigationControl, ~62px tall) so the two
+   never overlap. Deliberately compact, not "five equally huge pills" -
+   each row is its own naturally-sized pill, left-aligned, not stretched. */
+.tool-stack {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 112px;
-  z-index: 1000;
+  top: 76px;
+  left: 10px;
+  z-index: 900;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.1);
+  align-items: flex-start;
+  gap: 6px;
+  max-width: calc(100vw - 20px);
 }
 
-.control-bar {
+.tool-stack-item {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 4px;
-  padding: 4px 8px;
 }
 
-.altitude-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 3px 8px 6px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+/* RASP/HEIGHT's disclosure chevron (▸/▾) - purely visual, distinguishes
+   "has an associated submenu" (RASP, HEIGHT) from a plain toggle (Roads,
+   Airspace) at a glance, per the task's own ASCII mockup. */
+.tool-stack-chevron {
+  font-size: 9px;
+  margin-left: 2px;
+  opacity: 0.7;
+}
+
+.tool-stack-submenu {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  padding: 8px;
+}
+
+/* HEIGHT's own compact slider, revealed only while expanded (never a
+   permanent full-width bar) - narrower than the old bottom altitude-bar
+   since it now lives in a small top-left popover. */
+.tool-stack-submenu .altitude-slider {
+  width: 160px;
+}
+
+/* RASP's parameter popover - a compact 2x2 grid (not a full pill row) so
+   4 parameter names fit a small popover instead of needing the full
+   screen width the old horizontal toolbar row had available. */
+.tool-stack-submenu .rasp-param-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  width: 176px;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.tool-stack-submenu .rasp-param-selector button {
+  border-radius: 6px;
+  background: #f0f0f0;
+  min-height: 30px;
+  padding: 0 4px;
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .site-mode-toggle,
@@ -77,10 +115,10 @@
 }
 
 /* Hit-area technique (§ FlyWeather Mobile UI Correction item 1): the
-   visible pill stays ~32px tall for a compact single-row toolbar, but an
-   invisible pseudo-element pads the actual tap target a few px on every
-   side without affecting layout/row height - a plain absolutely-positioned
-   element contributes nothing to flex sizing. */
+   visible pill stays ~32px tall for a compact stack, but an invisible
+   pseudo-element pads the actual tap target a few px on every side
+   without affecting layout size - a plain absolutely-positioned element
+   contributes nothing to flex sizing. */
 .site-mode-toggle button::before,
 .rasp-param-selector button::before,
 .press-toggle::before,
@@ -102,12 +140,12 @@
 }
 
 /* One-tap reset to START (§ FlyWeather Interaction Model) - visually the
-   most prominent control in the bar, since it's the app's single way back
-   to live mode. Never disabled (§ FlyWeather Mobile UI Correction) -
-   unpressed/white means "tap to return to START" (an available action,
-   like the other toggles' OFF state), pressed/blue (.active) means "you
-   are at START now", matching the same pressed-state convention as
-   .press-toggle instead of a grayed-out "unavailable" look. */
+   most prominent control in the bottom bar, since it's the app's single
+   way back to live mode. Never disabled (§ FlyWeather Mobile UI
+   Correction) - unpressed/white means "tap to return to START" (an
+   available action, like the other toggles' OFF state), pressed/blue
+   (.active) means "you are at START now", matching the same pressed-state
+   convention as .press-toggle instead of a grayed-out "unavailable" look. */
 .start-button {
   position: relative;
   border: none;
@@ -129,16 +167,13 @@
 }
 
 /* Nonlinear Surface-180m slider (§ FlyWeather Mobile UI Correction - capped
-   at the real data ceiling) - fills the remaining width next to START;
-   label is fixed-width-ish via white-space:nowrap so the range input
-   doesn't jitter as the label text length changes between "Surface" and
-   "180 m AGL". */
+   at the real data ceiling) - label is fixed-width-ish via
+   white-space:nowrap so the range input doesn't jitter as the label text
+   length changes between "Surface" and "180 m AGL". */
 .altitude-slider {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
-  min-width: 0;
 }
 
 .altitude-slider-range {
@@ -153,25 +188,16 @@
   white-space: nowrap;
 }
 
-/* 4 options need to fit narrow mobile widths where the 2-option toggle
-   above doesn't - smaller padding/font, same shared active-state styling.
-   Lives inside the RASP legend's popover now, not the primary toolbar
-   (§ FlyWeather Mobile UI Correction item 3), so width pressure is lower
-   than when this sat permanently in .control-bar. */
-.rasp-param-selector button {
-  padding: 0 10px;
-  font-size: 12px;
-}
-
 /* Shared single-label pressed-state toggle (§ FlyWeather Next UI) - label
    text never changes between on/off; state is conveyed only by aria-pressed
    + this .active styling, replacing the old two-button "X off"/"X on"
-   AirspaceToggle/RaspToggle pattern. Used for AIRSPACE, WIND, RASP, ROADS. */
+   AirspaceToggle/RaspToggle pattern. Used for AIRSPACE, RASP, ROADS. */
 .press-toggle {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   border: none;
   border-radius: 999px;
   background: #fff;
@@ -186,6 +212,64 @@
 .press-toggle.active {
   background: #1565c0;
   color: #fff;
+}
+
+/* Bottom chrome: forecast navigation + data provenance only (§ FlyWeather
+   GUI Reorganization + Coherent Height Wind item 21) - Roads/Airspace/
+   RASP/Ridge/Winch never live down here anymore, only live in the
+   top-left tool stack above. Its measured height drives
+   --source-status-height, read by .site-sheet/.rasp-legend below. */
+.source-status-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 98px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Compact SITES/WIND FIELD/RASP status strip (items 15-18) - replaces the
+   old single prose sentence. Never color-only (item 16): MEASURED/FORECAST
+   is always real text, the LED is a redundant visual cue on top of it. */
+.source-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #444;
+}
+
+.source-status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.source-status-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Green = measured/live observation, blue = forecast/model (item 16's
+   suggested visual language). */
+.source-status-item.led-measured .source-status-led {
+  background: #2e7d32;
+}
+
+.source-status-item.led-forecast .source-status-led {
+  background: #1565c0;
 }
 
 .site-mode-empty-notice {
@@ -239,12 +323,12 @@
 
 .rasp-legend {
   position: absolute;
-  /* Anchored above the bottom controls (real height measured in
-     SiteMap.tsx, same --bottom-controls-height variable as .site-sheet)
-     rather than a fixed 128px - the bar wraps to multiple rows on narrow
-     phones, which used to grow tall enough to sit behind/hide this legend
-     entirely. */
-  bottom: calc(112px + var(--bottom-controls-height, 0px) + 8px);
+  /* Anchored above the bottom chrome (real height measured in SiteMap.tsx,
+     same --source-status-height variable as .site-sheet) rather than a
+     fixed value - the bar's height varies (RASP badge appearing, text
+     wrapping on narrow phones), which used to grow tall enough to sit
+     behind/hide this legend entirely. */
+  bottom: calc(98px + var(--source-status-height, 0px) + 8px);
   left: 12px;
   z-index: 500;
   background: rgba(255, 255, 255, 0.95);
@@ -253,38 +337,17 @@
   padding: 8px 12px 16px;
   width: 240px;
   max-width: calc(100vw - 24px);
-  /* Auto, not none (§ FlyWeather Mobile UI Correction item 3) - the title
-     is now a tap target that opens the RASP parameter popover below. */
-  pointer-events: auto;
+  /* Read-only (§ FlyWeather GUI Reorganization + Coherent Height Wind) -
+     the RASP parameter selector now lives on the RASP control itself in
+     the top-left tool stack, not behind a tap on this legend. */
+  pointer-events: none;
 }
 
-.rasp-legend-title,
-.rasp-legend-title-button {
+.rasp-legend-title {
   font-size: 12px;
   font-weight: 600;
   color: #333;
   margin-bottom: 6px;
-}
-
-.rasp-legend-title-button {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  border: none;
-  background: none;
-  padding: 0;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-}
-
-.rasp-legend-chevron {
-  font-size: 9px;
-  color: #777;
-}
-
-.rasp-legend-param-popover {
-  margin-bottom: 8px;
 }
 
 .rasp-legend-scale {
@@ -339,11 +402,11 @@
   position: absolute;
   left: 0;
   right: 0;
-  /* Anchored above the bottom controls (their real height is measured in
+  /* Anchored above the bottom chrome (its real height is measured in
      SiteMap.tsx, since it varies with content) rather than directly above
      the timeline - otherwise the sheet's z-index would either bury the
-     controls or they'd sit as a dead strip over the sheet. */
-  bottom: calc(112px + var(--bottom-controls-height, 0px));
+     source-status bar or it'd sit as a dead strip over the sheet. */
+  bottom: calc(98px + var(--source-status-height, 0px));
   max-height: 55%;
   overflow-y: auto;
   background: #fff;
@@ -413,17 +476,6 @@
   font-weight: 700;
   font-size: 15px;
   flex-shrink: 0;
-}
-
-/* Provenance line (§ FlyWeather Mobile UI Correction item 8) - lives in the
-   timeline's own top row instead of the primary toolbar, so it never
-   consumes toolbar width or forces an extra row; wraps rather than
-   truncates if it doesn't fit next to the time label on a very narrow
-   phone. */
-.time-slider-status {
-  font-size: 11px;
-  color: #666;
-  text-align: right;
 }
 
 .time-slider-range {

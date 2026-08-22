@@ -8,7 +8,8 @@ import { fetchSitesForecastBatch } from "../src/providers/forecast/openMeteoProv
 import { fetchWindGrid } from "../src/providers/forecast/openMeteoGridProvider.ts";
 import { buildWindGrid } from "../src/domain/windGrid.ts";
 import { computeSiteBounds } from "../src/components/Map/mapBounds.ts";
-import type { GeneratedForecastSitesFile, GeneratedWindGridFile } from "../src/domain/types.ts";
+import { MODEL_HEIGHTS_M } from "../src/domain/types.ts";
+import type { GeneratedForecastSitesFile, GeneratedWindGridFile, WindGridPoint } from "../src/domain/types.ts";
 
 // 31x31 = up to 961 points, ~3x the 18x18=324 grid the architecture fix
 // shipped with - safe to triple again now that fetching happens once
@@ -48,22 +49,33 @@ async function fetchPublished<T>(path: string): Promise<T | null> {
 
 /**
  * Guards against a shape drift between the currently-published grid
- * file and what this version of the collector expects - the wind grid
- * changed from single current-conditions values to per-hour arrays
- * (this commit), so the file published by the PREVIOUS version of this
- * script has an incompatible shape (no `hours`, single-number points).
+ * file and what this version of the collector expects. The wind grid
+ * has changed shape twice now: first from single current-conditions
+ * values to per-hour arrays, then (§ FlyWeather GUI Reorganization +
+ * Coherent Height Wind) from flat windDirectionDeg/windSpeedMs arrays to
+ * a `heights` record keyed by MODEL_HEIGHTS_M, mirroring SiteForecast -
+ * needed so the animated wind field can follow HEIGHT the same way site
+ * roses already do, not just show 10m wind forever. A file published by
+ * an older version of this script has an incompatible shape either way.
  * If a fresh fetch fails and falls back to that stale-shaped file
- * without this check, the frontend's `.slice()` calls on what it
- * expects to be arrays would throw. Treating a shape mismatch the same
- * as "no fallback available" (empty state) is safer than serving data
- * the frontend can't actually consume.
+ * without this check, the frontend's height lookups on what it expects
+ * to be a `heights` record would throw or silently read `undefined`.
+ * Treating a shape mismatch the same as "no fallback available" (empty
+ * state) is safer than serving data the frontend can't actually consume -
+ * do NOT reinterpret an old flat-array file as if it were multi-height.
  */
 function isCompatibleGridFile(data: unknown): data is GeneratedWindGridFile {
   if (typeof data !== "object" || data === null) return false;
   const d = data as Partial<GeneratedWindGridFile>;
   if (!Array.isArray(d.hours) || !Array.isArray(d.points)) return false;
   const [first] = d.points;
-  return first === undefined || (Array.isArray(first.windDirectionDeg) && Array.isArray(first.windSpeedMs));
+  if (first === undefined) return true;
+  const heights = (first as Partial<WindGridPoint>).heights;
+  if (typeof heights !== "object" || heights === null) return false;
+  return MODEL_HEIGHTS_M.every((h) => {
+    const series = (heights as Record<number, { windDirectionDeg?: unknown; windSpeedMs?: unknown }>)[h];
+    return series !== undefined && Array.isArray(series.windDirectionDeg) && Array.isArray(series.windSpeedMs);
+  });
 }
 
 async function main() {
