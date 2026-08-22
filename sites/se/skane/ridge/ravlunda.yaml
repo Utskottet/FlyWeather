@@ -8,9 +8,9 @@ coordinates:
   verified: true
   source: CPS
 sector:
-  from_deg: 78.75
-  to_deg: 101.25
-  verified: false
+  from_deg: 60
+  to_deg: 120
+  verified: true
 wind:
   verified: false
 station:
@@ -18,9 +18,11 @@ station:
   station_id: "126"
   verified: true
 ridge_height_m: 20
-description: East-facing Ravlunda/Haväng coastal ridge. CPS specifically warns about local wind behavior ('Ravlunda effect') and military-range availability.
+description: Ravlunda firing-range.   East-facing Ravlunda/Haväng coastal ridge. CPS specifically warns about local wind behavior ('Ravlunda effect') and military-range availability.
 warnings:
   - "[HARD] Flying availability depends on Ravlunda firing-range activity; weather green must not imply the site is open."
 links:
   - label: CPS listing
     url: https://www.cps.to/flygstallen/o-ravlunda/
+  - label: Försvarsmakten - skjutfält och förbud
+    url: https://www.forsvarsmakten.se/regler-och-tillstand/skjutfalt-och-forbud/
