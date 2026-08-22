@@ -33,7 +33,8 @@
 .height-mode-toggle,
 .map-mode-toggle,
 .site-mode-toggle,
-.airspace-toggle {
+.airspace-toggle,
+.rasp-toggle {
   display: inline-flex;
   background: #fff;
   border-radius: 999px;
@@ -44,7 +45,8 @@
 .height-mode-toggle button,
 .map-mode-toggle button,
 .site-mode-toggle button,
-.airspace-toggle button {
+.airspace-toggle button,
+.rasp-toggle button {
   border: none;
   background: transparent;
   min-height: 44px;
@@ -57,7 +59,8 @@
 .height-mode-toggle button.active,
 .map-mode-toggle button.active,
 .site-mode-toggle button.active,
-.airspace-toggle button.active {
+.airspace-toggle button.active,
+.rasp-toggle button.active {
   background: #1565c0;
   color: #fff;
 }
@@ -98,6 +101,60 @@
   font-size: 13px;
   color: #7a4a00;
   pointer-events: none;
+}
+
+.rasp-unavailable-notice {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 500;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  padding: 8px 12px;
+  max-width: 240px;
+  font-size: 13px;
+  color: #555;
+  pointer-events: none;
+}
+
+.rasp-legend {
+  position: absolute;
+  bottom: 128px;
+  left: 12px;
+  z-index: 500;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  padding: 8px 12px;
+  max-width: 220px;
+  pointer-events: none;
+}
+
+.rasp-legend-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.rasp-legend-scale {
+  display: flex;
+  height: 10px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.rasp-legend-swatch {
+  flex: 1;
+  height: 100%;
+}
+
+.rasp-legend-provenance {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #888;
 }
 
 .site-sheet-height-warning {

@@ -13,6 +13,7 @@ import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
 import { HeightModeToggle, type HeightMode } from "../HeightModeToggle/HeightModeToggle.tsx";
 import { SiteModeToggle, type SiteMode } from "../SiteModeToggle/SiteModeToggle.tsx";
 import { AirspaceToggle } from "../AirspaceToggle/AirspaceToggle.tsx";
+import { RaspToggle } from "../RaspToggle/RaspToggle.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
@@ -24,7 +25,9 @@ import { useSiteForecasts } from "../../app/useSiteForecasts.ts";
 import { useLiveData } from "../../app/useLiveData.ts";
 import { useWindGrid } from "../../app/useWindGrid.ts";
 import { usePrefersReducedMotion } from "../../app/usePrefersReducedMotion.ts";
+import { useSoaringManifest, resolveSoaringUrl } from "../../app/useSoaringManifest.ts";
 import { buildWindFieldGrid } from "../../domain/windField.ts";
+import { findNearestValidTime, findFileForValidTime } from "../../domain/soaring.ts";
 
 const MARKER_SIZE = 48;
 const SELECTED_MARKER_SIZE = 60;
@@ -189,6 +192,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const [mapMode, setMapMode] = useState<MapMode>("relief");
   const [siteMode, setSiteMode] = useState<SiteMode>("soaring");
   const [showAirspace, setShowAirspace] = useState(false);
+  const [showRasp, setShowRasp] = useState(false);
   // Bounds/fit are computed from the full located set regardless of
   // siteMode, same "no map jump" principle as heightMode/mapMode -
   // switching to Winch never recenters the map just because that set is
@@ -217,6 +221,26 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
     [prefersReducedMotion, windGridPoints],
   );
   const isNow = sliderIndex === 0;
+
+  const { manifest: soaringManifest, loading: soaringLoading, error: soaringError } = useSoaringManifest();
+  const wstarParameter = soaringManifest?.parameters.wstar ?? null;
+  const selectedHourIso = hours[sliderIndex] ?? null;
+  // Matched by actual valid timestamp (never by array index - two
+  // completely different data pipelines, no reason their hours would
+  // ever align positionally even though they usually align in wall-clock
+  // time), per docs/soaring.ts's tolerance rule.
+  const matchedRaspValidTime =
+    wstarParameter && selectedHourIso ? findNearestValidTime(wstarParameter.validTimes, selectedHourIso) : null;
+  const matchedRaspFile =
+    wstarParameter && matchedRaspValidTime ? findFileForValidTime(wstarParameter, matchedRaspValidTime) : null;
+  const raspOverlay =
+    showRasp && wstarParameter && matchedRaspFile
+      ? { imageUrl: resolveSoaringUrl(matchedRaspFile.raster), bbox: wstarParameter.grid.bbox }
+      : null;
+  // Only worth telling the user about once the manifest itself has
+  // resolved (loaded or failed) - avoids a flash of "unavailable" while
+  // the fetch is still in flight on first load.
+  const isRaspUnavailable = showRasp && !soaringLoading && !raspOverlay;
 
   // Flag using whichever of the two publish timestamps is OLDER - if
   // either dataset's refresh cron has stalled, that's worth surfacing
@@ -257,6 +281,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         <HeightModeToggle mode={heightMode} onChange={setHeightMode} />
         <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
         <AirspaceToggle show={showAirspace} onChange={setShowAirspace} />
+        <RaspToggle show={showRasp} onChange={setShowRasp} />
       </div>
       {visibleSites.length === 0 && (
         <div className="site-mode-empty-notice">
@@ -266,6 +291,31 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
       {isForecastDataStale && (
         <div className="data-staleness-notice" data-testid="data-staleness-notice">
           Forecast data hasn't updated in over an hour - may be stale.
+        </div>
+      )}
+      {isRaspUnavailable && (
+        <div className="rasp-unavailable-notice" data-testid="rasp-unavailable-notice">
+          {soaringError
+            ? "RASP thermal data unavailable."
+            : "No RASP thermal data for this forecast hour."}
+        </div>
+      )}
+      {raspOverlay && wstarParameter && (
+        <div className="rasp-legend" data-testid="rasp-legend">
+          <div className="rasp-legend-title">
+            {wstarParameter.label} ({wstarParameter.technicalLabel}) · {wstarParameter.unit}
+          </div>
+          <div className="rasp-legend-scale">
+            {wstarParameter.colorScale.map((stop) => (
+              <span key={stop.value} className="rasp-legend-swatch" style={{ backgroundColor: stop.color }} title={`${stop.value} ${wstarParameter.unit}`} />
+            ))}
+          </div>
+          {soaringManifest && (
+            <div className="rasp-legend-provenance">
+              {soaringManifest.source.provider} {soaringManifest.source.model} · model run{" "}
+              {new Date(soaringManifest.source.modelRun).toISOString().slice(0, 16).replace("T", " ")}Z
+            </div>
+          )}
         </div>
       )}
       <MapLibreMap
@@ -278,6 +328,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         boundsPadding={{ top: 40, bottom: 152, left: 40, right: 40 }}
         maxZoom={12}
         showAirspace={showAirspace}
+        raspOverlay={raspOverlay}
         windGrid={windFieldGrid}
         windMotionEnabled={!prefersReducedMotion}
         className="site-map"

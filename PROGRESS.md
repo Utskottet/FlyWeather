@@ -1131,3 +1131,63 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   mid-session is rare). Streak/advection-speed constants are
   visually-tuned starting points, not derived from a formal study -
   reasonable, open to further adjustment from real usage feedback.
+
+## RASP overlay: consumes FlyWeather-Soaring's W* product, first real soaring layer
+- Status: done
+- User task: FlyWeather Soaring Backend + First Real RASP Layer - a new
+  independent Python repo (`Utskottet/FlyWeather-Soaring`) owning all DMI/
+  physics work, FlyWeather consuming only its versioned product contract via
+  a RASP ON/OFF toggle (default OFF), matched by real timestamp.
+- Definition of Done: [x] `src/domain/soaring.ts` - manifest types +
+  `findNearestValidTime`/`findFileForValidTime`, 11 unit tests including the
+  exact-match/nearest-within-tolerance/no-match-returns-null/custom-tolerance/
+  boundary-inclusive/malformed-entry cases [x] `useSoaringManifest.ts` -
+  same fetch-hook shape as `useWindGrid`/`useSiteForecasts`, empty
+  `VITE_SOARING_BASE_URL` is a supported "not configured" state, not an
+  error [x] `raspLayer.ts` - MapLibre `image`-source add/update/remove,
+  idempotent, matches `airspaceLayer.ts`'s pattern [x] `RaspToggle.tsx` -
+  mirrors `AirspaceToggle.tsx` exactly [x] wired into `MapLibreMap.tsx`
+  (added first in `style.load` = bottom-most overlay) and `SiteMap.tsx`
+  (timestamp matching, unavailable notice, legend with real provenance)
+  [x] `.env.example` added (first custom env var in this codebase)
+  [x] lint/typecheck/207 unit tests/build/22 e2e tests (6 new) all green
+  [x] verified against REAL FlyWeather-Soaring output, not fixtures
+  [x] repository-isolation gate verified directly (built + ran with the
+  soaring backend entirely unconfigured)
+- **Verified against real generated products**: copied
+  FlyWeather-Soaring's actual Milestone-3 output (`products/v1/`, a real
+  DMI run) into `public/soaring-dev/`. Screenshots confirmed: (1) a
+  matched hour shows the real W\* overlay, correctly positioned, roses and
+  wind particles clearly on top of it, legend showing real "DMI HARMONIE ·
+  model run 2026-08-21 21:00Z" provenance; (2) NOW (outside the demo
+  data's 06:00-11:00Z window) shows "No RASP thermal data for this
+  forecast hour" - not stale data, not a fake overlay; (3) toggling off
+  then on again correctly restores the layer; (4) survives RELIEF->TOPO->
+  MAP with no duplication; (5) site clicks/Airspace/wind particles all
+  still work with RASP on.
+- **Isolation gate verified directly**: built and ran the app with
+  `VITE_SOARING_BASE_URL` completely unset - build succeeded, RASP shows
+  a genuinely distinct "RASP thermal data unavailable" message (vs. the
+  "no data for this hour" wording used when the manifest loads fine but
+  just lacks that specific hour), everything else unaffected, zero
+  console errors.
+- **Real network numbers**: enabling RASP + landing on a matched hour = 2
+  requests / 7.5KB (manifest + 1 raster). Each subsequent slider-hour
+  change = exactly 1 request / ~7KB (just the new raster, no manifest
+  re-fetch, no duplicate downloads). Mobile widths (360/390/430px) with
+  RASP on: no horizontal overflow, legend and toggle both readable
+  without obstructing the map.
+- Files: `src/domain/soaring.ts`, `src/app/useSoaringManifest.ts`,
+  `src/components/Map/raspLayer.ts`, `src/components/RaspToggle/RaspToggle.tsx`,
+  `src/components/Map/MapLibreMap.tsx`, `src/components/Map/SiteMap.tsx`,
+  `src/app/App.css`, `.env.example`, `.gitignore`,
+  `tests/unit/soaring.test.ts`, `tests/e2e/rasp.spec.ts`
+- Deferred / unresolved: the numeric grid JSON (per-hour, for a future
+  "W\* at this site" query feature) is published by FlyWeather-Soaring but
+  not yet fetched/used anywhere in FlyWeather - only the raster is
+  consumed this milestone, per the task's own "one clean backend + one
+  real W\* layer" scope. `VITE_SOARING_BASE_URL` still points at a local
+  dev copy (`public/soaring-dev/`, gitignored) - no live hosted URL exists
+  yet since `Utskottet/FlyWeather-Soaring` isn't on GitHub yet (see that
+  repo's own PROGRESS.md - still pending the one external repo-creation
+  action).

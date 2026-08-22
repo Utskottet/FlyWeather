@@ -2,6 +2,9 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
 *.tsbuildinfo
 test-results/
 playwright-report/
@@ -13,6 +16,10 @@ public/generated/
 
 # copied fresh from node_modules/maplibre-gl by scripts/copy-maplibre-worker.ts
 public/vendor/
+
+# local-dev-only copy of FlyWeather-Soaring's generated products (see
+# .env.example) - never part of this repo's own build output.
+public/soaring-dev/
 
 .DS_Store
 *.log

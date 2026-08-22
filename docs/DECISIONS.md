@@ -1542,3 +1542,59 @@ sibling element into the rose's own SVG.
   numbers, not derived from a formal readability study - reasonable
   starting points, open to further adjustment if real usage reveals a
   problem.
+
+## RASP integration: consumes FlyWeather-Soaring's product contract as an opaque static file
+- The new sibling repo `Utskottet/FlyWeather-Soaring` (Python, separate git
+  history, not a submodule) owns DMI fetch/GRIB decode/W\* physics entirely -
+  this repo touches none of that, only `src/domain/soaring.ts`'s manifest
+  shape and a fetch/timestamp-matching layer, per that repo's own
+  `docs/ARCHITECTURE.md` boundary.
+- **Timestamp matching, not index matching**: `findNearestValidTime()`
+  compares `hours[sliderIndex]` (this app's own real UTC instant) against
+  the manifest's `validTimes` with a documented 30-minute tolerance,
+  returning `null` if nothing is close enough - never a silent wrong-hour
+  substitution. The 30-minute figure is this app's own policy choice, not
+  something the manifest itself opines on (per that repo's
+  `docs/PRODUCT_CONTRACT.md`, which deliberately leaves tolerance as "the
+  consumer's own policy").
+- **`raspOverlay: {imageUrl, bbox} | null` is the only prop `MapLibreMap`
+  needs** - collapsing "toggled off" and "toggled on but no product for
+  this hour" into the same `null` case kept the map-layer logic simple;
+  the two cases only need to look different in the *text* shown by
+  `SiteMap` (`isRaspUnavailable`), not in what the map itself does.
+- **`updateImage()` in place, not remove/re-add**, when the slider moves to
+  a different matched hour - same "smooth transition, don't reset
+  unnecessarily" convention already established for the wind particle
+  layer's `updateWindParticleLayer`. `raster-fade-duration: 0` is
+  deliberate: MapLibre's default raster fade would visually blend the OLD
+  hour's raster into the NEW one for a moment, which could read as a real
+  (wrong) transitional value between two genuinely discrete forecast
+  hours, not just a cosmetic nicety to skip.
+- **Layer order**: RASP is added FIRST in the `"style.load"` handler
+  (before Skyways/Airspace/wind), so it paints as the bottom-most overlay
+  directly above the basemap - confirmed visually (roses and wind streaks
+  render clearly on top of the W\* color field, not obscured by it).
+- **MapLibre `image` source, not `raster` tiles** - FlyWeather-Soaring
+  publishes exactly one whole-region georeferenced image per forecast
+  hour (not a tile pyramid), so a 4-corner-coordinate `ImageSource` is the
+  correct native fit, not an unnecessary tiling layer.
+- **Isolation verified directly, not assumed**: built and ran the app
+  with `VITE_SOARING_BASE_URL` completely unset (no `.env`, simulating
+  FlyWeather-Soaring not existing at all) - build succeeded, RASP toggle
+  showed a real "RASP thermal data unavailable" message (distinct wording
+  from the "no data for this specific hour" case, since the underlying
+  reason genuinely differs), and every other feature (roses, wind
+  particles) worked with zero console errors.
+- **Verified against real generated products**, not fixtures: copied
+  FlyWeather-Soaring's actual `products/v1/` output (from a real DMI run,
+  see that repo's PROGRESS.md) into `public/soaring-dev/` for local
+  testing. A real matched hour showed the actual W\* overlay correctly
+  positioned (same coastlines already verified in that repo's own
+  `geo_check.py`); an unmatched hour (the live "NOW" position, since the
+  demo data only covered a 06:00-11:00Z window) correctly showed the
+  unavailable notice instead of stale or fake data.
+- **Real network numbers measured**, not assumed: enabling RASP + landing
+  on a matched hour cost 2 requests / 7.5KB (manifest + one raster); each
+  subsequent slider-hour change cost exactly 1 request / ~7KB (just the
+  new raster) - no duplicate fetches, no manifest re-fetch per slider
+  move, no runaway request growth.

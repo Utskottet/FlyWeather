@@ -11,7 +11,13 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { addSkywaysLayer } from "./skywaysLayer.ts";
 import { addAirspaceLayer, removeAirspaceLayer } from "./airspaceLayer.ts";
 import { addWindParticleLayer, removeWindParticleLayer, updateWindParticleLayer } from "./windParticleLayer.ts";
+import { addRaspLayer, RASP_SOURCE_ID, removeRaspLayer, updateRaspImage } from "./raspLayer.ts";
 import type { WindFieldGrid } from "../../domain/windField.ts";
+
+export interface RaspOverlay {
+  imageUrl: string;
+  bbox: [number, number, number, number];
+}
 
 const AIRSPACE_DATA_URL = `${import.meta.env.BASE_URL}static/airspaces.json`;
 // MapLibre resolves its worker script's URL relative to its own bundled
@@ -49,6 +55,8 @@ export interface MapLibreMapProps {
   windGrid?: WindFieldGrid | null;
   /** false when prefers-reduced-motion is on - the animated layer is not added at all in that case (caller renders a static fallback instead). */
   windMotionEnabled?: boolean;
+  /** null covers BOTH "toggled off" and "no product available for the current forecast hour" - either way, nothing is shown. The caller (SiteMap) is responsible for surfacing an "unavailable" notice in the latter case; this component only knows whether there's something to paint. */
+  raspOverlay?: RaspOverlay | null;
   className?: string;
   children?: (map: MapLibreGLMap | null) => React.ReactNode;
 }
@@ -68,6 +76,7 @@ export function MapLibreMap({
   showAirspace = false,
   windGrid = null,
   windMotionEnabled = true,
+  raspOverlay = null,
   className,
   children,
 }: MapLibreMapProps) {
@@ -91,6 +100,8 @@ export function MapLibreMap({
   windGridRef.current = windGrid;
   const windMotionEnabledRef = useRef(windMotionEnabled);
   windMotionEnabledRef.current = windMotionEnabled;
+  const raspOverlayRef = useRef(raspOverlay);
+  raspOverlayRef.current = raspOverlay;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -115,6 +126,12 @@ export function MapLibreMap({
     // the new spec, so this must re-run every time to stay always-on
     // across RELIEF/TOPO/MAP per Block 18's "no toggle" requirement.
     instance.on("style.load", () => {
+      // RASP added first so it paints as the bottom-most overlay, directly
+      // above the basemap - roses > airspace > wind > RASP > basemap, per
+      // the target visual stack (a transparency layer sitting under the
+      // wind particles and airspace lines/labels reads better than one
+      // painted on top of them).
+      if (raspOverlayRef.current) addRaspLayer(instance, raspOverlayRef.current.imageUrl, raspOverlayRef.current.bbox);
       addSkywaysLayer(instance);
       if (showAirspaceRef.current) addAirspaceLayer(instance, AIRSPACE_DATA_URL);
       if (windMotionEnabledRef.current) addWindParticleLayer(instance, windGridRef.current);
@@ -170,6 +187,28 @@ export function MapLibreMap({
     if (!map || !windMotionEnabled) return;
     updateWindParticleLayer(map, windGrid);
   }, [map, windGrid, windMotionEnabled]);
+
+  // Covers toggling RASP on/off AND the time slider moving to an hour
+  // with (or without) a matching product, uniformly: a non-null overlay
+  // adds the layer if missing or swaps its image in place if already
+  // present (no flicker, matches the wind layer's own "update, don't
+  // recreate" convention); null removes it entirely - including the
+  // case where the newly-selected hour simply has no matching product,
+  // per "do not retain an old raster while labeling it as the selected
+  // time". Surviving an actual style/mode switch is handled by the
+  // "style.load" listener above via raspOverlayRef.
+  useEffect(() => {
+    if (!map) return;
+    if (raspOverlay) {
+      if (map.getSource(RASP_SOURCE_ID)) {
+        updateRaspImage(map, raspOverlay.imageUrl);
+      } else {
+        addRaspLayer(map, raspOverlay.imageUrl, raspOverlay.bbox);
+      }
+    } else {
+      removeRaspLayer(map);
+    }
+  }, [map, raspOverlay]);
 
   return (
     <div ref={containerRef} className={className} data-testid="site-map-canvas">
