@@ -1255,3 +1255,45 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   full-horizon backend once its live data is confirmed (currently
   regenerating in production - see FlyWeather-Soaring's Milestones 5-7),
   plus updating this file's final numbers.
+
+## V2 milestone (RASP V2 + timeline polish): I1+I2 - parameter selector + numeric legend
+
+- Status: done, verified live against the real production backend, not just
+  unit tests. Lint/typecheck/228 unit tests/build all green.
+- **I1**: `RaspParamSelector` (new, mirrors `MapModeToggle.tsx`'s exact
+  pattern - the second N>2 segmented control in this app, not the first)
+  next to the existing RASP ON/OFF toggle, only rendered when RASP is on.
+  Plain labels ("Thermals"/"Thermal top"/"Usable height"/"Cloudbase"), no
+  jargon - technical names only appear in the legend subtext. Keys not yet
+  present in the loaded manifest show disabled ("Not available in this
+  forecast"), same pattern `MapModeToggle` already uses for unshipped modes -
+  verified for real: the live backend currently only has `wstar` (the other
+  3 products haven't been generated in production yet - see
+  FlyWeather-Soaring's H1/H2), and the selector correctly shows 3 disabled
+  buttons rather than crashing or hiding them (screenshot verified).
+  `SiteMap.tsx`'s `wstarParameter` generalized to `selectedParameter`, looked
+  up by the selected key from `soaringManifest.parameters` (already
+  `Record<string, SoaringParameter>` - zero type changes needed).
+- **I2**: `ParameterLegend` (new) replaces the old flex-of-equal-width-
+  swatches legend, which showed the numeric value only in an invisible
+  `title` tooltip - a real, complete gap, not a partial one. Now: a CSS
+  gradient bar with tick labels positioned at each color stop's *actual*
+  value fraction (not evenly by index) - verified with a deliberately
+  uneven test stop list (0, 0.5, 1.0, 3.5) to prove ticks don't just assume
+  uniform spacing. Live-verified: the W* legend now visibly reads
+  "0  0.5  1  1.5  2  2.5  3  3.5" under the gradient with "m/s" in the
+  title - directly answers the task's own test ("what W* value does this
+  color represent") from the visible legend alone.
+- Files: `src/components/RaspParamSelector/RaspParamSelector.tsx` (new),
+  `src/components/ParameterLegend/ParameterLegend.tsx` (new),
+  `src/domain/soaring.ts` (`RaspParamKey`, `RASP_PARAM_KEYS`),
+  `src/components/Map/SiteMap.tsx`, `src/app/App.css`,
+  `tests/unit/RaspParamSelector.test.tsx` (new, 5 tests),
+  `tests/unit/ParameterLegend.test.tsx` (new, 5 tests).
+- Deferred / unresolved: only verified live against a manifest with 1 of 4
+  parameters populated (production hasn't regenerated with the new products
+  yet) - the selector's "switch to an available parameter" path and the
+  other 3 legends aren't live-verified yet, pending FlyWeather-Soaring's H3
+  real generation run.
+- Next: I3 (timeline hour labels + day/night sky band), then a full
+  live-browser pass once all 4 backend products are actually live.

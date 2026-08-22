@@ -34,7 +34,8 @@
 .map-mode-toggle,
 .site-mode-toggle,
 .airspace-toggle,
-.rasp-toggle {
+.rasp-toggle,
+.rasp-param-selector {
   display: inline-flex;
   background: #fff;
   border-radius: 999px;
@@ -46,7 +47,8 @@
 .map-mode-toggle button,
 .site-mode-toggle button,
 .airspace-toggle button,
-.rasp-toggle button {
+.rasp-toggle button,
+.rasp-param-selector button {
   border: none;
   background: transparent;
   min-height: 44px;
@@ -60,14 +62,23 @@
 .map-mode-toggle button.active,
 .site-mode-toggle button.active,
 .airspace-toggle button.active,
-.rasp-toggle button.active {
+.rasp-toggle button.active,
+.rasp-param-selector button.active {
   background: #1565c0;
   color: #fff;
 }
 
-.map-mode-toggle button:disabled {
+.map-mode-toggle button:disabled,
+.rasp-param-selector button:disabled {
   color: #bbb;
   cursor: not-allowed;
+}
+
+/* 4 options need to fit narrow mobile widths where the 2-3 option toggles
+   above don't - smaller padding/font, same shared active-state styling. */
+.rasp-param-selector button {
+  padding: 0 10px;
+  font-size: 12px;
 }
 
 .site-mode-empty-notice {
@@ -127,8 +138,9 @@
   background: rgba(255, 255, 255, 0.95);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  padding: 8px 12px;
-  max-width: 220px;
+  padding: 8px 12px 16px;
+  width: 240px;
+  max-width: calc(100vw - 24px);
   pointer-events: none;
 }
 
@@ -136,19 +148,33 @@
   font-size: 12px;
   font-weight: 600;
   color: #333;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .rasp-legend-scale {
-  display: flex;
   height: 10px;
   border-radius: 3px;
-  overflow: hidden;
 }
 
-.rasp-legend-swatch {
-  flex: 1;
-  height: 100%;
+/* Numeric ticks under the gradient bar - the whole point of this component:
+   someone unfamiliar with the code can read a real value off the color,
+   not just "weak/strong". Positioned via inline `left` at each stop's own
+   value fraction (ParameterLegend.tsx), so spacing always matches the real
+   color mapping even for a non-uniform stop list. */
+.rasp-legend-ticks {
+  position: relative;
+  height: 14px;
+  margin-top: 2px;
+}
+
+.rasp-legend-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
 }
 
 .rasp-legend-provenance {

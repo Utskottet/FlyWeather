@@ -14,6 +14,8 @@ import { HeightModeToggle, type HeightMode } from "../HeightModeToggle/HeightMod
 import { SiteModeToggle, type SiteMode } from "../SiteModeToggle/SiteModeToggle.tsx";
 import { AirspaceToggle } from "../AirspaceToggle/AirspaceToggle.tsx";
 import { RaspToggle } from "../RaspToggle/RaspToggle.tsx";
+import { RaspParamSelector } from "../RaspParamSelector/RaspParamSelector.tsx";
+import { ParameterLegend } from "../ParameterLegend/ParameterLegend.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
@@ -27,7 +29,7 @@ import { useWindGrid } from "../../app/useWindGrid.ts";
 import { usePrefersReducedMotion } from "../../app/usePrefersReducedMotion.ts";
 import { useSoaringManifest, resolveSoaringUrl } from "../../app/useSoaringManifest.ts";
 import { buildWindFieldGrid } from "../../domain/windField.ts";
-import { findNearestValidTime, findFileForValidTime } from "../../domain/soaring.ts";
+import { findNearestValidTime, findFileForValidTime, RASP_PARAM_KEYS, type RaspParamKey } from "../../domain/soaring.ts";
 
 const MARKER_SIZE = 48;
 const SELECTED_MARKER_SIZE = 60;
@@ -193,6 +195,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const [siteMode, setSiteMode] = useState<SiteMode>("soaring");
   const [showAirspace, setShowAirspace] = useState(false);
   const [showRasp, setShowRasp] = useState(false);
+  const [selectedRaspParam, setSelectedRaspParam] = useState<RaspParamKey>("wstar");
   // Bounds/fit are computed from the full located set regardless of
   // siteMode, same "no map jump" principle as heightMode/mapMode -
   // switching to Winch never recenters the map just because that set is
@@ -223,19 +226,25 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const isNow = sliderIndex === 0;
 
   const { manifest: soaringManifest, loading: soaringLoading, error: soaringError } = useSoaringManifest();
-  const wstarParameter = soaringManifest?.parameters.wstar ?? null;
+  // Whichever of the 4 RASP parameters is currently selected - the manifest
+  // may not (yet) contain every key (e.g. an older backend deploy), so this
+  // is looked up by key rather than assumed present.
+  const availableRaspParams = soaringManifest
+    ? RASP_PARAM_KEYS.filter((k) => soaringManifest.parameters[k] !== undefined)
+    : [];
+  const selectedParameter = soaringManifest?.parameters[selectedRaspParam] ?? null;
   const selectedHourIso = hours[sliderIndex] ?? null;
   // Matched by actual valid timestamp (never by array index - two
   // completely different data pipelines, no reason their hours would
   // ever align positionally even though they usually align in wall-clock
   // time), per docs/soaring.ts's tolerance rule.
   const matchedRaspValidTime =
-    wstarParameter && selectedHourIso ? findNearestValidTime(wstarParameter.validTimes, selectedHourIso) : null;
+    selectedParameter && selectedHourIso ? findNearestValidTime(selectedParameter.validTimes, selectedHourIso) : null;
   const matchedRaspFile =
-    wstarParameter && matchedRaspValidTime ? findFileForValidTime(wstarParameter, matchedRaspValidTime) : null;
+    selectedParameter && matchedRaspValidTime ? findFileForValidTime(selectedParameter, matchedRaspValidTime) : null;
   const raspOverlay =
-    showRasp && wstarParameter && matchedRaspFile
-      ? { imageUrl: resolveSoaringUrl(matchedRaspFile.raster), bbox: wstarParameter.grid.bbox }
+    showRasp && selectedParameter && matchedRaspFile
+      ? { imageUrl: resolveSoaringUrl(matchedRaspFile.raster), bbox: selectedParameter.grid.bbox }
       : null;
   // Only worth telling the user about once the manifest itself has
   // resolved (loaded or failed) - avoids a flash of "unavailable" while
@@ -282,6 +291,13 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
         <AirspaceToggle show={showAirspace} onChange={setShowAirspace} />
         <RaspToggle show={showRasp} onChange={setShowRasp} />
+        {showRasp && (
+          <RaspParamSelector
+            selected={selectedRaspParam}
+            onChange={setSelectedRaspParam}
+            availableParams={availableRaspParams}
+          />
+        )}
       </div>
       {visibleSites.length === 0 && (
         <div className="site-mode-empty-notice">
@@ -300,23 +316,14 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
             : "No RASP thermal data for this forecast hour."}
         </div>
       )}
-      {raspOverlay && wstarParameter && (
-        <div className="rasp-legend" data-testid="rasp-legend">
-          <div className="rasp-legend-title">
-            {wstarParameter.label} ({wstarParameter.technicalLabel}) · {wstarParameter.unit}
-          </div>
-          <div className="rasp-legend-scale">
-            {wstarParameter.colorScale.map((stop) => (
-              <span key={stop.value} className="rasp-legend-swatch" style={{ backgroundColor: stop.color }} title={`${stop.value} ${wstarParameter.unit}`} />
-            ))}
-          </div>
-          {soaringManifest && (
-            <div className="rasp-legend-provenance">
-              {soaringManifest.source.provider} {soaringManifest.source.model} · model run{" "}
-              {new Date(soaringManifest.source.modelRun).toISOString().slice(0, 16).replace("T", " ")}Z
-            </div>
-          )}
-        </div>
+      {raspOverlay && selectedParameter && soaringManifest && (
+        <ParameterLegend
+          label={selectedParameter.label}
+          technicalLabel={selectedParameter.technicalLabel}
+          unit={selectedParameter.unit}
+          colorScale={selectedParameter.colorScale}
+          provenance={`${soaringManifest.source.provider} ${soaringManifest.source.model} · model run ${new Date(soaringManifest.source.modelRun).toISOString().slice(0, 16).replace("T", " ")}Z`}
+        />
       )}
       <MapLibreMap
         style={mapStyle}

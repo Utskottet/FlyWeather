@@ -47,6 +47,15 @@ export interface SoaringManifest {
 }
 
 /**
+ * The four RASP parameter keys FlyWeather-Soaring's manifest publishes
+ * (see that repo's cli.py PARAMETER_SPECS) - kept as a literal union here
+ * rather than `string` so the parameter selector/legend can be exhaustive.
+ */
+export type RaspParamKey = "wstar" | "thermal_top" | "hcrit" | "cloudbase";
+
+export const RASP_PARAM_KEYS: RaspParamKey[] = ["wstar", "thermal_top", "hcrit", "cloudbase"];
+
+/**
  * The only tolerance rule this app defines for matching its own selected
  * slider instant against the manifest's published validTimes - the
  * manifest itself has no opinion on tolerance (docs/PRODUCT_CONTRACT.md:
