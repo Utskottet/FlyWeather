@@ -1354,3 +1354,38 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   full-horizon 4-product generation completes (in progress - a real
   cloudbase-vs-DMI cross-check discrepancy showed up in that run's live
   output, being investigated before calling this milestone done).
+
+## V2 milestone: I4 - full self-test pass against real 4-product data
+
+- Status: done. Lint/typecheck/247 unit tests/build all green;
+  26/26 e2e green (one flake on a re-run, reproduced as passing both in
+  isolation and on a clean full re-run - not a real regression).
+- **Real data used, not fixtures**: copied FlyWeather-Soaring's actual H3
+  output (`products/v1/`, 82MB, real 60h/4-product generation) into the
+  local dev mirror and pointed `.env` at it. Along the way, found and fixed
+  a real local-dev misconfiguration: `.env` had
+  `VITE_SOARING_BASE_URL=/FlyWeather/soaring-dev`, but Vite's dev-server
+  `base` is `/` (only the production build uses `/FlyWeather/` - see
+  `vite.config.ts`) - the leftover `/FlyWeather` prefix would have 404'd
+  every soaring request against a local dev server. Fixed to `/soaring-dev`.
+- **Live-verified all four parameters together, not just that they don't
+  crash**: screenshots for each of Thermals/Thermal top/Usable height/
+  Cloudbase confirm real, visually distinct rasters, each with its own
+  correct legend (title, technical name, unit, real numeric ticks matching
+  that parameter's own range) - `test-results/i4-*.png`. Thermal top/
+  Hcrit/cloudbase all clearly show land warming more than the surrounding
+  sea (physically correct - water doesn't heat as readily), same pattern
+  W* already showed.
+- Confirms the backend/frontend co-design decision from H1 (all four
+  products share one grid geometry) actually works end-to-end: switching
+  parameters never caused a map jump or a layer-duplication issue, live,
+  not just in the unit-tested `raspLayer.ts` lifecycle logic.
+- Files: none (verification-only milestone) - screenshots are the record.
+- Deferred / unresolved: both repos have real, verified commits sitting
+  local-only right now (FlyWeather-Soaring's H1-H4, FlyWeather's I1-I4) -
+  the live production site still only has the original 1-parameter W*
+  product until these are pushed and a real CI run publishes the new
+  4-product backend output. `.env` currently points at the local dev
+  mirror rather than the live URL (deliberately, since the live backend
+  doesn't have the other 3 products yet) - worth switching back to the
+  live URL once the backend is actually deployed with all four.
