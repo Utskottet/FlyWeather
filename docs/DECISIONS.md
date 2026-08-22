@@ -1615,3 +1615,84 @@ sibling element into the rose's own SVG.
   require it. If DMI-sourced wind is wanted later, `dmi/edr.py`'s
   `_WIND_PARAMETER_NAMES` constant already exists as a starting point on
   the backend side, unused, waiting for that future decision.
+
+## FlyWeather Next UI: rose adaptive placement, compact single-label controls, provenance line
+
+- **WindRose weather/speed placement is adaptive, not fixed.** The
+  reference (`uploads/wind-sector-rose.html`) places the weather graphic
+  fixed above center and speed fixed below - fine for its own demo sector,
+  but covers the colored sector whenever a real site's sector points
+  upward. Weather now centers at `sectorMidpointDeg(sector) + 180°`
+  (translated only, never rotated, per explicit instruction), using the
+  existing wraparound-safe `sectorMidpointDeg`/`polarToCartesian` helpers -
+  no new angle math. Speed nudges to whichever vertical half the weather
+  graphic isn't in. With no sector configured it falls back to the
+  original fixed layout - there's nothing to avoid. `MASTER_SPEC.md` §2.5
+  is now the authoritative spec for this; §2's old permanent-green-and-
+  orange multi-sector language is marked obsolete (not deleted) since the
+  single-sector model already shipped in an earlier round (WindRose round
+  4) and this milestone only added the placement math on top of it.
+- **Weather graphic grew from 22 to 36 viewBox units (~39% of the rose's
+  92-unit ring diameter)** and is allowed to protrude ~12% past the ring
+  (`ICON_PROTRUSION_FRACTION`) - within the task's documented 35-40%-of-
+  diameter / 10-15%-protrusion targets. Verified against 8 mandated sector
+  cases (0-40°, 70-120°, 150-210°, 240-300°, 310-350°, very narrow, very
+  wide, wraparound) in both `tests/unit/WindRose.test.tsx` and
+  `tests/e2e/rose-gallery.spec.ts` (`adaptive-*` fixtures in
+  `src/dev/RoseGallery.tsx`).
+- **WeatherGlyph redrawn bold/filled** (filled sun + stroked rays,
+  bold-outlined near-white cloud, thicker rain lines) matching the
+  reference's own sun/cloud/rain hex values exactly - same
+  `WeatherGlyphProps`/`WeatherKind` API, so `WindRose.tsx`'s call site only
+  needed the larger `ICON_SIZE`, not a rewrite.
+- **New shared `PressToggle` component** replaces `AirspaceToggle`'s and
+  `RaspToggle`'s old two-button "X off"/"X on" pattern with one button
+  whose label text never changes; state is conveyed only via
+  `aria-pressed` + an `.active` class. Also used for a new `WindToggle`.
+  `HeightModeToggle`/`SiteModeToggle`/`MapModeToggle` already matched this
+  "one label per option" shape (they're N-way segmented controls, not
+  booleans) and only got compact CSS sizing, not a rewrite.
+- **New WIND toggle, default ON** (preserves prior default behavior).
+  Gates `windMotionEnabled={showWind && !prefersReducedMotion}` in
+  `SiteMap.tsx`; `MapLibreMap.tsx` already fully added/removed the
+  particle layer based on `windMotionEnabled` (no changes needed there) -
+  confirmed via a new e2e test that the layer is actually removed, not
+  just paused.
+- **Control bar moved from top-right (`.top-controls`) to a single compact
+  bar directly above the timeline**, consolidating all 6 controls (Map,
+  Height, Site, Airspace, Wind, Rasp+selector) plus the new provenance
+  line, per explicit user confirmation that Height/Site mode move into
+  this bar too (not left top-right).
+- **Real regression found and fixed during this work, not just a test
+  update**: moving the control bar to the bottom uncovered two collisions
+  that didn't exist when it lived top-right. (1) The provenance line's
+  first CSS draft used `flex-basis: 100%`, forcing the bar to always be
+  two rows tall even on wide desktop screens, which pushed the bar's
+  height past `MapLibreMap`'s existing `boundsPadding.bottom` reserve
+  (152px) and made the first fitted site marker land behind the bar,
+  unclickable - `tests/e2e/site-map.spec.ts`'s "tapping a marker" test
+  failed consistently, not flakily. Fixed by letting the provenance line
+  flow inline (`margin-left: auto`, wraps only when the row is actually
+  full) and bumping `boundsPadding.bottom` to 210px as a safety margin.
+  (2) The site detail sheet (`.site-sheet`, anchored `bottom: 112px`,
+  z-index 1000) and the new control bar occupy the same screen region;
+  since the sheet renders later in the JSX tree, opening it silently
+  covered the bar's buttons, breaking the "change height mode while a
+  site's sheet is open" flow (`height-mode.spec.ts`) even though nothing
+  in that test's own code changed. Fixed by measuring the control bar's
+  real height via `ResizeObserver` (it varies - RASP param selector
+  appears/disappears, provenance text wraps on narrow screens) and
+  anchoring the sheet at `bottom: calc(112px + var(--control-bar-height))`
+  instead of a hardcoded `112px`, so the two always stack rather than
+  overlap.
+- **Compact provenance line** is a new pure function
+  (`provenanceLine` in `domain/effectiveSample.ts`) returning the task's
+  exact mandated strings - `"Live site wind · Forecast map & RASP"` at
+  NOW, `"Sites, map & RASP: forecast"` for any future hour - rendered as
+  one line in the control bar. Additive to, not a replacement for,
+  `SiteSheet`'s existing per-site LIVE/FORECAST badge
+  (`live-data.spec.ts`, left untouched).
+- **`ParameterLegend` title format** changed from `"{label}
+  ({technicalLabel}) · {unit}"` to `"{label} · {technicalLabel} · {unit}"`
+  (e.g. `"Thermal strength · W* · m/s"`) - the task's exact requested
+  format, a wording-only change.

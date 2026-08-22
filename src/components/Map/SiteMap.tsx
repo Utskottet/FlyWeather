@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { LngLatBoundsLike } from "maplibre-gl";
 import type { LocatedSite } from "../../domain/sites.ts";
@@ -6,13 +6,14 @@ import type { SiteForecast, WindSample } from "../../domain/types.ts";
 import { MODEL_HEIGHTS_M } from "../../domain/types.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { classifyFreshness } from "../../domain/freshness.ts";
-import { selectEffectiveSample, type EffectiveSample } from "../../domain/effectiveSample.ts";
+import { selectEffectiveSample, provenanceLine, type EffectiveSample } from "../../domain/effectiveSample.ts";
 import { interpolateWindAtHeight } from "../../domain/heightInterpolation.ts";
 import { WindRose } from "../WindRose/index.ts";
 import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
 import { HeightModeToggle, type HeightMode } from "../HeightModeToggle/HeightModeToggle.tsx";
 import { SiteModeToggle, type SiteMode } from "../SiteModeToggle/SiteModeToggle.tsx";
 import { AirspaceToggle } from "../AirspaceToggle/AirspaceToggle.tsx";
+import { WindToggle } from "../WindToggle/WindToggle.tsx";
 import { RaspToggle } from "../RaspToggle/RaspToggle.tsx";
 import { RaspParamSelector } from "../RaspParamSelector/RaspParamSelector.tsx";
 import { ParameterLegend } from "../ParameterLegend/ParameterLegend.tsx";
@@ -194,8 +195,25 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const [mapMode, setMapMode] = useState<MapMode>("relief");
   const [siteMode, setSiteMode] = useState<SiteMode>("soaring");
   const [showAirspace, setShowAirspace] = useState(false);
+  const [showWind, setShowWind] = useState(true);
   const [showRasp, setShowRasp] = useState(false);
   const [selectedRaspParam, setSelectedRaspParam] = useState<RaspParamKey>("wstar");
+  // The control bar's real height varies (RASP param selector appearing,
+  // provenance text wrapping to its own line on narrow screens) - measured
+  // rather than guessed so SiteSheet can anchor itself just above it
+  // instead of sliding underneath and becoming unclickable (found via an
+  // E2E diagnostic: height-mode.spec.ts's "toggle height mode while the
+  // sheet is open" flow silently failed once both moved to the same
+  // bottom-of-screen area, § FlyWeather Next UI).
+  const controlBarRef = useRef<HTMLDivElement>(null);
+  const [controlBarHeight, setControlBarHeight] = useState(0);
+  useEffect(() => {
+    const el = controlBarRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => setControlBarHeight(entries[0].contentRect.height));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   // Bounds/fit are computed from the full located set regardless of
   // siteMode, same "no map jump" principle as heightMode/mapMode -
   // switching to Winch never recenters the map just because that set is
@@ -284,12 +302,17 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   const selectedResult = selectedSite ? effectiveSampleFor(selectedSite) : null;
 
   return (
-    <div className="site-map-container" data-testid="site-map">
-      <div className="top-controls">
+    <div
+      className="site-map-container"
+      data-testid="site-map"
+      style={{ "--control-bar-height": `${controlBarHeight}px` } as React.CSSProperties}
+    >
+      <div className="control-bar" data-testid="control-bar" ref={controlBarRef}>
         <MapModeToggle mode={mapMode} onChange={setMapMode} availableModes={["relief", "topo", "map"]} />
         <HeightModeToggle mode={heightMode} onChange={setHeightMode} />
         <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
         <AirspaceToggle show={showAirspace} onChange={setShowAirspace} />
+        <WindToggle show={showWind} onChange={setShowWind} />
         <RaspToggle show={showRasp} onChange={setShowRasp} />
         {showRasp && (
           <RaspParamSelector
@@ -298,6 +321,9 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
             availableParams={availableRaspParams}
           />
         )}
+        <div className="control-bar-provenance" data-testid="provenance-line">
+          {provenanceLine(isNow)}
+        </div>
       </div>
       {visibleSites.length === 0 && (
         <div className="site-mode-empty-notice">
@@ -329,20 +355,24 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         style={mapStyle}
         bounds={maplibreBounds}
         // Bottom padding keeps fitted markers clear of the persistent
-        // 112px time-slider bar (App.css's .time-slider height) so they
-        // never land unclickable behind it - found via an E2E diagnostic
-        // during the MapLibre port, not just a cosmetic choice.
-        boundsPadding={{ top: 40, bottom: 152, left: 40, right: 40 }}
+        // 112px time-slider bar PLUS the compact control bar now sitting
+        // directly above it (App.css's .time-slider/.control-bar heights)
+        // so they never land unclickable behind either - found via an E2E
+        // diagnostic during the MapLibre port (112px case) and again when
+        // the control bar moved from top-right to bottom (§ FlyWeather
+        // Next UI), not just a cosmetic choice.
+        boundsPadding={{ top: 40, bottom: 210, left: 40, right: 40 }}
         maxZoom={12}
         showAirspace={showAirspace}
         raspOverlay={raspOverlay}
         windGrid={windFieldGrid}
-        windMotionEnabled={!prefersReducedMotion}
+        windMotionEnabled={showWind && !prefersReducedMotion}
         className="site-map"
       >
         {(map) => (
           <>
-            {prefersReducedMotion &&
+            {showWind &&
+              prefersReducedMotion &&
               staticWindPoints.map((point, i) => {
                 const html = buildWindArrowHtml(
                   point.windDirectionDeg[sliderIndex] ?? null,

@@ -49,6 +49,27 @@ test.describe("Animated wind particle field", () => {
     await expect(page.getByTestId("site-sheet")).toBeVisible();
   });
 
+  test("WIND toggle removes the animated layer entirely, not just pauses it, and restores it when re-enabled (§ FlyWeather Next UI)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
+    await expect
+      .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
+      .toBe(true);
+    await expect(page.getByTestId("wind-toggle")).toHaveAttribute("aria-pressed", "true"); // on by default
+
+    await page.getByTestId("wind-toggle").click();
+    await expect
+      .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
+      .toBe(false);
+
+    await page.getByTestId("wind-toggle").click();
+    await expect
+      .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
+      .toBe(true);
+  });
+
   test("prefers-reduced-motion: no animated layer, static arrow markers shown instead", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");

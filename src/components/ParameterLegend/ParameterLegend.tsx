@@ -28,7 +28,7 @@ export function ParameterLegend({ label, technicalLabel, unit, colorScale, prove
   return (
     <div className="rasp-legend" data-testid="rasp-legend">
       <div className="rasp-legend-title">
-        {label} ({technicalLabel}) · {unit}
+        {label} · {technicalLabel} · {unit}
       </div>
       <div className="rasp-legend-scale" style={{ background: gradient }} />
       <div className="rasp-legend-ticks" data-testid="rasp-legend-ticks">

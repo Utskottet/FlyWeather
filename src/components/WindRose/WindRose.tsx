@@ -1,4 +1,4 @@
-import { describeSector, polarToCartesian } from "../../domain/direction.ts";
+import { describeSector, normalizeDeg, polarToCartesian, sectorMidpointDeg } from "../../domain/direction.ts";
 import { WeatherGlyph } from "../WeatherGlyph/WeatherGlyph.tsx";
 import type { WeatherKind } from "../../domain/weather.ts";
 
@@ -78,16 +78,48 @@ const NORTH_TICK_OUTER_R = OUTER_R;
 const NORTH_TICK_INNER_R = OUTER_R - 4;
 const NORTH_LABEL_R = OUTER_R - 11;
 
-// Weather icon + speed number layout, positions re-derived from the
-// reference's own absolute coordinates as ratios of its R=90 (icon
-// group translate(120 103) = 17 units above center -> 17/90; speed
-// text y=174 = 54 units below center -> 54/90), then re-applied to
-// this component's OUTER_R so the layout matches the reference's
-// proportions instead of copied pixel offsets that assumed its larger
-// viewBox.
-const ICON_CY = CENTER - OUTER_R * (17 / 90);
-const ICON_SIZE = 22;
-const SPEED_CY = CENTER + OUTER_R * (54 / 90);
+// Adaptive weather/speed layout (FlyWeather Next UI milestone): the
+// reference's weather-above/speed-below placement is fixed regardless of
+// sector position, which covers the colored sector whenever it points
+// upward. Instead, weather is placed at the sector's midpoint + 180deg (the
+// point on the ring farthest from the sector), translated only - never
+// rotated, per the task's explicit instruction - and speed nudges to
+// whichever vertical half the weather ISN'T in, staying horizontally
+// centered and near the ring's center where any pie-slice sector wedge is
+// narrowest. With no sector configured there's nothing to avoid, so the
+// angle defaults to 0 (north/up), reproducing the same relative
+// composition as before - just bigger, per the task's core "weather is too
+// small on phones" complaint applying universally, not only when a sector
+// exists.
+const DEFAULT_WEATHER_ANGLE = 0;
+
+// ~39% of the ring's own diameter (2*OUTER_R) - within the task's
+// documented 35-40%-of-rose-diameter target for the weather graphic
+// (previously 22, well under target - this is a deliberate, real increase,
+// not a cosmetic tweak).
+const ICON_SIZE = 36;
+
+// The graphic is allowed to protrude past the ring - within the task's
+// documented 10-15% range. ICON_PLACEMENT_R is the radius at which the
+// icon's CENTER sits, chosen so its outer edge lands exactly at
+// OUTER_R * (1 + ICON_PROTRUSION_FRACTION).
+const ICON_PROTRUSION_FRACTION = 0.12;
+const ICON_PLACEMENT_R = OUTER_R * (1 + ICON_PROTRUSION_FRACTION) - ICON_SIZE / 2;
+
+// Speed keeps the reference's original below-center offset magnitude
+// (54/90 of OUTER_R) - only its sign (above vs. below center) becomes
+// adaptive.
+const SPEED_OFFSET = OUTER_R * (54 / 90);
+
+/** Sector midpoint + 180deg (wraparound-safe via the existing
+ * sectorMidpointDeg helper) - the point on the ring farthest from the
+ * sector, where the weather graphic reads clearest without covering it.
+ * Returns the reference's own fixed "up" angle when there's no sector to
+ * avoid. */
+function weatherAngleFor(sector: RoseSector | null): number {
+  if (!sector) return DEFAULT_WEATHER_ANGLE;
+  return normalizeDeg(sectorMidpointDeg(sector.fromDeg, sector.toDeg) + 180);
+}
 
 /** Split-tail wind pointer, per the reference. Tip points toward the compass direction wind is coming FROM (§29.3). */
 function pointerPoints(angleDeg: number): string {
@@ -111,6 +143,12 @@ export function WindRose({
   const northTickOuter = polarToCartesian(CENTER, CENTER, NORTH_TICK_OUTER_R, 0);
   const northTickInner = polarToCartesian(CENTER, CENTER, NORTH_TICK_INNER_R, 0);
   const northLabelPos = polarToCartesian(CENTER, CENTER, NORTH_LABEL_R, 0);
+
+  const weatherAngle = weatherAngleFor(sector);
+  const iconCenter = polarToCartesian(CENTER, CENTER, ICON_PLACEMENT_R, weatherAngle);
+  // Speed nudges to whichever vertical half the weather ISN'T in, so the two
+  // never share space regardless of where the sector pushed the weather.
+  const speedCy = CENTER + (iconCenter.y < CENTER ? SPEED_OFFSET : -SPEED_OFFSET);
 
   return (
     <div
@@ -189,14 +227,17 @@ export function WindRose({
         )}
 
         {weatherKind && (
-          <g transform={`translate(${CENTER - ICON_SIZE / 2} ${ICON_CY - ICON_SIZE / 2})`} data-testid="rose-weather-icon">
+          <g
+            transform={`translate(${iconCenter.x - ICON_SIZE / 2} ${iconCenter.y - ICON_SIZE / 2})`}
+            data-testid="rose-weather-icon"
+          >
             <WeatherGlyph kind={weatherKind} size={ICON_SIZE} />
           </g>
         )}
 
         <text
           x={CENTER}
-          y={SPEED_CY}
+          y={speedCy}
           textAnchor="middle"
           dominantBaseline="central"
           fontSize={windSpeedMs !== null ? 19 : 15}

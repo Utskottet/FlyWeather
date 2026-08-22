@@ -2,10 +2,36 @@ import { describe, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach } from "vitest";
 import { WindRose, type RoseSector, type RoseState } from "../../src/components/WindRose/index.ts";
+import { normalizeDeg, sectorMidpointDeg } from "../../src/domain/direction.ts";
 
 afterEach(cleanup);
 
 const SW_SECTOR: RoseSector = { fromDeg: 213.75, toDeg: 236.25 };
+
+// Mirrors WindRose.tsx's own internal geometry constants - duplicated here
+// deliberately (not imported) so these tests catch an accidental change to
+// either side independently, per this project's own "don't test a function
+// against itself" convention used elsewhere (test_wstar.py etc.).
+const CENTER = 50;
+const OUTER_R = 46;
+
+function iconCenterOf(container: HTMLElement): { x: number; y: number } | null {
+  const g = container.querySelector('[data-testid="rose-weather-icon"]');
+  const transform = g?.getAttribute("transform") ?? "";
+  const match = transform.match(/translate\(([-\d.]+) ([-\d.]+)\)/);
+  if (!match) return null;
+  const svg = g?.querySelector("svg");
+  const iconSize = Number(svg?.getAttribute("width") ?? 0);
+  return { x: Number(match[1]) + iconSize / 2, y: Number(match[2]) + iconSize / 2 };
+}
+
+/** Inverse of domain/direction.ts's polarToCartesian - the compass bearing
+ * of a point relative to (cx,cy), 0=north/up, clockwise. */
+function angleOfPoint(cx: number, cy: number, px: number, py: number): number {
+  const dx = px - cx;
+  const dy = cy - py;
+  return normalizeDeg((Math.atan2(dx, dy) * 180) / Math.PI);
+}
 
 function baseProps() {
   return {
@@ -204,5 +230,94 @@ describe("WindRose - size handling (§29.11, §29.12)", () => {
 
     small.unmount();
     large.unmount();
+  });
+});
+
+describe("WindRose - adaptive weather placement (FlyWeather Next UI: weather translates opposite the sector, never rotates, per the task's mandated sector cases)", () => {
+  it.each<[string, number, number]>([
+    ["0-40deg", 0, 40],
+    ["70-120deg", 70, 120],
+    ["150-210deg", 150, 210],
+    ["240-300deg", 240, 300],
+    ["310-350deg", 310, 350],
+    ["very narrow (100-105deg)", 100, 105],
+    ["very wide (20-300deg)", 20, 300],
+    ["wraparound north (330-30deg)", 330, 30],
+  ])("%s sector: places weather near the ring's far side from the sector midpoint", (_label, fromDeg, toDeg) => {
+    const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg, toDeg }} weatherKind="rain" />);
+    const iconCenter = iconCenterOf(container);
+    expect(iconCenter).not.toBeNull();
+
+    const expectedAngle = normalizeDeg(sectorMidpointDeg(fromDeg, toDeg) + 180);
+    const actualAngle = angleOfPoint(CENTER, CENTER, iconCenter!.x, iconCenter!.y);
+    // Compare via the shorter angular distance so e.g. 359.9 vs 0.1 counts as close.
+    const angularDiff = Math.min(Math.abs(actualAngle - expectedAngle), 360 - Math.abs(actualAngle - expectedAngle));
+    expect(angularDiff).toBeLessThan(0.5);
+  });
+
+  it("translates the weather icon without rotating it (no rotate() in its transform)", () => {
+    const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg: 70, toDeg: 120 }} weatherKind="rain" />);
+    const transform = container.querySelector('[data-testid="rose-weather-icon"]')?.getAttribute("transform") ?? "";
+    expect(transform).toMatch(/^translate\(/);
+    expect(transform).not.toMatch(/rotate/);
+  });
+
+  it("moves weather to a different position for two very different sectors (proves placement is genuinely sector-dependent)", () => {
+    const north = render(<WindRose {...baseProps()} sector={{ fromDeg: 0, toDeg: 40 }} weatherKind="rain" />);
+    const south = render(<WindRose {...baseProps()} sector={{ fromDeg: 150, toDeg: 210 }} weatherKind="rain" />);
+    expect(iconCenterOf(north.container)).not.toEqual(iconCenterOf(south.container));
+    north.unmount();
+    south.unmount();
+  });
+
+  it("allows the weather graphic to protrude past the ring by roughly 10-15%, per the task's explicit allowance", () => {
+    const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg: 150, toDeg: 210 }} weatherKind="rain" />);
+    const iconCenter = iconCenterOf(container)!;
+    const g = container.querySelector('[data-testid="rose-weather-icon"]');
+    const iconSize = Number(g?.querySelector("svg")?.getAttribute("width"));
+    const distanceFromCenter = Math.hypot(iconCenter.x - CENTER, iconCenter.y - CENTER);
+    const outerEdge = distanceFromCenter + iconSize / 2;
+    expect(outerEdge).toBeGreaterThan(OUTER_R); // genuinely protrudes, not just touching the ring
+    expect(outerEdge / OUTER_R).toBeLessThan(1.2); // but not wildly past the 10-15% target
+  });
+
+  it("renders the weather graphic meaningfully larger than the previous 22px-in-100-viewBox size (~35-40% of ring diameter)", () => {
+    const { container } = render(<WindRose {...baseProps()} weatherKind="rain" />);
+    const iconSize = Number(container.querySelector('[data-testid="rose-weather-icon"] svg')?.getAttribute("width"));
+    expect(iconSize).toBeGreaterThanOrEqual(0.35 * (2 * OUTER_R));
+    expect(iconSize).toBeLessThanOrEqual(0.45 * (2 * OUTER_R));
+  });
+
+  it("keeps speed horizontal (a single text baseline, never rotated) regardless of sector", () => {
+    const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg: 70, toDeg: 120 }} weatherKind="rain" />);
+    const speed = container.querySelector('[data-testid="speed-text"]');
+    expect(speed?.getAttribute("transform")).toBeNull();
+  });
+
+  it("nudges speed to the opposite vertical half from wherever the weather graphic landed", () => {
+    const northWeather = render(<WindRose {...baseProps()} sector={{ fromDeg: 150, toDeg: 210 }} weatherKind="rain" />);
+    const southWeather = render(<WindRose {...baseProps()} sector={{ fromDeg: 0, toDeg: 40 }} weatherKind="rain" />);
+
+    const northIconY = iconCenterOf(northWeather.container)!.y;
+    const northSpeedY = Number(northWeather.container.querySelector('[data-testid="speed-text"]')?.getAttribute("y"));
+    const southIconY = iconCenterOf(southWeather.container)!.y;
+    const southSpeedY = Number(southWeather.container.querySelector('[data-testid="speed-text"]')?.getAttribute("y"));
+
+    // Weather above center -> speed below center, and vice versa, for both cases.
+    expect(northIconY < CENTER).not.toBe(northSpeedY < CENTER);
+    expect(southIconY < CENTER).not.toBe(southSpeedY < CENTER);
+    // And the two cases actually differ from each other - not coincidentally identical.
+    expect(northSpeedY).not.toBeCloseTo(southSpeedY, 1);
+
+    northWeather.unmount();
+    southWeather.unmount();
+  });
+
+  it("falls back to the reference's default up/down composition when no sector is configured", () => {
+    const { container } = render(<WindRose {...baseProps()} sector={null} weatherKind="rain" />);
+    const iconCenter = iconCenterOf(container)!;
+    const speedY = Number(container.querySelector('[data-testid="speed-text"]')?.getAttribute("y"));
+    expect(iconCenter.y).toBeLessThan(CENTER); // weather above center
+    expect(speedY).toBeGreaterThan(CENTER); // speed below center
   });
 });

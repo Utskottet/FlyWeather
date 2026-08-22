@@ -58,6 +58,19 @@ RASP / thermal / soaring forecast layers are explicitly a later phase.
 
 # 2. Absolute core UI: the rose
 
+> **Current, authoritative design note (FlyWeather Next UI milestone):**
+> The rose's *concept* below (north-up, sector + direction + speed + state)
+> is still current. Its *implementation detail* changed in one important
+> way: only the site's single configured GREEN sector is drawn (there is no
+> separate ORANGE wedge - marginal/uncertain conditions are conveyed by the
+> whole-rose state color instead, per §2.2 as updated), the wedge is drawn
+> semi-transparent (opacity ~0.78) so the map shows through it, and the
+> weather graphic/speed number are no longer fixed above/below center - they
+> adapt to the sector's position (see the new §2.5 below, which is the
+> authoritative source for that behavior). Item 1 and parts of §2.2 below
+> describing a *permanent green-AND-orange multi-wedge* rose are kept for
+> archival context but are **obsolete** - do not implement against them.
+
 This is the most important requirement in the project.
 
 Do **not** replace it with:
@@ -73,10 +86,17 @@ The icon must be conceptually modeled on the Holfuy `mode=rose` presentation use
 
 Each site rose is north-up and contains:
 
-1. **Permanent site direction sectors**
-   - GREEN sector(s): optimal wind directions for that physical flying site.
-   - YELLOW/ORANGE sector(s): acceptable but marginal wind directions.
-   - These sectors are site data and do not rotate with weather.
+1. **Permanent site direction sectors** *(OBSOLETE - see the note at the top
+   of §2. Kept for archival context; do not implement this multi-wedge
+   version.)*
+   - ~~GREEN sector(s): optimal wind directions for that physical flying site.~~
+   - ~~YELLOW/ORANGE sector(s): acceptable but marginal wind directions.~~
+   - ~~These sectors are site data and do not rotate with weather.~~
+   - **Current behavior:** only the site's single GREEN sector is drawn
+     (`RoseSector | null` in `WindRose.tsx`), filled with the *overall
+     rose state* color (item 5 below), not a fixed green/orange scheme.
+     There is no separate orange wedge. It is still site data and does
+     not rotate with weather.
 
 2. **Selected wind direction**
    - An arrow/pointer at or near the perimeter.
@@ -100,11 +120,16 @@ Each site rose is north-up and contains:
    - RED = selected wind is outside configured usable conditions or violates a hard configured weather rule.
    - GRAY = no trustworthy data / stale data / no configured flyability rules.
 
-The overall state should be visible mainly through the rose border/background treatment without destroying the internal permanent green/orange sector visualization.
+**Current behavior:** the single green sector's fill color IS the overall
+state color (`STATE_SECTOR_COLOR` in `WindRose.tsx`) - there is no separate
+border/background treatment layered on top; the sector itself carries the
+signal. The next subsection's "two independent color systems" framing is
+obsolete for the same reason - there is now one sector, colored by state.
 
-## 2.2 Important semantic distinction
+## 2.2 Important semantic distinction *(OBSOLETE framing - see above)*
 
-There are two independent color systems:
+~~There are two independent color systems~~ - this described the old
+permanent-green-plus-orange-wedge design. Kept for archival context:
 
 ### A. Sector colors
 Describe the **physical site orientation**:
@@ -118,7 +143,9 @@ Describes the **selected time's weather fit**:
 - red = bad;
 - gray = unknown/stale.
 
-Do not confuse these.
+**Current behavior:** there is only one sector (the site's GREEN range) and
+it is always colored by (B), the whole-rose state - (A) as a separate
+concept no longer exists in the implementation.
 
 ## 2.3 Direction convention
 
@@ -156,6 +183,35 @@ Required expanded view:
 - status reason.
 
 The map marker and expanded rose must use the same underlying component / geometry logic.
+
+## 2.5 Adaptive weather/speed placement (current, authoritative)
+
+Added in the FlyWeather Next UI milestone, on top of the single-sector
+model in the note at the top of §2 - this is the current source of truth
+for where the weather graphic and speed number sit inside the rose.
+
+- The weather graphic is centered at `sectorMidpointDeg(sector) + 180°`
+  (the point on the ring farthest from the colored sector) - computed via
+  `src/domain/direction.ts`'s existing wraparound-safe
+  `sectorMidpointDeg`/`polarToCartesian` helpers, not new angle math.
+  It is **translated only, never rotated**.
+- With no sector configured (`sector === null`), it falls back to the
+  original fixed above-center position - there is nothing to avoid.
+- The graphic is sized to roughly 35-40% of the rose's diameter (bold,
+  high-contrast per `WeatherGlyph.tsx`) and is allowed to protrude ~10-15%
+  past the outer ring - intentional, not a bug, so it stays large enough
+  to read on small map markers.
+- The speed number stays horizontally centered (never rotates) but nudges
+  to whichever vertical half the weather graphic is *not* occupying, so
+  the two never overlap regardless of sector position.
+- Priority when space is tight (highest first): sector visible > weather
+  readable > speed readable > weather may protrude past the ring > speed
+  may move > N marker visible > never shrink everything to
+  unreadability.
+- Reference: `uploads/wind-sector-rose.html` is the visual authority for
+  the rose's transparency/sector/pointer/weather+speed *composition*, but
+  its fixed weather-above/speed-below placement is superseded by the
+  adaptive placement described here.
 
 ---
 
@@ -944,18 +1000,30 @@ Never make offline cached data appear current.
 
 # 29. Acceptance tests — rose
 
+> Items 5, 6 and 10 below predate the single-sector model (§2's current
+> authoritative note) and are superseded as noted inline; kept for
+> archival context rather than renumbered/deleted.
+
 Mandatory unit/visual tests:
 
 1. North-up geometry.
 2. A 180° sector appears on south side.
 3. A 225° wind arrow points to SW source direction correctly.
 4. Wrap-around green sector 337.5°→22.5° renders correctly.
-5. Multiple green sectors render.
-6. Green and orange site sectors remain fixed when wind changes.
+5. ~~Multiple green sectors render.~~ **OBSOLETE** - a site has exactly one
+   (or zero) green sector now (`RoseSector | null`); this no longer
+   applies.
+6. Green site sector remains fixed when wind changes (its position is
+   site data; only the weather graphic/speed number move, adaptively -
+   see §2.5). *(Originally: "Green and orange site sectors remain fixed";
+   there is no separate orange sector to test.)*
 7. Wind arrow rotates with selected data.
 8. Center speed changes with selected data.
 9. Recent direction dots appear for observation history only.
-10. Overall green/orange/red/gray styling does not hide sector geometry.
+10. Overall green/orange/red/gray state color does not hide the sector
+    geometry, and the adaptively-placed weather graphic does not obscure
+    the sector either (§2.5) - verified for the mandated sector-angle
+    cases in `tests/e2e/rose-gallery.spec.ts`.
 11. Rose remains readable at 48 px and 64 px.
 12. Expanded rose uses identical angle semantics.
 
@@ -967,6 +1035,13 @@ Take Playwright screenshots for:
 - wrong-direction red case;
 - unverified orange case;
 - stale gray case.
+
+Additionally (FlyWeather Next UI, §2.5's adaptive placement) - synthetic
+sector-angle cases covering every quadrant plus narrow/wide/wraparound
+edges: 0-40°, 70-120°, 150-210°, 240-300°, 310-350°, a very narrow sector,
+a very wide sector, and a wraparound sector (e.g. 330-30°). Implemented as
+the `adaptive-*` fixtures in `src/dev/RoseGallery.tsx`, asserted in
+`tests/e2e/rose-gallery.spec.ts`.
 
 ---
 

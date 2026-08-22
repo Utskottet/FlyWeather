@@ -26,6 +26,15 @@ describe("ParameterLegend", () => {
     expect(ticks.textContent).toContain("3.5");
   });
 
+  it("titles with the exact three-segment format the task mandates: label · technicalLabel · unit", () => {
+    const { getByTestId } = render(
+      <ParameterLegend label="Thermal strength" technicalLabel="W*" unit="m/s" colorScale={WSTAR_STOPS} />,
+    );
+    expect(getByTestId("rasp-legend").querySelector(".rasp-legend-title")?.textContent?.trim()).toBe(
+      "Thermal strength · W* · m/s",
+    );
+  });
+
   it("shows the unit explicitly in the title", () => {
     const { getByTestId } = render(
       <ParameterLegend label="Thermal strength" technicalLabel="W*" unit="m/s" colorScale={WSTAR_STOPS} />,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectEffectiveSample } from "../../src/domain/effectiveSample.ts";
+import { selectEffectiveSample, provenanceLine } from "../../src/domain/effectiveSample.ts";
 import type { WindSample } from "../../src/domain/types.ts";
 
 const now = new Date("2026-08-18T12:00:00Z");
@@ -50,5 +50,15 @@ describe("selectEffectiveSample (§6.1)", () => {
   it("never labels a forecast value as an observation", () => {
     const result = selectEffectiveSample(true, liveSample(45), forecastPoint, now, 10, 30);
     expect(result.sourceKind).not.toBe("observation");
+  });
+});
+
+describe("provenanceLine (§ FlyWeather Next UI compact map-level status line)", () => {
+  it("uses the exact mandated string at NOW", () => {
+    expect(provenanceLine(true)).toBe("Live site wind · Forecast map & RASP");
+  });
+
+  it("uses the exact mandated string for any future hour", () => {
+    expect(provenanceLine(false)).toBe("Sites, map & RASP: forecast");
   });
 });

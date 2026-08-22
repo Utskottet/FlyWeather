@@ -19,22 +19,27 @@
   pointer-events: none;
 }
 
-.top-controls {
+/* Single compact bar immediately above the timeline (§ FlyWeather Next UI) -
+   replaces the old top-right .top-controls stack. flex-wrap lets it degrade
+   gracefully at 360-430px instead of overflowing the viewport. */
+.control-bar {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  left: 0;
+  right: 0;
+  bottom: 112px;
   z-index: 1000;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.1);
 }
 
 .height-mode-toggle,
 .map-mode-toggle,
 .site-mode-toggle,
-.airspace-toggle,
-.rasp-toggle,
 .rasp-param-selector {
   display: inline-flex;
   background: #fff;
@@ -46,14 +51,12 @@
 .height-mode-toggle button,
 .map-mode-toggle button,
 .site-mode-toggle button,
-.airspace-toggle button,
-.rasp-toggle button,
 .rasp-param-selector button {
   border: none;
   background: transparent;
-  min-height: 44px;
-  padding: 0 16px;
-  font-size: 14px;
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #444;
 }
@@ -61,8 +64,6 @@
 .height-mode-toggle button.active,
 .map-mode-toggle button.active,
 .site-mode-toggle button.active,
-.airspace-toggle button.active,
-.rasp-toggle button.active,
 .rasp-param-selector button.active {
   background: #1565c0;
   color: #fff;
@@ -79,6 +80,42 @@
 .rasp-param-selector button {
   padding: 0 10px;
   font-size: 12px;
+}
+
+/* Shared single-label pressed-state toggle (§ FlyWeather Next UI) - label
+   text never changes between on/off; state is conveyed only by aria-pressed
+   + this .active styling, replacing the old two-button "X off"/"X on"
+   AirspaceToggle/RaspToggle pattern. Used for AIRSPACE, WIND and RASP. */
+.press-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+}
+
+.press-toggle.active {
+  background: #1565c0;
+  color: #fff;
+}
+
+/* Compact map/RASP provenance line (§ FlyWeather Next UI) - additive to,
+   not a replacement for, SiteSheet's own per-site LIVE/FORECAST badge.
+   margin-left: auto keeps the bar to a single row on wide screens (sits at
+   the row's end); flex-wrap on .control-bar still drops it to its own line
+   on narrow phones once the controls alone fill the width. */
+.control-bar-provenance {
+  margin-left: auto;
+  font-size: 11px;
+  color: #666;
+  white-space: nowrap;
 }
 
 .site-mode-empty-notice {
@@ -132,7 +169,11 @@
 
 .rasp-legend {
   position: absolute;
-  bottom: 128px;
+  /* Anchored above the control bar (real height measured in SiteMap.tsx,
+     same --control-bar-height variable as .site-sheet) rather than a fixed
+     128px - the bar wraps to multiple rows on narrow phones, which used to
+     grow tall enough to sit behind/hide this legend entirely. */
+  bottom: calc(112px + var(--control-bar-height, 0px) + 8px);
   left: 12px;
   z-index: 500;
   background: rgba(255, 255, 255, 0.95);
@@ -203,7 +244,11 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 112px;
+  /* Anchored above the control bar (its real height is measured in
+     SiteMap.tsx, since it varies with content) rather than directly above
+     the timeline - otherwise the sheet's z-index would either bury the
+     bar's controls or the bar would sit as a dead strip over the sheet. */
+  bottom: calc(112px + var(--control-bar-height, 0px));
   max-height: 55%;
   overflow-y: auto;
   background: #fff;

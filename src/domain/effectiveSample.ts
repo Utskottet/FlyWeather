@@ -56,3 +56,12 @@ export function selectEffectiveSample(
     ageMinutes: null,
   };
 }
+
+/**
+ * Compact map-level provenance line (§ FlyWeather Next UI) - distinct from
+ * SiteSheet's per-site LIVE/FORECAST badge (live-data.spec.ts, untouched).
+ * Exact wording mandated by the task; do not alter punctuation.
+ */
+export function provenanceLine(isNow: boolean): string {
+  return isNow ? "Live site wind · Forecast map & RASP" : "Sites, map & RASP: forecast";
+}

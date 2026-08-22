@@ -70,7 +70,7 @@ test.describe("Site map", () => {
     await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
 
     // off by default (Block 17: opt-in reference info, not default clutter)
-    await expect(page.getByTestId("airspace-off")).toHaveClass(/active/);
+    await expect(page.getByTestId("airspace-toggle")).toHaveAttribute("aria-pressed", "false");
     const hasLayerBefore = await page.evaluate(() => window.__flyweatherMap!.getLayer("airspace-fill") !== undefined);
     expect(hasLayerBefore).toBe(false);
 
@@ -79,7 +79,7 @@ test.describe("Site map", () => {
       return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
     });
 
-    await page.getByTestId("airspace-on").click();
+    await page.getByTestId("airspace-toggle").click();
     await page.waitForFunction(() => window.__flyweatherMap!.getLayer("airspace-fill") !== undefined);
 
     const viewDuring = await page.evaluate(() => {
@@ -88,7 +88,7 @@ test.describe("Site map", () => {
     });
     expect(viewDuring).toEqual(viewBefore);
 
-    await page.getByTestId("airspace-off").click();
+    await page.getByTestId("airspace-toggle").click();
     await expect
       .poll(() => page.evaluate(() => window.__flyweatherMap!.getLayer("airspace-fill") !== undefined))
       .toBe(false);

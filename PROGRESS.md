@@ -1389,3 +1389,88 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   mirror rather than the live URL (deliberately, since the live backend
   doesn't have the other 3 products yet) - worth switching back to the
   live URL once the backend is actually deployed with all four.
+
+## FlyWeather Next UI milestone: rose adaptive placement, compact single-label controls, provenance line
+
+- Status: done. Lint/typecheck/269 unit tests/build all green; 28/28 e2e
+  green (0 flakes on the final full run).
+- Investigation up front found timeline hour labels, day/night sky band,
+  the numeric W* legend, and the three new RASP products (thermal top,
+  Hcrit, cloudbase) already shipped in the prior V2 milestone - no rework
+  needed there. The real new work was entirely the WindRose marker,
+  WeatherGlyph, the control bar, and the provenance line.
+- **WindRose adaptive placement**: weather graphic now centers at
+  `sectorMidpointDeg(sector) + 180°` (translated only, never rotated),
+  grown from 22 to 36 viewBox units (~39% of the ring diameter) and
+  allowed to protrude ~12% past the ring; speed nudges to whichever
+  vertical half the weather isn't in. Verified against all 8 mandated
+  sector cases (0-40°, 70-120°, 150-210°, 240-300°, 310-350°, very narrow,
+  very wide, wraparound) in both `tests/unit/WindRose.test.tsx` (41 tests,
+  up from 26) and a new e2e test in `tests/e2e/rose-gallery.spec.ts` that
+  computes the real on-screen icon angle and asserts it against the same
+  formula. `WeatherGlyph.tsx` redrawn bold/filled to match the reference's
+  own sun/cloud/rain hex values - same API, no call-site changes beyond
+  the larger size.
+- **New `PressToggle` shared component** replaces `AirspaceToggle`'s/
+  `RaspToggle`'s old two-button "X off"/"X on" pattern with one
+  never-changes-text button (state via `aria-pressed`); also backs a new
+  `WindToggle` (default ON) that fully removes the particle layer when
+  off, not just pauses it - confirmed with a new e2e test.
+  `HeightModeToggle`/`SiteModeToggle`/`MapModeToggle` kept as-is
+  behaviorally (they already matched this shape) and moved into the same
+  bar per explicit user confirmation.
+- **Two real regressions found and fixed during self-test, not just
+  cosmetic**: moving the control bar from top-right to directly above the
+  timeline uncovered two occlusion bugs that only existed because of the
+  new bottom-anchored position. (1) The provenance line's first CSS draft
+  (`flex-basis: 100%`) forced the bar to always be 2 rows tall even on
+  wide desktop, pushing it past `MapLibreMap`'s existing 152px
+  `boundsPadding.bottom` reserve and landing the first fitted marker
+  behind it, unclickable - `site-map.spec.ts`'s "tapping a marker" test
+  failed consistently (not a flake) until fixed. (2) The site detail
+  sheet and the new control bar both anchor to the same bottom region;
+  since the sheet renders later in the DOM it silently covered the bar's
+  buttons once open, breaking the "change height mode while the sheet is
+  open" flow even though nothing in that test itself changed. Fixed by
+  measuring the bar's real height via `ResizeObserver` and anchoring both
+  the sheet and the RASP legend at `bottom: calc(112px + var(--control-
+  bar-height))` instead of fixed pixel offsets - caught a third instance
+  of the same class of bug (RASP legend hidden behind the bar on narrow
+  phones) during live-browser screenshot review, before it shipped.
+- **Provenance line**: new `provenanceLine()` in `domain/effectiveSample.ts`
+  returns the task's exact mandated strings - `"Live site wind · Forecast
+  map & RASP"` at NOW, `"Sites, map & RASP: forecast"` for any future hour
+  - rendered as one line in the control bar, additive to (not replacing)
+  `SiteSheet`'s own per-site LIVE/FORECAST badge.
+- `ParameterLegend`'s title format changed to `"{label} · {technicalLabel}
+  · {unit}"` (three segments, one separator) per the task's exact example.
+- Live-verified at desktop (1280px) and 360/390/430px via Playwright
+  screenshots: rose gallery (all mandated cases, sector unobscured, weather
+  legible and clearly opposite the sector, transparent map showing
+  through), control bar (single row on desktop, wraps cleanly to several
+  rows on narrow phones, all pressed states visible via blue highlight),
+  RASP legend (numeric ticks, real provenance text, readable above the
+  bar at every width), and the site-sheet-open collision case specifically.
+- `MASTER_SPEC.md` §2 updated: old permanent-green-and-orange multi-sector
+  language marked obsolete inline (kept, not deleted, per the task's own
+  instruction), new §2.5 added as the current authoritative source for
+  adaptive placement; §29's acceptance-test list annotated the same way.
+  `docs/DECISIONS.md` has a new block recording all of the above.
+- Files: `src/components/WindRose/WindRose.tsx`,
+  `src/components/WeatherGlyph/WeatherGlyph.tsx`,
+  `src/components/PressToggle/PressToggle.tsx` (new),
+  `src/components/WindToggle/WindToggle.tsx` (new),
+  `src/components/AirspaceToggle/AirspaceToggle.tsx`,
+  `src/components/RaspToggle/RaspToggle.tsx`,
+  `src/components/Map/SiteMap.tsx`, `src/domain/effectiveSample.ts`,
+  `src/components/ParameterLegend/ParameterLegend.tsx`, `src/app/App.css`,
+  `src/dev/RoseGallery.tsx`, `MASTER_SPEC.md`, `docs/DECISIONS.md`, plus
+  matching test files (`tests/unit/WindRose.test.tsx`,
+  `tests/unit/PressToggle.test.tsx` new, `tests/unit/effectiveSample.test.ts`,
+  `tests/unit/ParameterLegend.test.tsx`, `tests/e2e/rasp.spec.ts`,
+  `tests/e2e/site-map.spec.ts`, `tests/e2e/wind-particles.spec.ts`,
+  `tests/e2e/rose-gallery.spec.ts`).
+- Deferred / unresolved: none identified. Rain layer explicitly out of
+  scope for this milestone (architecture preserved for later, per the
+  task). Not yet pushed - awaiting user confirmation per established
+  pattern.

@@ -98,10 +98,25 @@ const CASES: Case[] = [
   },
 ];
 
+// Task-mandated adaptive-weather-placement fixtures (§ FlyWeather Next UI,
+// item 14) - synthetic sector angles, not tied to real site geometry like
+// CASES above, specifically chosen to exercise every quadrant plus narrow/
+// wide/wraparound edge cases for the sector-midpoint+180deg placement math.
+const ADAPTIVE_PLACEMENT_CASES: Case[] = [
+  { slug: "adaptive-0-40", title: "0-40deg", sector: { fromDeg: 0, toDeg: 40 }, windDirectionDeg: 20, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-70-120", title: "70-120deg", sector: { fromDeg: 70, toDeg: 120 }, windDirectionDeg: 95, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-150-210", title: "150-210deg", sector: { fromDeg: 150, toDeg: 210 }, windDirectionDeg: 180, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-240-300", title: "240-300deg", sector: { fromDeg: 240, toDeg: 300 }, windDirectionDeg: 270, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-310-350", title: "310-350deg", sector: { fromDeg: 310, toDeg: 350 }, windDirectionDeg: 330, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-narrow", title: "Very narrow (100-105deg)", sector: { fromDeg: 100, toDeg: 105 }, windDirectionDeg: 102, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-wide", title: "Very wide (20-300deg)", sector: { fromDeg: 20, toDeg: 300 }, windDirectionDeg: 160, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-wraparound", title: "Wraparound (330-30deg)", sector: { fromDeg: 330, toDeg: 30 }, windDirectionDeg: 0, windSpeedMs: 4, state: "green", weather: "rain" },
+];
+
 export function RoseGallery() {
   return (
     <main style={{ display: "flex", flexWrap: "wrap", gap: 24, padding: 24, fontFamily: "sans-serif" }}>
-      {CASES.map((c) => (
+      {[...CASES, ...ADAPTIVE_PLACEMENT_CASES].map((c) => (
         <figure key={c.slug} data-testid={`rose-case-${c.slug}`} style={{ margin: 0, textAlign: "center" }}>
           <WindRose
             size={160}
