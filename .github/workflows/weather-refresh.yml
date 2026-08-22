@@ -49,6 +49,8 @@ jobs:
       # (§13.1: "keep the collector fast," avoid unnecessary work).
       - name: Build (validates SITES.md, collects fresh live data, builds app)
         run: npm run build
+        env:
+          VITE_SOARING_BASE_URL: https://utskottet.github.io/FlyWeather-Soaring
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
