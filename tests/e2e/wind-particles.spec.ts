@@ -79,7 +79,7 @@ test.describe("Animated wind particle field", () => {
     const before = await arrow.screenshot();
 
     await page.getByTestId("height-control-button").click();
-    await page.getByTestId("altitude-slider-range").fill("1"); // 180m - the far end from Surface/10m
+    await page.getByTestId("altitude-slider-range").fill("1"); // 450m - the far end from Surface/10m
     await page.waitForTimeout(300);
 
     const after = await arrow.screenshot();

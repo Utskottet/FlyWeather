@@ -11,13 +11,15 @@ const POINTS = [
 const HOURS = ["2026-08-19T00:00", "2026-08-19T01:00", "2026-08-19T02:00"];
 
 describe("buildGridUrl", () => {
-  it("comma-joins all point coordinates in request order, requesting hourly wind at all 4 model heights (§ FlyWeather GUI Reorganization + Coherent Height Wind)", () => {
+  it("comma-joins all point coordinates in request order, requesting hourly wind at all 7 DMI model heights (§ Simplify DMI Wind v1 - Open-Meteo is the fallback, requested at the same heights)", () => {
     const url = buildGridUrl(POINTS);
     const params = new URL(url).searchParams;
     expect(params.get("latitude")).toBe("55.4000,55.9000,56.2000");
     expect(params.get("longitude")).toBe("13.0000,12.7000,14.0000");
     expect(params.get("hourly")).toBe(
-      "wind_speed_10m,wind_direction_10m,wind_speed_80m,wind_direction_80m,wind_speed_120m,wind_direction_120m,wind_speed_180m,wind_direction_180m",
+      "wind_speed_10m,wind_direction_10m,wind_speed_50m,wind_direction_50m,wind_speed_100m,wind_direction_100m," +
+        "wind_speed_150m,wind_direction_150m,wind_speed_250m,wind_direction_250m,wind_speed_350m,wind_direction_350m," +
+        "wind_speed_450m,wind_direction_450m",
     );
     expect(params.get("wind_speed_unit")).toBe("ms");
     expect(params.get("forecast_days")).toBe("5");
@@ -34,12 +36,10 @@ describe("normalizeGridResponse", () => {
           time: HOURS,
           wind_speed_10m: [5.6, 5.8, 6.0],
           wind_direction_10m: [182, 183, 184],
-          wind_speed_80m: [8.1, 8.2, 8.3],
-          wind_direction_80m: [190, 191, 192],
-          wind_speed_120m: [9.1, 9.2, 9.3],
-          wind_direction_120m: [195, 196, 197],
-          wind_speed_180m: [11.1, 11.2, 11.3],
-          wind_direction_180m: [200, 201, 202],
+          wind_speed_100m: [8.1, 8.2, 8.3],
+          wind_direction_100m: [190, 191, 192],
+          wind_speed_450m: [11.1, 11.2, 11.3],
+          wind_direction_450m: [200, 201, 202],
         },
       },
     ];
@@ -50,16 +50,23 @@ describe("normalizeGridResponse", () => {
     expect(p.lat).toBe(55.4);
     expect(p.lon).toBe(13.0);
     expect(p.heights[10]).toEqual({ windDirectionDeg: [182, 183, 184], windSpeedMs: [5.6, 5.8, 6.0] });
-    expect(p.heights[80]).toEqual({ windDirectionDeg: [190, 191, 192], windSpeedMs: [8.1, 8.2, 8.3] });
-    expect(p.heights[120]).toEqual({ windDirectionDeg: [195, 196, 197], windSpeedMs: [9.1, 9.2, 9.3] });
-    expect(p.heights[180]).toEqual({ windDirectionDeg: [200, 201, 202], windSpeedMs: [11.1, 11.2, 11.3] });
+    expect(p.heights[100]).toEqual({ windDirectionDeg: [190, 191, 192], windSpeedMs: [8.1, 8.2, 8.3] });
+    expect(p.heights[450]).toEqual({ windDirectionDeg: [200, 201, 202], windSpeedMs: [11.1, 11.2, 11.3] });
+    // Open-Meteo (fallback) doesn't support 50/150/250/350m - real, checked
+    // live (see types.ts's MODEL_HEIGHTS_M docstring) - a response that
+    // omits them entirely (while still reporting 3 real hours) must
+    // null-fill to match the hours length, not crash or drop the height key.
+    expect(p.heights[50]).toEqual({ windDirectionDeg: [null, null, null], windSpeedMs: [null, null, null] });
+    expect(p.heights[150]).toEqual({ windDirectionDeg: [null, null, null], windSpeedMs: [null, null, null] });
+    expect(p.heights[250]).toEqual({ windDirectionDeg: [null, null, null], windSpeedMs: [null, null, null] });
+    expect(p.heights[350]).toEqual({ windDirectionDeg: [null, null, null], windSpeedMs: [null, null, null] });
   });
 
   it("returns null-filled series at every height for a missing/short response rather than crashing", () => {
     const result = normalizeGridResponse(POINTS, []);
     expect(result.hours).toEqual([]);
     expect(result.points).toHaveLength(3);
-    for (const h of [10, 80, 120, 180] as const) {
+    for (const h of [10, 50, 100, 150, 250, 350, 450] as const) {
       expect(result.points[0].heights[h]).toEqual({ windDirectionDeg: [], windSpeedMs: [] });
     }
   });
@@ -73,16 +80,15 @@ describe("normalizeGridResponse", () => {
           time: HOURS,
           wind_speed_10m: [5.6, 5.8, 6.0],
           wind_direction_10m: [182, 183, 184],
-          // 80/120/180m omitted entirely - e.g. a provider hiccup for just those variables
+          // every other height omitted entirely - e.g. a provider hiccup for just those variables
         },
       },
     ];
     const result = normalizeGridResponse([POINTS[0]], raw);
     const [p] = result.points;
     expect(p.heights[10].windSpeedMs).toEqual([5.6, 5.8, 6.0]);
-    expect(p.heights[80].windSpeedMs).toEqual([null, null, null]);
-    expect(p.heights[120].windSpeedMs).toEqual([null, null, null]);
-    expect(p.heights[180].windSpeedMs).toEqual([null, null, null]);
+    expect(p.heights[100].windSpeedMs).toEqual([null, null, null]);
+    expect(p.heights[450].windSpeedMs).toEqual([null, null, null]);
   });
 });
 
@@ -99,12 +105,10 @@ describe("fetchWindGrid batching", () => {
         time: HOURS,
         wind_speed_10m: [5, 5, 5],
         wind_direction_10m: [180, 180, 180],
-        wind_speed_80m: [8, 8, 8],
-        wind_direction_80m: [180, 180, 180],
-        wind_speed_120m: [9, 9, 9],
-        wind_direction_120m: [180, 180, 180],
-        wind_speed_180m: [11, 11, 11],
-        wind_direction_180m: [180, 180, 180],
+        wind_speed_100m: [9, 9, 9],
+        wind_direction_100m: [180, 180, 180],
+        wind_speed_450m: [11, 11, 11],
+        wind_direction_450m: [180, 180, 180],
       },
     };
   }
@@ -128,7 +132,7 @@ describe("fetchWindGrid batching", () => {
     expect(result.points[0].lat).toBeCloseTo(points[0].lat, 6);
     expect(result.points[899].lat).toBeCloseTo(points[899].lat, 6);
     // every height genuinely present, not just 10m
-    expect(result.points[0].heights[180].windSpeedMs).toEqual([11, 11, 11]);
+    expect(result.points[0].heights[450].windSpeedMs).toEqual([11, 11, 11]);
   });
 
   it("returns an empty result without fetching for an empty point set", async () => {

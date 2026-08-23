@@ -1,15 +1,16 @@
 import { MODEL_HEIGHTS_M } from "./types.ts";
 
 /**
- * The real ceiling of per-site wind-at-height data (Open-Meteo's hourly
- * API only exposes 10/80/120/180m AGL - see openMeteoProvider.ts).
+ * The real ceiling of per-site wind-at-height data - DMI's own highest
+ * published named-AGL height (§ Simplify DMI Wind v1: production wind
+ * stops at 450m, not 2000m - the 450-2000m pressure-level path is
+ * isolated as experimental on the backend, see FlyWeather-Soaring's
+ * dmi/wind_experimental.py).
  *
  * The slider's own max (below) is capped at exactly this value (§
- * FlyWeather Mobile UI Correction) - a prior version let the slider run to
- * 1500m and silently/verbosely fell back to 180m data above that, which
- * the task called out as misleading. There is nothing above this to
- * select until real DMI vertical-wind products exist, so it's simply not
- * offered.
+ * FlyWeather Mobile UI Correction's original reasoning still applies) -
+ * offering a slider range beyond what any provider can actually answer
+ * is misleading, so it's simply not offered.
  */
 export const ALTITUDE_MAX_REAL_DATA_M = Math.max(...MODEL_HEIGHTS_M);
 
@@ -27,17 +28,18 @@ interface AltitudeSegment {
 }
 
 /**
- * Nonlinear slider mapping (§ FlyWeather Interaction Model, re-tuned for
- * the 180m cap in the Mobile UI Correction pass): low altitudes get a
- * large physical portion of the slider for fine control (40/50/70m must
- * all be easily dialable), the 120/180m end of the real range compresses
- * into a smaller portion. Segments meet exactly at their shared boundaries
- * so the mapping is continuous, not just piecewise-plausible.
+ * Nonlinear slider mapping, re-tuned for the 450m cap (§ Simplify DMI
+ * Wind v1 item 4/13): low altitudes still get a large physical portion of
+ * the slider for fine control - most ridge-soaring/thermal use sits under
+ * 150m - with DMI's own real named heights (10/50/100/150/250/350/450m)
+ * spread across the range rather than compressed into a tiny high-altitude
+ * sliver. Segments meet exactly at their shared boundaries so the mapping
+ * is continuous, not just piecewise-plausible.
  */
 const SEGMENTS: AltitudeSegment[] = [
-  { fFrom: 0.0, fTo: 0.55, mFrom: 0, mTo: 70 },
-  { fFrom: 0.55, fTo: 0.8, mFrom: 70, mTo: 120 },
-  { fFrom: 0.8, fTo: 1.0, mFrom: 120, mTo: ALTITUDE_SLIDER_MAX_M },
+  { fFrom: 0.0, fTo: 0.5, mFrom: 0, mTo: 150 },
+  { fFrom: 0.5, fTo: 0.8, mFrom: 150, mTo: 350 },
+  { fFrom: 0.8, fTo: 1.0, mFrom: 350, mTo: ALTITUDE_SLIDER_MAX_M },
 ];
 
 const ALTITUDE_ROUNDING_M = 5;

@@ -1,4 +1,5 @@
 import { openMeteoCodeToWeatherKind } from "../../domain/weather.ts";
+import { MODEL_HEIGHTS_M, type ModelHeightM } from "../../domain/types.ts";
 import type { ForecastProvider, ForecastSiteRequest, SiteForecast } from "../../domain/types.ts";
 
 const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
@@ -6,33 +7,21 @@ const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
 // regardless of what hour "now" happens to be within day 0 (§6).
 const FORECAST_DAYS = 5;
 
-export interface OpenMeteoHourly {
-  time: string[];
-  wind_speed_10m: (number | null)[];
-  wind_direction_10m: (number | null)[];
-  wind_speed_80m: (number | null)[];
-  wind_direction_80m: (number | null)[];
-  wind_speed_120m: (number | null)[];
-  wind_direction_120m: (number | null)[];
-  wind_speed_180m: (number | null)[];
-  wind_direction_180m: (number | null)[];
-  wind_gusts_10m: (number | null)[];
-  weather_code: (number | null)[];
-}
+// Requests wind at every one of this build's MODEL_HEIGHTS_M (DMI's real
+// heights, § Simplify DMI Wind v1) the same way openMeteoGridProvider.ts
+// already does - Open-Meteo (the fallback provider) only has real data at
+// 10m/100m from that list (checked live, see types.ts's MODEL_HEIGHTS_M
+// docstring), the rest come back null-filled, not an error.
+export type OpenMeteoHourly = { time: string[]; wind_gusts_10m: (number | null)[]; weather_code: (number | null)[] } & Partial<
+  Record<`wind_speed_${ModelHeightM}m` | `wind_direction_${ModelHeightM}m`, (number | null)[]>
+>;
 
 export interface OpenMeteoResponse {
   hourly: OpenMeteoHourly;
 }
 
 const HOURLY_VARS = [
-  "wind_speed_10m",
-  "wind_direction_10m",
-  "wind_speed_80m",
-  "wind_direction_80m",
-  "wind_speed_120m",
-  "wind_direction_120m",
-  "wind_speed_180m",
-  "wind_direction_180m",
+  ...MODEL_HEIGHTS_M.flatMap((h) => [`wind_speed_${h}m`, `wind_direction_${h}m`]),
   "wind_gusts_10m",
   "weather_code",
 ];
@@ -71,12 +60,16 @@ export function buildOpenMeteoBatchUrl(points: { lat: number; lon: number }[]): 
 /** Normalizes a raw Open-Meteo response into our internal SiteForecast shape. Pure - no network. */
 export function normalizeOpenMeteoResponse(siteId: string, raw: OpenMeteoResponse): SiteForecast {
   const { hourly } = raw;
-  const heights: SiteForecast["heights"] = {
-    10: { windDirectionDeg: hourly.wind_direction_10m, windSpeedMs: hourly.wind_speed_10m },
-    80: { windDirectionDeg: hourly.wind_direction_80m, windSpeedMs: hourly.wind_speed_80m },
-    120: { windDirectionDeg: hourly.wind_direction_120m, windSpeedMs: hourly.wind_speed_120m },
-    180: { windDirectionDeg: hourly.wind_direction_180m, windSpeedMs: hourly.wind_speed_180m },
-  };
+  const nulls = () => hourly.time.map(() => null);
+  const heights = Object.fromEntries(
+    MODEL_HEIGHTS_M.map((h) => [
+      h,
+      {
+        windDirectionDeg: hourly[`wind_direction_${h}m`] ?? nulls(),
+        windSpeedMs: hourly[`wind_speed_${h}m`] ?? nulls(),
+      },
+    ]),
+  ) as SiteForecast["heights"];
   return {
     siteId,
     sourceId: "open-meteo",

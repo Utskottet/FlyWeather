@@ -19,6 +19,27 @@
   pointer-events: none;
 }
 
+/* Tiny centered top wordmark (§ Simplify DMI Wind v1 item 14) - identity
+   only, deliberately unobtrusive: small, low-contrast, never intercepts
+   map drag/zoom or the tool stack (which starts lower, at top:76px, and
+   is left-aligned - no overlap by construction). */
+.uppvind-wordmark {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  pointer-events: none;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(20, 20, 20, 0.45);
+  padding: 3px 10px;
+  border-radius: 20px;
+  user-select: none;
+}
+
 /* Top-left vertical tool stack (§ FlyWeather GUI Reorganization + Coherent
    Height Wind items 2-8) - site selection, map overlays, and the
    collapsible HEIGHT control in one deliberate hierarchy, replacing the

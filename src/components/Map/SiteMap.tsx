@@ -314,6 +314,12 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
       data-testid="site-map"
       style={{ "--source-status-height": `${sourceStatusBarHeight}px` } as React.CSSProperties}
     >
+      {/* Tiny centered top wordmark (§ Simplify DMI Wind v1 item 14) -
+          identity only, not a branding redesign. Non-interactive so it
+          never competes with map drag/zoom or the tool stack below it. */}
+      <div className="uppvind-wordmark" aria-hidden="true">
+        UPPVIND
+      </div>
       {/* Top-left tool stack (§ FlyWeather GUI Reorganization + Coherent
           Height Wind items 2-8): site selection, map overlays, and the
           collapsible HEIGHT control - a deliberate hierarchy, not one

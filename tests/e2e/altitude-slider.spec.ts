@@ -42,10 +42,10 @@ test.describe("HEIGHT control + START (§ FlyWeather GUI Reorganization + Cohere
     const altitudeLabel = page.getByTestId("altitude-slider-label");
     await expect(altitudeLabel).toHaveText("Surface");
 
-    // f=0.55 round-trips to exactly 70m (tests/unit/altitudeAxis.test.ts).
-    await page.getByTestId("altitude-slider-range").fill("0.55");
-    await expect(altitudeLabel).toHaveText("70 m AGL");
-    await expect(heightButton).toContainText("HEIGHT 70m");
+    // f=0.25 -> 75m (§ Simplify DMI Wind v1: 0..0.5 spans 0..150m).
+    await page.getByTestId("altitude-slider-range").fill("0.25");
+    await expect(altitudeLabel).toHaveText("75 m AGL");
+    await expect(heightButton).toContainText("HEIGHT 75m");
     await expect(page.getByTestId("source-status-sites")).toContainText("FORECAST");
     await expect(startButton).toHaveAttribute("aria-pressed", "false");
 
@@ -68,7 +68,7 @@ test.describe("HEIGHT control + START (§ FlyWeather GUI Reorganization + Cohere
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("HEIGHT never offers a value above the real 180m data ceiling", async ({ page }) => {
+  test("HEIGHT never offers a value above the real 450m data ceiling (§ Simplify DMI Wind v1)", async ({ page }) => {
     await page.goto("/");
     const markers = page.locator(".rose-marker-icon");
     await markers.first().waitFor();
@@ -78,7 +78,7 @@ test.describe("HEIGHT control + START (§ FlyWeather GUI Reorganization + Cohere
     const range = page.getByTestId("altitude-slider-range");
     await expect(range).toHaveAttribute("max", "1");
     await range.fill("1"); // the slider's own max
-    await expect(page.getByTestId("altitude-slider-label")).toHaveText("180 m AGL");
+    await expect(page.getByTestId("altitude-slider-label")).toHaveText("450 m AGL");
   });
 
   test("collapsing HEIGHT does not reset the selected altitude", async ({ page }) => {
@@ -88,15 +88,15 @@ test.describe("HEIGHT control + START (§ FlyWeather GUI Reorganization + Cohere
 
     const heightButton = page.getByTestId("height-control-button");
     await heightButton.click();
-    await page.getByTestId("altitude-slider-range").fill("0.55");
-    await expect(heightButton).toContainText("HEIGHT 70m");
+    await page.getByTestId("altitude-slider-range").fill("0.25");
+    await expect(heightButton).toContainText("HEIGHT 75m");
 
     await heightButton.click(); // collapse
     await expect(page.getByTestId("height-control-slider")).toHaveCount(0);
-    await expect(heightButton).toContainText("HEIGHT 70m"); // altitude preserved while collapsed
+    await expect(heightButton).toContainText("HEIGHT 75m"); // altitude preserved while collapsed
 
     await heightButton.click(); // re-expand
-    await expect(page.getByTestId("altitude-slider-label")).toHaveText("70 m AGL");
+    await expect(page.getByTestId("altitude-slider-label")).toHaveText("75 m AGL");
   });
 
   test("START also resets time, and moving time alone exits live mode", async ({ page }) => {
@@ -125,11 +125,11 @@ test.describe("HEIGHT control + START (§ FlyWeather GUI Reorganization + Cohere
     await page.locator(".rose-marker-icon").first().waitFor();
     await page.waitForTimeout(1500);
 
-    // Set up: tomorrow, 120m, RASP on, Roads on, Airspace on.
+    // Set up: tomorrow, 350m, RASP on, Roads on, Airspace on.
     await page.getByTestId("time-slider-range").fill("24");
     await page.getByTestId("height-control-button").click();
-    await page.getByTestId("altitude-slider-range").fill("0.8"); // 120m boundary (tests/unit/altitudeAxis.test.ts)
-    await expect(page.getByTestId("altitude-slider-label")).toHaveText("120 m AGL");
+    await page.getByTestId("altitude-slider-range").fill("0.8"); // 350m segment boundary (tests/unit/altitudeAxis.test.ts)
+    await expect(page.getByTestId("altitude-slider-label")).toHaveText("350 m AGL");
     await page.getByTestId("rasp-toggle").click();
     await page.getByTestId("roads-toggle").click();
     await page.getByTestId("airspace-toggle").click();

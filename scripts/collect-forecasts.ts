@@ -5,10 +5,24 @@ import { locatedEnabledSites } from "../src/domain/sites.ts";
 import { buildCatalogue } from "./build-sites-catalogue.ts";
 import { fetchSitesForecastBatch } from "../src/providers/forecast/openMeteoProvider.ts";
 import { fetchWindGrid } from "../src/providers/forecast/openMeteoGridProvider.ts";
+import { fetchDmiWindGrid, mergeDmiWindIntoSiteForecast } from "../src/providers/forecast/dmiWindProvider.ts";
 import { buildWindGrid } from "../src/domain/windGrid.ts";
 import { computeSiteBounds } from "../src/components/Map/mapBounds.ts";
 import { MODEL_HEIGHTS_M } from "../src/domain/types.ts";
-import type { GeneratedForecastSitesFile, GeneratedWindGridFile, WindGridPoint } from "../src/domain/types.ts";
+import type { GeneratedForecastSitesFile, GeneratedWindGridFile, SiteForecast, WindGridPoint } from "../src/domain/types.ts";
+
+// § Simplify DMI Wind v1: real DMI HARMONIE DINI wind (dmi/wind.py's Wind
+// v1, 10-450m native AGL) is now the primary source for both the animated
+// regional field and per-site wind, with Open-Meteo as the fallback -
+// reversing the prior default. Open-Meteo is always fetched first and
+// used as-is (unchanged code path, same resilience it already had); DMI is
+// then attempted as an *enhancement* on top of that baseline - if it
+// succeeds, both the grid and every site's wind get upgraded to real DMI
+// values; if DMI is unavailable for any reason, whatever Open-Meteo
+// already produced (fresh or its own last-published fallback) is kept
+// exactly as before. This never makes the existing Open-Meteo resilience
+// any weaker, only adds a preferred source on top of it.
+const SOARING_BASE_URL = "https://utskottet.github.io/FlyWeather-Soaring";
 
 // 31x31 = up to 961 points, ~3x the 18x18=324 grid the architecture fix
 // shipped with - safe to triple again now that fetching happens once
@@ -125,6 +139,41 @@ async function main() {
           : "collect-forecasts: no previously published forecast-wind-grid.json available either - writing empty",
       );
     }
+  }
+
+  // --- DMI wind (primary source; enhances whatever Open-Meteo baseline was already produced above) ---
+  // Sampled at the grid points AND every site's own coordinates in a single
+  // batch (one manifest fetch + one set of per-hour file fetches shared
+  // across both consumers), so the animated field and every site rose come
+  // from the exact same DMI run/valid-times/heights (§56 "share HEIGHT/
+  // run/time"). A DMI failure here leaves gridFile/sitesFile exactly as
+  // Open-Meteo already produced them above - never a partial/mixed write.
+  try {
+    if (!bounds) throw new Error("no located sites to compute grid bounds from");
+    const gridQueryPoints = buildWindGrid(bounds, GRID_RESOLUTION);
+    const sitesWithForecast = sites.filter((s) => sitesFile.sites[s.id] !== undefined);
+    const sitePoints = sitesWithForecast.map((s) => ({ lat: s.coordinates.lat, lon: s.coordinates.lon }));
+
+    const { hours: dmiHours, points: dmiPoints } = await fetchDmiWindGrid(SOARING_BASE_URL, [
+      ...gridQueryPoints,
+      ...sitePoints,
+    ]);
+    const dmiGridPoints = dmiPoints.slice(0, gridQueryPoints.length);
+    const dmiSitePoints = dmiPoints.slice(gridQueryPoints.length);
+
+    gridFile = { generatedAt: new Date().toISOString(), hours: dmiHours, points: dmiGridPoints };
+
+    const upgradedSites: GeneratedForecastSitesFile["sites"] = { ...sitesFile.sites };
+    sitesWithForecast.forEach((s, i) => {
+      upgradedSites[s.id] = mergeDmiWindIntoSiteForecast(sitesFile.sites[s.id] as SiteForecast, dmiSitePoints[i], dmiHours);
+    });
+    sitesFile = { ...sitesFile, sites: upgradedSites };
+
+    console.log(
+      `collect-forecasts: DMI wind v1 active - upgraded grid (${dmiGridPoints.length} points x ${dmiHours.length} hours) and ${sitesWithForecast.length} site forecasts`,
+    );
+  } catch (err) {
+    console.warn(`collect-forecasts: DMI wind unavailable, staying on Open-Meteo - ${(err as Error).message}`);
   }
 
   mkdirSync(dirname(sitesOutPath), { recursive: true });
