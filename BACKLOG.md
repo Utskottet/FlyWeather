@@ -37,3 +37,12 @@ commitment log.
   `wind.verified: true` so far. Every other site in the catalogue still
   shows `speedFit: "unknown"` (never green) until its real min/max safe
   wind speed is confirmed and entered, site by site.
+- **RASP generation schedule times are suboptimal for actual flying
+  planning**: current cron (`FlyWeather-Soaring/.github/workflows/generate.yml`)
+  runs 4x/day at 03/09/15/21 UTC. 21:00 UTC in particular isn't useful -
+  pilots need fresh RASP earlier in the day. Requested: run early morning
+  and again around midday (roughly 06:00 and 13:00 - confirm whether
+  meant as Swedish local time (CET/CEST) or UTC before changing the cron)
+  so the forecast is actually usable for planning that day's flying,
+  instead of a schedule driven by even spacing rather than when pilots
+  need the data.
