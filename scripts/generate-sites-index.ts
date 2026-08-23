@@ -19,7 +19,8 @@ const csvOutPath = resolve(repoRoot, "sites-index.csv");
 const mdOutPath = resolve(repoRoot, "SITES_INDEX.md");
 
 function sectorDegrees(site: Site): string {
-  return site.sector ? `${site.sector.from_deg}–${site.sector.to_deg}` : "";
+  if (!site.sector) return "";
+  return site.sector.ranges.map((r) => `${r.from_deg}–${r.to_deg}`).join(", ");
 }
 
 function stationLabel(site: Site): string {

@@ -51,7 +51,7 @@ export function SiteSheet({
   selectedTimestamp,
   onClose,
 }: SiteSheetProps) {
-  const sector = site.sector ? { fromDeg: site.sector.from_deg, toDeg: site.sector.to_deg } : null;
+  const sector = site.sector ? site.sector.ranges.map((r) => ({ fromDeg: r.from_deg, toDeg: r.to_deg })) : null;
   const { state, reasons } = evaluateFlyability(
     sample.windDirectionDeg,
     sample.windSpeedMs,

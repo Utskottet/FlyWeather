@@ -8,7 +8,7 @@ import {
 } from "../../src/domain/flyability.ts";
 import type { Sector } from "../../src/domain/siteFile.ts";
 
-const SECTOR: Sector = { from_deg: 213.75, to_deg: 236.25, verified: false };
+const SECTOR: Sector = { ranges: [{ from_deg: 213.75, to_deg: 236.25 }], verified: false };
 
 describe("computeDirectionFit (§5.2, § FlyWeather Site Catalogue Migration single-sector redesign)", () => {
   it("is good inside the sector", () => {
@@ -20,8 +20,8 @@ describe("computeDirectionFit (§5.2, § FlyWeather Site Catalogue Migration sin
   });
 
   it("uses exactly MARGINAL_SECTOR_PADDING_DEG on each edge, not a moment more", () => {
-    const justInsidePad = SECTOR.from_deg - MARGINAL_SECTOR_PADDING_DEG + 0.01;
-    const justOutsidePad = SECTOR.from_deg - MARGINAL_SECTOR_PADDING_DEG - 0.01;
+    const justInsidePad = SECTOR.ranges[0].from_deg - MARGINAL_SECTOR_PADDING_DEG + 0.01;
+    const justOutsidePad = SECTOR.ranges[0].from_deg - MARGINAL_SECTOR_PADDING_DEG - 0.01;
     expect(computeDirectionFit(justInsidePad, SECTOR)).toBe("maybe");
     expect(computeDirectionFit(justOutsidePad, SECTOR)).toBe("bad");
   });
@@ -39,13 +39,40 @@ describe("computeDirectionFit (§5.2, § FlyWeather Site Catalogue Migration sin
   });
 
   it("handles a north-crossing sector (330 -> 30) including its wraparound padding", () => {
-    const wrap: Sector = { from_deg: 330, to_deg: 30, verified: true };
+    const wrap: Sector = { ranges: [{ from_deg: 330, to_deg: 30 }], verified: true };
     expect(computeDirectionFit(0, wrap)).toBe("good"); // due north, inside the wrap
     expect(computeDirectionFit(340, wrap)).toBe("good");
     expect(computeDirectionFit(35, wrap)).toBe("maybe"); // 5deg past 30, within the 11.25deg pad
     expect(computeDirectionFit(322, wrap)).toBe("maybe"); // 8deg before 330, within the 11.25deg pad
     expect(computeDirectionFit(315, wrap)).toBe("bad"); // 15deg before 330, outside the pad
     expect(computeDirectionFit(180, wrap)).toBe("bad");
+  });
+});
+
+describe("computeDirectionFit with multiple sector ranges (e.g. a winch site launchable from either end)", () => {
+  // Klamby-like: two opposite-facing ranges, neither wrapping 0/360 nor
+  // adjacent to each other (a real gap on both sides).
+  const dual: Sector = {
+    ranges: [
+      { from_deg: 45, to_deg: 145 },
+      { from_deg: 225, to_deg: 315 },
+    ],
+    verified: true,
+  };
+
+  it("is good inside either range", () => {
+    expect(computeDirectionFit(90, dual)).toBe("good");
+    expect(computeDirectionFit(270, dual)).toBe("good");
+  });
+
+  it("is maybe within padding of either range's edge", () => {
+    expect(computeDirectionFit(40, dual)).toBe("maybe"); // just below range 1's from_deg
+    expect(computeDirectionFit(320, dual)).toBe("maybe"); // just above range 2's to_deg
+  });
+
+  it("is bad in the real gap between the two ranges (not near either edge)", () => {
+    expect(computeDirectionFit(185, dual)).toBe("bad"); // roughly midway between 145 and 225
+    expect(computeDirectionFit(0, dual)).toBe("bad"); // roughly midway between 315 and 45 (wrapping)
   });
 });
 

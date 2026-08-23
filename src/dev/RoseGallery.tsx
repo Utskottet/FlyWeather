@@ -4,7 +4,7 @@ import type { WeatherKind } from "../domain/weather.ts";
 interface Case {
   slug: string;
   title: string;
-  sector: RoseSector | null;
+  sector: RoseSector[] | null;
   windDirectionDeg: number | null;
   windSpeedMs: number | null;
   state: RoseState;
@@ -18,12 +18,14 @@ interface Case {
 // check against production geometry, not just synthetic angles. Only
 // the green ("inner") range is drawn - orange sub-ranges are no longer
 // separate wedges, per explicit feedback matching the reference's
-// single-wedge, status-colored model.
+// single-wedge, status-colored model. Every sector here is a single-range
+// array - most real sites only ever have one; see "klamby-dual-sector"
+// below for the multi-range case.
 const CASES: Case[] = [
   {
     slug: "hammar-sw",
     title: "Hammar-like SW case",
-    sector: { fromDeg: 213.75, toDeg: 236.25 },
+    sector: [{ fromDeg: 213.75, toDeg: 236.25 }],
     windDirectionDeg: 225,
     windSpeedMs: 5.2,
     state: "green",
@@ -32,7 +34,7 @@ const CASES: Case[] = [
   {
     slug: "kaseberga-s",
     title: "Kåseberga-like S case",
-    sector: { fromDeg: 168.75, toDeg: 191.25 },
+    sector: [{ fromDeg: 168.75, toDeg: 191.25 }],
     windDirectionDeg: 180,
     windSpeedMs: 6.0,
     state: "green",
@@ -46,7 +48,7 @@ const CASES: Case[] = [
   {
     slug: "ravlunda-e",
     title: "Ravlunda-like E case",
-    sector: { fromDeg: 78.75, toDeg: 101.25 },
+    sector: [{ fromDeg: 78.75, toDeg: 101.25 }],
     windDirectionDeg: 90,
     windSpeedMs: 4.5,
     state: "green",
@@ -55,7 +57,7 @@ const CASES: Case[] = [
   {
     slug: "n-wraparound",
     title: "N wraparound case",
-    sector: { fromDeg: 348.75, toDeg: 11.25 },
+    sector: [{ fromDeg: 348.75, toDeg: 11.25 }],
     windDirectionDeg: 5,
     windSpeedMs: 5.0,
     state: "green",
@@ -64,7 +66,7 @@ const CASES: Case[] = [
   {
     slug: "wrong-direction-red",
     title: "Wrong-direction red case",
-    sector: { fromDeg: 213.75, toDeg: 236.25 },
+    sector: [{ fromDeg: 213.75, toDeg: 236.25 }],
     windDirectionDeg: 45,
     windSpeedMs: 7.1,
     state: "red",
@@ -73,7 +75,7 @@ const CASES: Case[] = [
   {
     slug: "unverified-orange",
     title: "Unverified orange case",
-    sector: { fromDeg: 213.75, toDeg: 236.25 },
+    sector: [{ fromDeg: 213.75, toDeg: 236.25 }],
     windDirectionDeg: 225,
     windSpeedMs: 5.2,
     state: "orange",
@@ -82,7 +84,7 @@ const CASES: Case[] = [
   {
     slug: "stale-gray",
     title: "Stale gray case",
-    sector: { fromDeg: 213.75, toDeg: 236.25 },
+    sector: [{ fromDeg: 213.75, toDeg: 236.25 }],
     windDirectionDeg: null,
     windSpeedMs: null,
     state: "gray",
@@ -96,6 +98,18 @@ const CASES: Case[] = [
     state: "gray",
     weather: "cloudy",
   },
+  {
+    slug: "klamby-dual-sector",
+    title: "Klamby-like dual-sector winch case",
+    sector: [
+      { fromDeg: 45, toDeg: 145 },
+      { fromDeg: 225, toDeg: 315 },
+    ],
+    windDirectionDeg: 270,
+    windSpeedMs: 3.5,
+    state: "green",
+    weather: "partly-cloudy",
+  },
 ];
 
 // Task-mandated adaptive-weather-placement fixtures (§ FlyWeather Next UI,
@@ -103,14 +117,14 @@ const CASES: Case[] = [
 // CASES above, specifically chosen to exercise every quadrant plus narrow/
 // wide/wraparound edge cases for the sector-midpoint+180deg placement math.
 const ADAPTIVE_PLACEMENT_CASES: Case[] = [
-  { slug: "adaptive-0-40", title: "0-40deg", sector: { fromDeg: 0, toDeg: 40 }, windDirectionDeg: 20, windSpeedMs: 4, state: "green", weather: "rain" },
-  { slug: "adaptive-70-120", title: "70-120deg", sector: { fromDeg: 70, toDeg: 120 }, windDirectionDeg: 95, windSpeedMs: 4, state: "green", weather: "rain" },
-  { slug: "adaptive-150-210", title: "150-210deg", sector: { fromDeg: 150, toDeg: 210 }, windDirectionDeg: 180, windSpeedMs: 4, state: "green", weather: "rain" },
-  { slug: "adaptive-240-300", title: "240-300deg", sector: { fromDeg: 240, toDeg: 300 }, windDirectionDeg: 270, windSpeedMs: 4, state: "green", weather: "rain" },
-  { slug: "adaptive-310-350", title: "310-350deg", sector: { fromDeg: 310, toDeg: 350 }, windDirectionDeg: 330, windSpeedMs: 4, state: "green", weather: "rain" },
-  { slug: "adaptive-narrow", title: "Very narrow (100-105deg)", sector: { fromDeg: 100, toDeg: 105 }, windDirectionDeg: 102, windSpeedMs: 4, state: "green", weather: "rain" },
-  { slug: "adaptive-wide", title: "Very wide (20-300deg)", sector: { fromDeg: 20, toDeg: 300 }, windDirectionDeg: 160, windSpeedMs: 4, state: "green", weather: "rain" },
-  { slug: "adaptive-wraparound", title: "Wraparound (330-30deg)", sector: { fromDeg: 330, toDeg: 30 }, windDirectionDeg: 0, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-0-40", title: "0-40deg", sector: [{ fromDeg: 0, toDeg: 40 }], windDirectionDeg: 20, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-70-120", title: "70-120deg", sector: [{ fromDeg: 70, toDeg: 120 }], windDirectionDeg: 95, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-150-210", title: "150-210deg", sector: [{ fromDeg: 150, toDeg: 210 }], windDirectionDeg: 180, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-240-300", title: "240-300deg", sector: [{ fromDeg: 240, toDeg: 300 }], windDirectionDeg: 270, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-310-350", title: "310-350deg", sector: [{ fromDeg: 310, toDeg: 350 }], windDirectionDeg: 330, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-narrow", title: "Very narrow (100-105deg)", sector: [{ fromDeg: 100, toDeg: 105 }], windDirectionDeg: 102, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-wide", title: "Very wide (20-300deg)", sector: [{ fromDeg: 20, toDeg: 300 }], windDirectionDeg: 160, windSpeedMs: 4, state: "green", weather: "rain" },
+  { slug: "adaptive-wraparound", title: "Wraparound (330-30deg)", sector: [{ fromDeg: 330, toDeg: 30 }], windDirectionDeg: 0, windSpeedMs: 4, state: "green", weather: "rain" },
 ];
 
 export function RoseGallery() {

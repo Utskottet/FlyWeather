@@ -16,7 +16,7 @@ function baseSite(overrides: Partial<SiteFile> = {}): SiteFile {
     id: "test-site",
     name: "Test Site",
     coordinates: { lat: 55.4, lon: 14.0, verified: true },
-    sector: { from_deg: 200, to_deg: 250, verified: false },
+    sector: { ranges: [{ from_deg: 200, to_deg: 250 }], verified: false },
     wind: { verified: false },
     description: "A test site.",
     ...overrides,
@@ -44,17 +44,17 @@ describe("siteFileSchema", () => {
   });
 
   it("rejects a degree value outside 0-360", () => {
-    const result = siteFileSchema.safeParse(baseSite({ sector: { from_deg: -10, to_deg: 50, verified: false } }));
+    const result = siteFileSchema.safeParse(baseSite({ sector: { ranges: [{ from_deg: -10, to_deg: 50 }], verified: false } }));
     expect(result.success).toBe(false);
   });
 
   it("rejects a zero-width (malformed) sector", () => {
-    const result = siteFileSchema.safeParse(baseSite({ sector: { from_deg: 100, to_deg: 100, verified: false } }));
+    const result = siteFileSchema.safeParse(baseSite({ sector: { ranges: [{ from_deg: 100, to_deg: 100 }], verified: false } }));
     expect(result.success).toBe(false);
   });
 
   it("accepts a north-crossing sector like 330 -> 30", () => {
-    const result = siteFileSchema.safeParse(baseSite({ sector: { from_deg: 330, to_deg: 30, verified: true } }));
+    const result = siteFileSchema.safeParse(baseSite({ sector: { ranges: [{ from_deg: 330, to_deg: 30 }], verified: true } }));
     expect(result.success).toBe(true);
   });
 

@@ -1,4 +1,4 @@
-import { describeSector, normalizeDeg, polarToCartesian, sectorMidpointDeg } from "../../domain/direction.ts";
+import { describeSector, polarToCartesian, sectorMidpointDeg } from "../../domain/direction.ts";
 import { WeatherGlyph } from "../WeatherGlyph/WeatherGlyph.tsx";
 import type { WeatherKind } from "../../domain/weather.ts";
 
@@ -19,13 +19,16 @@ export interface WindRoseProps {
   /** Rendered pixel size (square). 48-64 for map markers, 120-200 for the expanded view (§2.4). */
   size?: number;
   /**
-   * The site's core flyable direction range (its single green/"inner"
-   * sector - orange sub-ranges are no longer drawn as separate wedges,
-   * per explicit feedback matching the reference's one-wedge model).
-   * Null when the site has no green sector configured - never fabricate
-   * a range, render no wedge instead (§2.1.4).
+   * The site's core flyable direction range(s) (orange sub-ranges are not
+   * drawn as separate wedges, per explicit feedback matching the
+   * reference's one-wedge-per-range model). Most sites have exactly one;
+   * a site can have more than one (e.g. a winch strip launchable from
+   * either end) - each renders as its own wedge, all in the same
+   * `state` color, since flyability is one overall state for the site,
+   * not per-range. Null/empty when the site has no sector configured -
+   * never fabricate a range, render no wedge instead (§2.1.4).
    */
-  sector: RoseSector | null;
+  sector: RoseSector[] | null;
   /** Colors the wedge - the reference's model conveys good/maybe/no-go entirely through this one wedge's fill, not a separate ring. */
   state: RoseState;
   windDirectionDeg: number | null;
@@ -101,20 +104,6 @@ const DEFAULT_WEATHER_ANGLE = 0;
 // full 360deg ring does not.
 const WEATHER_ANGLE_PRESETS = [45, 135, 225, 315];
 
-/** Nearest of WEATHER_ANGLE_PRESETS to `angle`, by shortest circular distance. */
-function nearestPreset(angle: number): number {
-  let best = WEATHER_ANGLE_PRESETS[0];
-  let bestDiff = Infinity;
-  for (const preset of WEATHER_ANGLE_PRESETS) {
-    const diff = Math.min(Math.abs(angle - preset), 360 - Math.abs(angle - preset));
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      best = preset;
-    }
-  }
-  return best;
-}
-
 // ~39% of the ring's own diameter (2*OUTER_R) - within the task's
 // documented 35-40%-of-rose-diameter target for the weather graphic
 // (previously 22, well under target - this is a deliberate, real increase,
@@ -133,15 +122,29 @@ const ICON_PLACEMENT_R = OUTER_R * (1 + ICON_PROTRUSION_FRACTION) - ICON_SIZE / 
 // adaptive.
 const SPEED_OFFSET = OUTER_R * (54 / 90);
 
-/** Nearest deliberate diagonal preset to "sector midpoint + 180deg"
- * (wraparound-safe via the existing sectorMidpointDeg helper) - the corner
- * of the ring farthest from the sector, where the weather graphic reads
- * clearest without covering it. Returns the reference's own fixed "up"
- * angle when there's no sector to avoid. */
-function weatherAngleFor(sector: RoseSector | null): number {
-  if (!sector) return DEFAULT_WEATHER_ANGLE;
-  const farSide = normalizeDeg(sectorMidpointDeg(sector.fromDeg, sector.toDeg) + 180);
-  return nearestPreset(farSide);
+/** Of the 4 deliberate diagonal presets, the one farthest from every
+ * sector range's own midpoint (maximin: for each preset, its distance to
+ * the NEAREST range; pick the preset that maximizes that) - the corner of
+ * the ring least likely to sit under any wedge, where the weather graphic
+ * reads clearest. For a single range this reduces to exactly "nearest
+ * preset to sector midpoint + 180deg" (the original single-sector
+ * behavior - verified equivalent, not just similar). Returns the
+ * reference's own fixed "up" angle when there's nothing to avoid. */
+function weatherAngleFor(sector: RoseSector[] | null): number {
+  if (!sector || sector.length === 0) return DEFAULT_WEATHER_ANGLE;
+  const midpoints = sector.map((s) => sectorMidpointDeg(s.fromDeg, s.toDeg));
+  let best = WEATHER_ANGLE_PRESETS[0];
+  let bestMinDistance = -Infinity;
+  for (const preset of WEATHER_ANGLE_PRESETS) {
+    const distanceToNearestSector = Math.min(
+      ...midpoints.map((mid) => Math.min(Math.abs(preset - mid), 360 - Math.abs(preset - mid))),
+    );
+    if (distanceToNearestSector > bestMinDistance) {
+      bestMinDistance = distanceToNearestSector;
+      best = preset;
+    }
+  }
+  return best;
 }
 
 /** Split-tail wind pointer, per the reference. Tip points toward the compass direction wind is coming FROM (§29.3). */
@@ -186,14 +189,15 @@ export function WindRose({
         role="img"
         aria-label={siteName ? `Wind rose for ${siteName}` : "Wind rose"}
       >
-        {sector && (
+        {sector?.map((range, i) => (
           <path
-            d={describeSector(CENTER, CENTER, OUTER_R, sector.fromDeg, sector.toDeg)}
+            key={`sector-${i}`}
+            d={describeSector(CENTER, CENTER, OUTER_R, range.fromDeg, range.toDeg)}
             fill={STATE_SECTOR_COLOR[state]}
             opacity={SECTOR_OPACITY}
             data-testid="sector"
           />
-        )}
+        ))}
 
         <circle
           cx={CENTER}

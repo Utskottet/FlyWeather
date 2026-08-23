@@ -145,7 +145,7 @@ function buildRoseHtml(
   weatherKind: SiteForecast["weatherKind"][number],
 ): { html: string; size: number } {
   const size = selected ? SELECTED_MARKER_SIZE : MARKER_SIZE;
-  const sector = site.sector ? { fromDeg: site.sector.from_deg, toDeg: site.sector.to_deg } : null;
+  const sector = site.sector ? site.sector.ranges.map((r) => ({ fromDeg: r.from_deg, toDeg: r.to_deg })) : null;
   const { state } = evaluateFlyability(
     sample.windDirectionDeg,
     sample.windSpeedMs,

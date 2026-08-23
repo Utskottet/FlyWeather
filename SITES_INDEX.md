@@ -2,7 +2,7 @@
 
 Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a generated view for humans, not authoritative - edit the YAML files under `sites/`, then re-run `npm run sites:index`.
 
-29 sites total, 12 active.
+30 sites total, 12 active.
 
 | Active | Country | Region | Group | Short name | Full name | Sector (deg) | Station | Pilot level | Coords verified | Sector verified |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -14,14 +14,15 @@ Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a
 | yes | se | skane | ridge | Barsebäck | Barsebäck camping | 292.5–337.5 | viva #25 |  | no | no |
 | yes | se | skane | ridge | Hammar | Hammars backar | 213.75–236.25 | holfuy #214 |  | yes | no |
 | yes | se | skane | ridge | Höganäs | Höganäs Strandbaden | 281.25–303.75 | holfuy #128 |  | no | no |
-| yes | se | skane | ridge | Hovet N | Hovs Hallar N | 348.75–11.25 | holfuy #127 |  | no | no |
-| yes | se | skane | ridge | Hovet NV | Hovs Hallar NV | 315–337.5 | holfuy #127 |  | no | no |
+| yes | se | skane | ridge | Hovet NV | Hovs Hallar NV | 290–350 | holfuy #127 |  | no | yes |
 | yes | se | skane | ridge | Kåseberga | Kåseberga Sydhanget | 168.75–191.25 | holfuy #155 |  | no | no |
 | yes | se | skane | ridge | Mölle | Kullaberg / Mölle | 202.5–247.5 | holfuy #597 |  | no | no |
 | yes | se | skane | ridge | Ravlunda | Ravlunda / Haväng | 60–120 | holfuy #126 |  | yes | yes |
 | yes | se | skane | ridge | Rökerierna | Rökerierna Kåseberga | 123.75–146.25 | holfuy #155 |  | no | no |
+| yes | se | skane | winch | Klamby | Klamby | 45–145, 225–315 | sjoboflyg #esmi |  | yes | yes |
 | no | se | skane |  | Stenarna | Ales stenar / Stenarna | 213.75–236.25 | holfuy #214 |  | no | no |
 | no | se | skane |  | Brofästet | Brofästet | 258.75–281.25 |  |  | no | no |
+| no | se | skane |  | Hovet N | Hovs Hallar N | 290–350 | holfuy #127 |  | no | yes |
 | no | se | skane |  | Laröd | Larödbaden | 213.75–236.25 |  |  | no | no |
 | no | se | skane |  | Lernacken | Lernacken | 157.5–202.5 |  |  | no | no |
 | no | se | skane |  |  | Paramotor Dalhäll |  |  |  | no |  |

@@ -14,16 +14,39 @@ import { z } from "zod";
 const degSchema = z.number().min(0).max(360);
 
 /**
- * The single authoritative wind sector, numeric degrees, clockwise from
- * from_deg to to_deg. North-crossing sectors are valid (e.g. 330 -> 30) -
- * see domain/direction.ts's isAngleInSector, which already handles the
- * wraparound. Replaces the old rose.green[]/rose.orange[] pair - see
+ * One clockwise range, from_deg to to_deg, numeric degrees. North-crossing
+ * ranges are valid (e.g. 330 -> 30) - see domain/direction.ts's
+ * isAngleInSector, which already handles the wraparound.
+ */
+const sectorRangeSchema = z
+  .object({
+    from_deg: degSchema,
+    to_deg: degSchema,
+  })
+  .refine((r) => r.from_deg !== r.to_deg, {
+    message: "sector range from_deg and to_deg must not be equal (zero-width sector)",
+  });
+
+/**
+ * The authoritative wind sector(s) a site can be launched in - one or more
+ * non-overlapping clockwise ranges. Most sites have exactly one (a ridge
+ * only faces one way); a winch site can legitimately have two
+ * opposite-facing ranges (the cable can be laid out and launched from
+ * either end depending on wind - real case: Klamby, 45-145deg and
+ * 225-315deg). Authored either as a single `from_deg`/`to_deg` pair (the
+ * common case, kept for every existing single-sector site - no migration
+ * needed) or as `ranges: [{from_deg, to_deg}, ...]` for a genuinely
+ * multi-sector site; both parse to the same always-array `ranges` shape
+ * below, so every downstream consumer (flyability.ts, WindRose.tsx) only
+ * ever deals with one shape, never a single/many special case.
+ *
+ * Replaces the old rose.green[]/rose.orange[] pair - see
  * SITE_MIGRATION_REPORT.md for how every site's old green/orange ranges
- * mapped onto this single sector, and domain/flyability.ts for how the
- * old orange "marginal" zone became a uniform derived padding instead of
+ * mapped onto this, and domain/flyability.ts for how the old orange
+ * "marginal" zone became a uniform derived padding instead of
  * hand-authored per-site data.
  */
-export const sectorSchema = z
+const singleSectorSchema = z
   .object({
     from_deg: degSchema,
     to_deg: degSchema,
@@ -31,7 +54,15 @@ export const sectorSchema = z
   })
   .refine((s) => s.from_deg !== s.to_deg, {
     message: "sector from_deg and to_deg must not be equal (zero-width sector)",
-  });
+  })
+  .transform((s) => ({ ranges: [{ from_deg: s.from_deg, to_deg: s.to_deg }], verified: s.verified }));
+
+const multiSectorSchema = z.object({
+  ranges: z.array(sectorRangeSchema).min(1),
+  verified: z.boolean(),
+});
+
+export const sectorSchema = z.union([multiSectorSchema, singleSectorSchema]);
 
 export const coordinatesSchema = z
   .object({

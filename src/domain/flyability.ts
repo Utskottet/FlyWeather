@@ -22,18 +22,24 @@ export type SpeedFit = "good" | "bad" | "unknown";
 export const MARGINAL_SECTOR_PADDING_DEG = 11.25;
 
 /**
- * Direction result per MASTER_SPEC.md §5.2: inside the sector is good,
- * within MARGINAL_SECTOR_PADDING_DEG of either edge is maybe, further
- * outside is bad, and no sector configured at all is unknown - never
- * guess.
+ * Direction result per MASTER_SPEC.md §5.2: inside any of the site's
+ * sector ranges is good, within MARGINAL_SECTOR_PADDING_DEG of any
+ * range's edge is maybe, further outside every range is bad, and no
+ * sector configured at all is unknown - never guess. Most sites have one
+ * range; a site can have more (e.g. a winch strip launchable from either
+ * end) - every range is checked independently, any match wins.
  */
 export function computeDirectionFit(windDirectionDeg: number | null, sector: Sector | null): DirectionFit {
   if (windDirectionDeg === null) return "unknown";
   if (sector === null) return "unknown";
-  if (isAngleInSector(windDirectionDeg, sector.from_deg, sector.to_deg)) return "good";
-  const paddedFrom = normalizeDeg(sector.from_deg - MARGINAL_SECTOR_PADDING_DEG);
-  const paddedTo = normalizeDeg(sector.to_deg + MARGINAL_SECTOR_PADDING_DEG);
-  if (isAngleInSector(windDirectionDeg, paddedFrom, paddedTo)) return "maybe";
+  for (const range of sector.ranges) {
+    if (isAngleInSector(windDirectionDeg, range.from_deg, range.to_deg)) return "good";
+  }
+  for (const range of sector.ranges) {
+    const paddedFrom = normalizeDeg(range.from_deg - MARGINAL_SECTOR_PADDING_DEG);
+    const paddedTo = normalizeDeg(range.to_deg + MARGINAL_SECTOR_PADDING_DEG);
+    if (isAngleInSector(windDirectionDeg, paddedFrom, paddedTo)) return "maybe";
+  }
   return "bad";
 }
 

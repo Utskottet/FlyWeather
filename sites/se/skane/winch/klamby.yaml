@@ -8,8 +8,11 @@ coordinates:
   verified: true
   source: User-supplied field coordinates (55°40'22.64"N 13°45'12.42"E)
 sector:
-  from_deg: 45
-  to_deg: 145
+  ranges:
+    - from_deg: 45
+      to_deg: 145
+    - from_deg: 225
+      to_deg: 315
   verified: true
 wind:
   verified: true
@@ -21,15 +24,12 @@ station:
   verified: true
   note: Sjöbo Flyg / ESMI live weather station (https://vader.sjoboflyg.se/, WeeWX/Ecowitt) - wind direction, average wind, and gust. No `sjoboflyg` live-data provider is implemented in providers/live/ yet, so this source is currently inert (resolveLiveSample skips unrecognized provider names rather than failing) - the station/ID are real and ready for when one is built.
 description: >-
-  CPS.se klubbfält (winch site). Private field, contact CPS. Real usable
-  wind band is a single site-supplied range: green 0-5 m/s, orange 5-6 m/s,
-  red above 6 m/s - this catalogue's schema only supports one min/max
-  "good" band today, so orange is folded into red here (0-5 m/s kept as
-  the verified good band) rather than fabricating a maybe-tier that isn't
-  really representable yet. This site also has a second, opposite-facing
-  launch sector (225-315 deg) not captured by the single from_deg/to_deg
-  field below - approximated to the wider of the two real ranges
-  (45-145 deg) for now; the reverse-direction launch is real and valid,
-  just not yet representable without extending the schema to multiple
-  sector ranges.
+  CPS.se klubbfält (winch site). Private field, contact CPS. Launchable
+  from either end of the strip depending on wind (45-145deg and
+  225-315deg, both real, both represented in sector.ranges above). Real
+  usable wind band is a single site-supplied range: green 0-5 m/s, orange
+  5-6 m/s, red above 6 m/s - this catalogue's schema only supports one
+  min/max "good" band today, so orange is folded into red here (0-5 m/s
+  kept as the verified good band) rather than fabricating a maybe-tier
+  that isn't really representable yet.
 links: []

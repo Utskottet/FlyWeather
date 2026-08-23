@@ -14,7 +14,7 @@ function locatedSite(overrides: Partial<LocatedSite> = {}): LocatedSite {
     region: "skane",
     group: "ridge",
     coordinates: { lat: 55.4, lon: 14.0, verified: true },
-    sector: { from_deg: 200, to_deg: 250, verified: false },
+    sector: { ranges: [{ from_deg: 200, to_deg: 250 }], verified: false },
     wind: { verified: false },
     description: "A test site.",
     ...overrides,

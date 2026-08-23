@@ -6,7 +6,7 @@ import { normalizeDeg, sectorMidpointDeg } from "../../src/domain/direction.ts";
 
 afterEach(cleanup);
 
-const SW_SECTOR: RoseSector = { fromDeg: 213.75, toDeg: 236.25 };
+const SW_SECTOR: RoseSector[] = [{ fromDeg: 213.75, toDeg: 236.25 }];
 
 // Mirrors WindRose.tsx's own internal geometry constants - duplicated here
 // deliberately (not imported) so these tests catch an accidental change to
@@ -246,7 +246,7 @@ describe("WindRose - adaptive weather placement (§ FlyWeather Mobile UI Correct
     ["very wide (20-300deg)", 20, 300],
     ["wraparound north (330-30deg)", 330, 30],
   ])("%s sector: places weather at the preset nearest the ring's far side from the sector midpoint", (_label, fromDeg, toDeg) => {
-    const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg, toDeg }} weatherKind="rain" />);
+    const { container } = render(<WindRose {...baseProps()} sector={[{ fromDeg, toDeg }]} weatherKind="rain" />);
     const iconCenter = iconCenterOf(container);
     expect(iconCenter).not.toBeNull();
 
@@ -276,7 +276,7 @@ describe("WindRose - adaptive weather placement (§ FlyWeather Mobile UI Correct
   ])(
     "%s sector: weather lands on exactly one of the 4 fixed diagonal presets, never a free/orbital angle",
     (_label, fromDeg, toDeg) => {
-      const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg, toDeg }} weatherKind="rain" />);
+      const { container } = render(<WindRose {...baseProps()} sector={[{ fromDeg, toDeg }]} weatherKind="rain" />);
       const iconCenter = iconCenterOf(container)!;
       const actualAngle = angleOfPoint(CENTER, CENTER, iconCenter.x, iconCenter.y);
       const closestPresetDiff = Math.min(
@@ -287,22 +287,22 @@ describe("WindRose - adaptive weather placement (§ FlyWeather Mobile UI Correct
   );
 
   it("translates the weather icon without rotating it (no rotate() in its transform)", () => {
-    const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg: 70, toDeg: 120 }} weatherKind="rain" />);
+    const { container } = render(<WindRose {...baseProps()} sector={[{ fromDeg: 70, toDeg: 120 }]} weatherKind="rain" />);
     const transform = container.querySelector('[data-testid="rose-weather-icon"]')?.getAttribute("transform") ?? "";
     expect(transform).toMatch(/^translate\(/);
     expect(transform).not.toMatch(/rotate/);
   });
 
   it("moves weather to a different position for two very different sectors (proves placement is genuinely sector-dependent)", () => {
-    const north = render(<WindRose {...baseProps()} sector={{ fromDeg: 0, toDeg: 40 }} weatherKind="rain" />);
-    const south = render(<WindRose {...baseProps()} sector={{ fromDeg: 150, toDeg: 210 }} weatherKind="rain" />);
+    const north = render(<WindRose {...baseProps()} sector={[{ fromDeg: 0, toDeg: 40 }]} weatherKind="rain" />);
+    const south = render(<WindRose {...baseProps()} sector={[{ fromDeg: 150, toDeg: 210 }]} weatherKind="rain" />);
     expect(iconCenterOf(north.container)).not.toEqual(iconCenterOf(south.container));
     north.unmount();
     south.unmount();
   });
 
   it("allows the weather graphic to protrude past the ring by roughly 10-15%, per the task's explicit allowance", () => {
-    const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg: 150, toDeg: 210 }} weatherKind="rain" />);
+    const { container } = render(<WindRose {...baseProps()} sector={[{ fromDeg: 150, toDeg: 210 }]} weatherKind="rain" />);
     const iconCenter = iconCenterOf(container)!;
     const g = container.querySelector('[data-testid="rose-weather-icon"]');
     const iconSize = Number(g?.querySelector("svg")?.getAttribute("width"));
@@ -320,14 +320,14 @@ describe("WindRose - adaptive weather placement (§ FlyWeather Mobile UI Correct
   });
 
   it("keeps speed horizontal (a single text baseline, never rotated) regardless of sector", () => {
-    const { container } = render(<WindRose {...baseProps()} sector={{ fromDeg: 70, toDeg: 120 }} weatherKind="rain" />);
+    const { container } = render(<WindRose {...baseProps()} sector={[{ fromDeg: 70, toDeg: 120 }]} weatherKind="rain" />);
     const speed = container.querySelector('[data-testid="speed-text"]');
     expect(speed?.getAttribute("transform")).toBeNull();
   });
 
   it("nudges speed to the opposite vertical half from wherever the weather graphic landed", () => {
-    const northWeather = render(<WindRose {...baseProps()} sector={{ fromDeg: 150, toDeg: 210 }} weatherKind="rain" />);
-    const southWeather = render(<WindRose {...baseProps()} sector={{ fromDeg: 0, toDeg: 40 }} weatherKind="rain" />);
+    const northWeather = render(<WindRose {...baseProps()} sector={[{ fromDeg: 150, toDeg: 210 }]} weatherKind="rain" />);
+    const southWeather = render(<WindRose {...baseProps()} sector={[{ fromDeg: 0, toDeg: 40 }]} weatherKind="rain" />);
 
     const northIconY = iconCenterOf(northWeather.container)!.y;
     const northSpeedY = Number(northWeather.container.querySelector('[data-testid="speed-text"]')?.getAttribute("y"));
