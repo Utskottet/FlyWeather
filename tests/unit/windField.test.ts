@@ -1,36 +1,28 @@
 import { describe, expect, it } from "vitest";
 import { buildWindFieldGrid, sampleWindField, speedToColor, windGridPointAtHeight } from "../../src/domain/windField.ts";
-import type { WindGridPoint } from "../../src/domain/types.ts";
+import { MODEL_HEIGHTS_M, type ModelHeightM, type WindGridPoint } from "../../src/domain/types.ts";
 
 /**
  * Builds a WindGridPoint carrying the SAME wind at every one of
- * MODEL_HEIGHTS_M (10/50/100/150/250/350/450, DMI's real named-AGL
- * heights) unless `perHeight` overrides specific heights - most tests
- * below only care about one slider index, so a flat single-hour series
- * per height keeps call sites readable.
+ * MODEL_HEIGHTS_M (the backend's real named-AGL heights, Surface-2000m,
+ * § UPPVIND recovery milestone) unless `perHeight` overrides specific
+ * heights - most tests below only care about one slider index, so a flat
+ * single-hour series per height keeps call sites readable.
  */
 function point(
   lat: number,
   lon: number,
   dirFrom: number | null,
   speedMs: number | null,
-  perHeight?: Partial<Record<10 | 50 | 100 | 150 | 250 | 350 | 450, { windDirectionDeg: number | null; windSpeedMs: number | null }>>,
+  perHeight?: Partial<Record<ModelHeightM, { windDirectionDeg: number | null; windSpeedMs: number | null }>>,
 ): WindGridPoint {
   const base = { windDirectionDeg: [dirFrom], windSpeedMs: [speedMs] };
-  const at = (h: 10 | 50 | 100 | 150 | 250 | 350 | 450) =>
+  const at = (h: ModelHeightM) =>
     perHeight?.[h] ? { windDirectionDeg: [perHeight[h]!.windDirectionDeg], windSpeedMs: [perHeight[h]!.windSpeedMs] } : base;
   return {
     lat,
     lon,
-    heights: {
-      10: at(10),
-      50: at(50),
-      100: at(100),
-      150: at(150),
-      250: at(250),
-      350: at(350),
-      450: at(450),
-    },
+    heights: Object.fromEntries(MODEL_HEIGHTS_M.map((h) => [h, at(h)])) as Record<ModelHeightM, { windDirectionDeg: (number | null)[]; windSpeedMs: (number | null)[] }>,
   };
 }
 
@@ -91,7 +83,7 @@ describe("buildWindFieldGrid", () => {
     const p = (lat: number, lon: number): WindGridPoint => ({
       lat,
       lon,
-      heights: { 10: twoHourSeries, 50: twoHourSeries, 100: twoHourSeries, 150: twoHourSeries, 250: twoHourSeries, 350: twoHourSeries, 450: twoHourSeries },
+      heights: Object.fromEntries(MODEL_HEIGHTS_M.map((h) => [h, twoHourSeries])) as Record<ModelHeightM, typeof twoHourSeries>,
     });
     const points: WindGridPoint[] = [p(55, 13), p(55, 14), p(56, 13), p(56, 14)];
     const atNow = buildWindFieldGrid(points, 0, SURFACE_M)!;
@@ -167,14 +159,14 @@ describe("windGridPointAtHeight (§ FlyWeather GUI Reorganization + Coherent Hei
     expect(windSpeedMs).toBe(4);
   });
 
-  it("clamps to the 450m series at or above the real ceiling, never extrapolating past it", () => {
-    const p = point(55, 13, 0, 0, { 450: { windDirectionDeg: 77, windSpeedMs: 20 } });
-    const { windDirectionDeg, windSpeedMs } = windGridPointAtHeight(p, 0, 450);
+  it("clamps to the 2000m series at or above the real ceiling, never extrapolating past it", () => {
+    const p = point(55, 13, 0, 0, { 2000: { windDirectionDeg: 77, windSpeedMs: 20 } });
+    const { windDirectionDeg, windSpeedMs } = windGridPointAtHeight(p, 0, 2000);
     expect(windDirectionDeg).toBe(77);
     expect(windSpeedMs).toBe(20);
   });
 
-  it.each([10, 40, 50, 70, 100, 150, 250, 350, 450])(
+  it.each([10, 40, 50, 70, 100, 150, 250, 350, 450, 600, 1000, 1500, 2000])(
     "returns a real (non-null) sample at %sm when every model height has data",
     (altitudeM) => {
       const p = point(55, 13, 0, 0, {

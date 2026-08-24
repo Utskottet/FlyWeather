@@ -6,9 +6,9 @@ export interface AltitudeSliderProps {
   onChange: (altitudeM: number) => void;
 }
 
-// Tick marks at Surface + every DMI native AGL height (§ Simplify DMI Wind
-// v1 item 13: "suggested stops Surface/50/100/150/250/350/450m") - a
-// <datalist> only draws visual snap-hint ticks, it does NOT quantize the
+// Tick marks at Surface + every native backend height (§ UPPVIND recovery
+// milestone: Surface/50/100/150/250/350/450/600/800/1000/1250/1500/1750/
+// 2000m) - a <datalist> only draws visual snap-hint ticks, it does NOT quantize the
 // input's value, so everything between ticks stays freely selectable and
 // still drives real continuous U/V interpolation (heightInterpolation.ts),
 // never a hard snap to just these 8 values.
@@ -20,10 +20,10 @@ const TICK_ALTITUDES_M = [SURFACE_ALTITUDE_M, ...MODEL_HEIGHTS_M];
  * source of truth; the range input's own position is always derived from
  * it via altitudeMToFraction, never tracked separately.
  *
- * Capped at ALTITUDE_SLIDER_MAX_M (== ALTITUDE_MAX_REAL_DATA_M, 450m - §
- * Simplify DMI Wind v1, DMI's own highest native AGL height) - § FlyWeather
- * Mobile UI Correction's original reasoning still applies: nothing above
- * the real data ceiling is selectable.
+ * Capped at ALTITUDE_SLIDER_MAX_M (== ALTITUDE_MAX_REAL_DATA_M, 2000m - §
+ * UPPVIND recovery milestone, the backend's own highest published height)
+ * - § FlyWeather Mobile UI Correction's original reasoning still applies:
+ * nothing above the real data ceiling is selectable.
  */
 export function AltitudeSlider({ altitudeM, onChange }: AltitudeSliderProps) {
   const label = formatAltitudeLabel(altitudeM);

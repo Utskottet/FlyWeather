@@ -71,12 +71,16 @@ function fetchMockFor(manifest: unknown, numericFile: unknown) {
 
 describe("assertDmiHeightsMatch", () => {
   it("does not throw when the manifest's heights exactly match MODEL_HEIGHTS_M (any order)", () => {
-    expect(() => assertDmiHeightsMatch([450, 10, 250, 100, 350, 50, 150])).not.toThrow();
+    expect(() =>
+      assertDmiHeightsMatch([2000, 450, 10, 1750, 250, 100, 1500, 350, 50, 1250, 150, 1000, 800, 600]),
+    ).not.toThrow();
   });
 
   it("throws rather than guessing a mapping when heights have drifted", () => {
     expect(() => assertDmiHeightsMatch([10, 50, 100, 150, 250, 350])).toThrow(/don't match/);
-    expect(() => assertDmiHeightsMatch([10, 50, 100, 150, 250, 350, 450, 600])).toThrow(/don't match/);
+    expect(() =>
+      assertDmiHeightsMatch([10, 50, 100, 150, 250, 350, 450, 600, 800, 1000, 1250, 1500, 1750]),
+    ).toThrow(/don't match/);
   });
 });
 

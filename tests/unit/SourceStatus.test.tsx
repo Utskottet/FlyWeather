@@ -29,4 +29,19 @@ describe("SourceStatus (§ FlyWeather GUI Reorganization + Coherent Height Wind 
       expect(getByTestId(testId).textContent).toMatch(/MEASURED|FORECAST/);
     }
   });
+
+  it("shows the wind field's age when provided, omits it when not yet loaded", () => {
+    const { getByTestId, queryByTestId, rerender } = render(
+      <SourceStatus sitesMeasured={true} raspOn={false} windAge="8m" />,
+    );
+    expect(getByTestId("source-status-wind-age").textContent).toContain("8m");
+
+    rerender(<SourceStatus sitesMeasured={true} raspOn={false} windAge={null} />);
+    expect(queryByTestId("source-status-wind-age")).toBeNull();
+  });
+
+  it("shows RASP's own age alongside its chip when provided", () => {
+    const { getByTestId } = render(<SourceStatus sitesMeasured={true} raspOn={true} raspAge="1h 5m" />);
+    expect(getByTestId("source-status-rasp-age").textContent).toContain("1h 5m");
+  });
 });

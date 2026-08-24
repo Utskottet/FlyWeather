@@ -34,6 +34,6 @@ describe("HeightControl (§ FlyWeather GUI Reorganization + Coherent Height Wind
     const { getByTestId } = render(<HeightControl altitudeM={0} onChange={onChange} />);
     fireEvent.click(getByTestId("height-control-button"));
     fireEvent.change(getByTestId("altitude-slider-range"), { target: { value: "1" } });
-    expect(onChange).toHaveBeenCalledWith(450);
+    expect(onChange).toHaveBeenCalledWith(2000);
   });
 });

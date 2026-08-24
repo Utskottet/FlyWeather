@@ -1,11 +1,10 @@
 import { MODEL_HEIGHTS_M } from "./types.ts";
 
 /**
- * The real ceiling of per-site wind-at-height data - DMI's own highest
- * published named-AGL height (§ Simplify DMI Wind v1: production wind
- * stops at 450m, not 2000m - the 450-2000m pressure-level path is
- * isolated as experimental on the backend, see FlyWeather-Soaring's
- * dmi/wind_experimental.py).
+ * The real ceiling of per-site wind-at-height data - the backend's
+ * highest published height (§ UPPVIND recovery milestone: DWD ICON-EU
+ * via Open-Meteo on the backend now covers Surface-2000m, superseding
+ * the earlier 450m DMI HARMONIE DINI ceiling).
  *
  * The slider's own max (below) is capped at exactly this value (§
  * FlyWeather Mobile UI Correction's original reasoning still applies) -
@@ -28,18 +27,22 @@ interface AltitudeSegment {
 }
 
 /**
- * Nonlinear slider mapping, re-tuned for the 450m cap (§ Simplify DMI
- * Wind v1 item 4/13): low altitudes still get a large physical portion of
- * the slider for fine control - most ridge-soaring/thermal use sits under
- * 150m - with DMI's own real named heights (10/50/100/150/250/350/450m)
- * spread across the range rather than compressed into a tiny high-altitude
- * sliver. Segments meet exactly at their shared boundaries so the mapping
- * is continuous, not just piecewise-plausible.
+ * Nonlinear slider mapping, re-tuned for the 2000m cap (§ UPPVIND
+ * recovery milestone): low altitudes still get a large physical portion
+ * of the slider for fine control - most ridge-soaring/thermal use sits
+ * under 150m - with movement per slider-fraction getting progressively
+ * coarser at altitude, four segments instead of three so the 450-2000m
+ * span (where the old 3-segment shape would have crammed 1650m into the
+ * last fifth of the slider) still gets two intermediate steps. Segment
+ * boundaries land exactly on real backend heights (150/450/1000/2000)
+ * and meet exactly at their shared boundaries so the mapping is
+ * continuous, not just piecewise-plausible.
  */
 const SEGMENTS: AltitudeSegment[] = [
   { fFrom: 0.0, fTo: 0.5, mFrom: 0, mTo: 150 },
-  { fFrom: 0.5, fTo: 0.8, mFrom: 150, mTo: 350 },
-  { fFrom: 0.8, fTo: 1.0, mFrom: 350, mTo: ALTITUDE_SLIDER_MAX_M },
+  { fFrom: 0.5, fTo: 0.75, mFrom: 150, mTo: 450 },
+  { fFrom: 0.75, fTo: 0.9, mFrom: 450, mTo: 1000 },
+  { fFrom: 0.9, fTo: 1.0, mFrom: 1000, mTo: ALTITUDE_SLIDER_MAX_M },
 ];
 
 const ALTITUDE_ROUNDING_M = 5;

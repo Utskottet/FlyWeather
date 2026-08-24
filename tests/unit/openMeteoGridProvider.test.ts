@@ -11,7 +11,7 @@ const POINTS = [
 const HOURS = ["2026-08-19T00:00", "2026-08-19T01:00", "2026-08-19T02:00"];
 
 describe("buildGridUrl", () => {
-  it("comma-joins all point coordinates in request order, requesting hourly wind at all 7 DMI model heights (§ Simplify DMI Wind v1 - Open-Meteo is the fallback, requested at the same heights)", () => {
+  it("comma-joins all point coordinates in request order, requesting hourly wind at all 14 backend model heights (§ UPPVIND recovery milestone - Open-Meteo is the fallback, requested at the same heights)", () => {
     const url = buildGridUrl(POINTS);
     const params = new URL(url).searchParams;
     expect(params.get("latitude")).toBe("55.4000,55.9000,56.2000");
@@ -19,7 +19,9 @@ describe("buildGridUrl", () => {
     expect(params.get("hourly")).toBe(
       "wind_speed_10m,wind_direction_10m,wind_speed_50m,wind_direction_50m,wind_speed_100m,wind_direction_100m," +
         "wind_speed_150m,wind_direction_150m,wind_speed_250m,wind_direction_250m,wind_speed_350m,wind_direction_350m," +
-        "wind_speed_450m,wind_direction_450m",
+        "wind_speed_450m,wind_direction_450m,wind_speed_600m,wind_direction_600m,wind_speed_800m,wind_direction_800m," +
+        "wind_speed_1000m,wind_direction_1000m,wind_speed_1250m,wind_direction_1250m,wind_speed_1500m,wind_direction_1500m," +
+        "wind_speed_1750m,wind_direction_1750m,wind_speed_2000m,wind_direction_2000m",
     );
     expect(params.get("wind_speed_unit")).toBe("ms");
     expect(params.get("forecast_days")).toBe("5");

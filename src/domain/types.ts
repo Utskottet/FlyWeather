@@ -22,27 +22,34 @@ export interface HeightWindSeries {
 }
 
 /**
- * Model heights (m AGL) this app requests wind for - DMI HARMONIE DINI's
- * real named-AGL surface heights (§ Simplify DMI Wind v1), matching
- * FlyWeather-Soaring's dmi/wind.py SURFACE_HEIGHTS_M exactly. Both sides
- * of that contract are independently defined constants, not one shared
- * import (separate repos/languages) - kept in sync by convention, and
+ * Model heights (m AGL) this app requests wind for - matching
+ * FlyWeather-Soaring's public wind contract exactly (icon/wind.py's
+ * OUTPUT_HEIGHTS_M, § UPPVIND recovery milestone: DWD ICON-EU via
+ * Open-Meteo on the backend, Surface-2000m). Both sides of that contract
+ * are independently defined constants, not one shared import (separate
+ * repos/languages) - kept in sync by convention, and
  * providers/forecast/dmiWindProvider.ts validates the published
- * manifest's own heightsM against this list at runtime rather than
- * trusting the two never drift.
+ * manifest's own heightsM against this list at runtime (throws rather
+ * than silently guessing a mapping if they've drifted) instead of
+ * trusting the two never diverge.
  *
- * Open-Meteo (the fallback provider, used when DMI's product is
- * unavailable) does NOT support most of these heights - checked live, not
- * assumed: requesting wind_speed_50m/150m/250m/350m/450m returns HTTP 200
- * with those specific fields present but entirely null (unit "undefined"),
- * not an error - only 10m and 100m come back with real data. This is
- * already handled without special-casing: openMeteoGridProvider.ts/
+ * Open-Meteo (the FRONTEND's own direct fallback provider, used only
+ * when the backend's wind product is unavailable - a completely
+ * separate code path from the backend's own ICON usage above) does NOT
+ * support most of these heights - checked live, not assumed: requesting
+ * wind_speed_50m/150m/250m/350m/450m returns HTTP 200 with those
+ * specific fields present but entirely null (unit "undefined"), not an
+ * error - only 10m/80m/100m/120m/180m come back with real data (Open-
+ * Meteo's own near-surface wind fields don't extend past 180m at all;
+ * heights above that were never checked live for this fallback path
+ * specifically, so no claim is made about them here - don't assume).
+ * This is already handled without special-casing: openMeteoGridProvider.ts/
  * openMeteoProvider.ts already default any Open-Meteo field absent-or-null
- * to a null-filled series, so a fallback naturally supplies real values at
- * just 10m/100m and honest nulls elsewhere - a disclosed degradation, not
- * fabricated data, appropriate for a fallback path.
+ * to a null-filled series, so the fallback naturally supplies real values
+ * only where Open-Meteo actually has them and honest nulls elsewhere - a
+ * disclosed degradation, not fabricated data, appropriate for a fallback.
  */
-export const MODEL_HEIGHTS_M = [10, 50, 100, 150, 250, 350, 450] as const;
+export const MODEL_HEIGHTS_M = [10, 50, 100, 150, 250, 350, 450, 600, 800, 1000, 1250, 1500, 1750, 2000] as const;
 export type ModelHeightM = (typeof MODEL_HEIGHTS_M)[number];
 
 /**
