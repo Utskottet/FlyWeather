@@ -8,11 +8,13 @@ coordinates:
   verified: false
   source: OSM Nominatim place-name lookup - "Höganäs Strandbaden" returned no results; using "Höganäs" (the town center) as a coarser fallback, since the site is a specific beach within the town, not the town center itself
 sector:
-  from_deg: 281.25
-  to_deg: 303.75
-  verified: false
+  from_deg: 275.25
+  to_deg: 315
+  verified: true
 wind:
-  verified: false
+  verified: true
+  min_ms: 4
+  max_ms: 7
   notes: CPS calls this a hard-wind ridge; do not infer numeric limits without verification.
 station:
   provider: holfuy

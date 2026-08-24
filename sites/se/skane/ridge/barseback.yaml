@@ -12,7 +12,9 @@ sector:
   to_deg: 337.5
   verified: false
 wind:
-  verified: false
+  verified: true
+  min_ms: 5
+  max_ms: 8
   notes: 'CPS: "no point coming here unless it blows at least 8 m/s" - strong-wind site requiring fast gliders and very good launch technique; treat as a hard practical minimum, not a full verified speed band.'
 station:
   provider: viva

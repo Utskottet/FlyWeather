@@ -3,16 +3,18 @@ id: hammar
 name: Hammars backar
 short_name: Hammar
 coordinates:
-  lat: 55.403333
-  lon: 14.012167
+  lat: 55.41285
+  lon: 13.993881
   verified: true
   source: CPS
 sector:
-  from_deg: 213.75
-  to_deg: 236.25
+  from_deg: 190
+  to_deg: 255
   verified: false
 wind:
-  verified: false
+  verified: true
+  min_ms: 4
+  max_ms: 8
 station:
   provider: holfuy
   station_id: "214"
