@@ -5,9 +5,9 @@ import { locatedEnabledSites } from "../src/domain/sites.ts";
 import { buildCatalogue } from "./build-sites-catalogue.ts";
 import { fetchSitesForecastBatch } from "../src/providers/forecast/openMeteoProvider.ts";
 import { fetchWindGrid } from "../src/providers/forecast/openMeteoGridProvider.ts";
-import { fetchDmiWindGrid, mergeDmiWindIntoSiteForecast } from "../src/providers/forecast/dmiWindProvider.ts";
+import { fetchDmiWindGrid, fetchDmiWindManifestEntry, mergeDmiWindIntoSiteForecast } from "../src/providers/forecast/dmiWindProvider.ts";
 import { buildWindGrid } from "../src/domain/windGrid.ts";
-import { computeSiteBounds } from "../src/components/Map/mapBounds.ts";
+import { computeSiteBounds, type LatLonBounds } from "../src/components/Map/mapBounds.ts";
 import { MODEL_HEIGHTS_M } from "../src/domain/types.ts";
 import type { GeneratedForecastSitesFile, GeneratedWindGridFile, SiteForecast, WindGridPoint } from "../src/domain/types.ts";
 
@@ -117,12 +117,31 @@ async function main() {
     }
   }
 
-  // --- Wind grid ---
-  let gridFile: GeneratedWindGridFile;
-  const bounds = computeSiteBounds(sites);
+  // --- Wind grid bounds ---
+  // Real bug (2026-08-24): this used to ALWAYS be computeSiteBounds(sites)
+  // regardless of source, so even once DMI wind became the active source
+  // for the grid below, it was only ever sampled within the located
+  // sites' own small bounding box (Skane/Denmark) - nowhere near DMI's
+  // real coverage, which matches RASP's full south-scandinavia region
+  // (up to Stockholm). Prefer DMI's own published grid.bbox (the same
+  // region RASP's raster is rendered for) when reachable; fall back to
+  // site bounds only so the Open-Meteo-only baseline still has *some*
+  // area to query if the DMI manifest can't be reached at all.
+  const siteBounds = computeSiteBounds(sites);
+  let gridBounds: LatLonBounds | null = siteBounds;
   try {
-    if (!bounds) throw new Error("no located sites to compute grid bounds from");
-    const { hours, points } = await fetchWindGrid(buildWindGrid(bounds, GRID_RESOLUTION));
+    const windEntry = await fetchDmiWindManifestEntry(SOARING_BASE_URL);
+    const [minLon, minLat, maxLon, maxLat] = windEntry.grid.bbox;
+    gridBounds = { minLat, maxLat, minLon, maxLon };
+  } catch (err) {
+    console.warn(`collect-forecasts: could not read DMI's grid bbox up front, falling back to site bounds - ${(err as Error).message}`);
+  }
+
+  // --- Wind grid (baseline, Open-Meteo) ---
+  let gridFile: GeneratedWindGridFile;
+  try {
+    if (!gridBounds) throw new Error("no grid bounds available (no located sites and no DMI manifest)");
+    const { hours, points } = await fetchWindGrid(buildWindGrid(gridBounds, GRID_RESOLUTION));
     gridFile = { generatedAt: new Date().toISOString(), hours, points };
     console.log(`collect-forecasts: fetched fresh wind grid (${points.length} points x ${hours.length} hours)`);
   } catch (err) {
@@ -149,8 +168,8 @@ async function main() {
   // run/time"). A DMI failure here leaves gridFile/sitesFile exactly as
   // Open-Meteo already produced them above - never a partial/mixed write.
   try {
-    if (!bounds) throw new Error("no located sites to compute grid bounds from");
-    const gridQueryPoints = buildWindGrid(bounds, GRID_RESOLUTION);
+    if (!gridBounds) throw new Error("no grid bounds available (no located sites and no DMI manifest)");
+    const gridQueryPoints = buildWindGrid(gridBounds, GRID_RESOLUTION);
     const sitesWithForecast = sites.filter((s) => sitesFile.sites[s.id] !== undefined);
     const sitePoints = sitesWithForecast.map((s) => ({ lat: s.coordinates.lat, lon: s.coordinates.lon }));
 
