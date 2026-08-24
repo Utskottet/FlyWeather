@@ -20,9 +20,12 @@
 }
 
 /* Tiny centered top wordmark (§ Simplify DMI Wind v1 item 14) - identity
-   only, deliberately unobtrusive: small, low-contrast, never intercepts
-   map drag/zoom or the tool stack (which starts lower, at top:76px, and
-   is left-aligned - no overlap by construction). */
+   only, still deliberately small and never intercepts map drag/zoom or
+   the tool stack (which starts lower, at top:76px, and is left-aligned -
+   no overlap by construction). Warm gold rather than plain white (per
+   explicit feedback: "a bit more logo colored") - evokes thermals/
+   sunlight (UPPVIND = updraft), distinct from the app's own interactive
+   blue so it never reads as a tappable control. */
 .uppvind-wordmark {
   position: absolute;
   top: 8px;
@@ -30,10 +33,11 @@
   transform: translateX(-50%);
   z-index: 500;
   pointer-events: none;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #ffd166;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   background: rgba(20, 20, 20, 0.45);
   padding: 3px 10px;
   border-radius: 20px;

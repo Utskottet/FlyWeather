@@ -17,19 +17,33 @@ export function classifyFreshness(
   return "stale";
 }
 
+const STOCKHOLM_DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Stockholm",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const STOCKHOLM_TIME_FMT = new Intl.DateTimeFormat("sv-SE", {
+  timeZone: "Europe/Stockholm",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+const STOCKHOLM_WEEKDAY_FMT = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Stockholm", weekday: "short" });
+
 /**
- * Human-readable "how old" label for a report timestamp (e.g. "3m",
- * "1h 20m", "2d") - lets RASP/wind-field provenance show a literal age
- * rather than a raw model-run timestamp the user has to do math on. A
- * future timestamp (clock skew) clamps to "0m" rather than going negative.
+ * The literal clock time a report was downloaded/generated (e.g. "06:00
+ * TODAY", "18:00 SUN") rather than a relative "how old" age - per
+ * explicit feedback that a raw age number ("8h 31m") still makes the
+ * user do mental math against the current time to judge whether data is
+ * current; an absolute time is unambiguous at a glance. Always in
+ * Europe/Stockholm time regardless of the viewer's own timezone, same
+ * convention SiteSheet's own timeLabel already uses - the flying
+ * conditions are local to Sweden even if the viewer isn't.
  */
-export function formatAge(observedAt: string, now: Date): string {
-  const ageMinutes = Math.max(0, Math.round((now.getTime() - new Date(observedAt).getTime()) / 60_000));
-  if (ageMinutes < 60) return `${ageMinutes}m`;
-  const hours = Math.floor(ageMinutes / 60);
-  const minutes = ageMinutes % 60;
-  if (hours < 24) return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
-  const days = Math.floor(hours / 24);
-  const remHours = hours % 24;
-  return remHours === 0 ? `${days}d` : `${days}d ${remHours}h`;
+export function formatDownloadTime(observedAt: string, now: Date): string {
+  const date = new Date(observedAt);
+  const time = STOCKHOLM_TIME_FMT.format(date);
+  const sameDay = STOCKHOLM_DATE_FMT.format(date) === STOCKHOLM_DATE_FMT.format(now);
+  if (sameDay) return `${time} TODAY`;
+  return `${time} ${STOCKHOLM_WEEKDAY_FMT.format(date).toUpperCase()}`;
 }

@@ -4,6 +4,7 @@ import {
   SOUTH_SWEDEN_REPRESENTATIVE_LOCATION,
   buildSkyBandBlocks,
   classifySkyBand,
+  isNightAt,
   skyBandCssGradient,
 } from "../../src/domain/skyBand.ts";
 
@@ -50,6 +51,28 @@ describe("classifySkyBand", () => {
     const times = realSunTimes(new Date("2026-08-22T12:00:00Z"));
     const wellAfterSunrise = new Date(times.sunrise.getTime() + 60 * 60_000);
     expect(classifySkyBand(wellAfterSunrise, LOC)).toBe("day");
+  });
+});
+
+describe("isNightAt", () => {
+  it("is true in the middle of the night, false at solar noon", () => {
+    const times = realSunTimes(new Date("2026-06-21T12:00:00Z"));
+    const midnight = new Date((times.nadir as Date).getTime());
+    expect(isNightAt(midnight.toISOString(), LOC)).toBe(true);
+    expect(isNightAt(times.solarNoon.toISOString(), LOC)).toBe(false);
+  });
+
+  it("is false during the sunrise/sunset transition window, not just full day", () => {
+    const times = realSunTimes(new Date("2026-08-22T12:00:00Z"));
+    expect(isNightAt(times.sunrise.toISOString(), LOC)).toBe(false);
+  });
+
+  it("defaults to the real current instant when instantIso is null", () => {
+    // Not asserting a specific value (that would just re-test classifySkyBand
+    // against whatever "now" happens to be when this test runs) - only that
+    // it doesn't throw and returns a real boolean rather than requiring a
+    // timestamp.
+    expect(typeof isNightAt(null, LOC)).toBe("boolean");
   });
 });
 

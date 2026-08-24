@@ -35,6 +35,8 @@ export interface WindRoseProps {
   windSpeedMs: number | null;
   /** Rendered inside the rose (per the user's uploaded reference design), above the speed number - not composed externally by the caller anymore. */
   weatherKind?: WeatherKind;
+  /** Swaps the rose's Sun for a crescent Moon when the selected instant is after dark at this site - see domain/skyBand.ts's isNightAt. */
+  isNight?: boolean;
   historyPoints?: HistoryPoint[];
   siteName?: string;
 }
@@ -163,6 +165,7 @@ export function WindRose({
   windDirectionDeg,
   windSpeedMs,
   weatherKind,
+  isNight = false,
   historyPoints = [],
   siteName,
 }: WindRoseProps) {
@@ -258,7 +261,7 @@ export function WindRose({
             transform={`translate(${iconCenter.x - ICON_SIZE / 2} ${iconCenter.y - ICON_SIZE / 2})`}
             data-testid="rose-weather-icon"
           >
-            <WeatherGlyph kind={weatherKind} size={ICON_SIZE} />
+            <WeatherGlyph kind={weatherKind} size={ICON_SIZE} isNight={isNight} />
           </g>
         )}
 

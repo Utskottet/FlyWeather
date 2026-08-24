@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyFreshness, formatAge } from "../../src/domain/freshness.ts";
+import { classifyFreshness, formatDownloadTime } from "../../src/domain/freshness.ts";
 
 describe("classifyFreshness (§11.2)", () => {
   const now = new Date("2026-08-18T12:00:00Z");
@@ -22,26 +22,21 @@ describe("classifyFreshness (§11.2)", () => {
   });
 });
 
-describe("formatAge", () => {
+describe("formatDownloadTime", () => {
+  // now = 2026-08-18T12:00:00Z = 14:00 Europe/Stockholm (CEST, UTC+2 in August)
   const now = new Date("2026-08-18T12:00:00Z");
 
-  it("formats sub-hour ages in minutes", () => {
-    expect(formatAge("2026-08-18T12:00:00Z", now)).toBe("0m");
-    expect(formatAge("2026-08-18T11:53:00Z", now)).toBe("7m");
-    expect(formatAge("2026-08-18T11:01:00Z", now)).toBe("59m");
+  it("shows TODAY when the timestamp is the same Stockholm calendar day as now", () => {
+    expect(formatDownloadTime("2026-08-18T10:00:00Z", now)).toBe("12:00 TODAY");
   });
 
-  it("formats hour-plus ages as hours and minutes, omitting minutes when exact", () => {
-    expect(formatAge("2026-08-18T11:00:00Z", now)).toBe("1h");
-    expect(formatAge("2026-08-18T10:35:00Z", now)).toBe("1h 25m");
+  it("shows the short weekday when the timestamp is a different Stockholm calendar day", () => {
+    expect(formatDownloadTime("2026-08-17T10:00:00Z", now)).toBe("12:00 MON");
   });
 
-  it("formats day-plus ages as days and hours, omitting hours when exact", () => {
-    expect(formatAge("2026-08-16T12:00:00Z", now)).toBe("2d");
-    expect(formatAge("2026-08-16T09:00:00Z", now)).toBe("2d 3h");
-  });
-
-  it("clamps a future timestamp to 0m rather than going negative", () => {
-    expect(formatAge("2026-08-18T12:30:00Z", now)).toBe("0m");
+  it("compares calendar days in Stockholm time, not the raw UTC date - a timestamp just after Stockholm midnight still reads as a new day", () => {
+    // 2026-08-17T22:30:00Z is 00:30 on 2026-08-18 in Stockholm (CEST) -
+    // same Stockholm day as `now`, even though the UTC dates differ.
+    expect(formatDownloadTime("2026-08-17T22:30:00Z", now)).toBe("00:30 TODAY");
   });
 });

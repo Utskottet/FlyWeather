@@ -30,18 +30,18 @@ describe("SourceStatus (§ FlyWeather GUI Reorganization + Coherent Height Wind 
     }
   });
 
-  it("shows the wind field's age when provided, omits it when not yet loaded", () => {
+  it("shows the wind field's download time when provided, omits it when not yet loaded", () => {
     const { getByTestId, queryByTestId, rerender } = render(
-      <SourceStatus sitesMeasured={true} raspOn={false} windAge="8m" />,
+      <SourceStatus sitesMeasured={true} raspOn={false} windUpdated="06:00 TODAY" />,
     );
-    expect(getByTestId("source-status-wind-age").textContent).toContain("8m");
+    expect(getByTestId("source-status-wind-time").textContent).toContain("06:00 TODAY");
 
-    rerender(<SourceStatus sitesMeasured={true} raspOn={false} windAge={null} />);
-    expect(queryByTestId("source-status-wind-age")).toBeNull();
+    rerender(<SourceStatus sitesMeasured={true} raspOn={false} windUpdated={null} />);
+    expect(queryByTestId("source-status-wind-time")).toBeNull();
   });
 
-  it("shows RASP's own age alongside its chip when provided", () => {
-    const { getByTestId } = render(<SourceStatus sitesMeasured={true} raspOn={true} raspAge="1h 5m" />);
-    expect(getByTestId("source-status-rasp-age").textContent).toContain("1h 5m");
+  it("shows RASP's own download time alongside its chip when provided", () => {
+    const { getByTestId } = render(<SourceStatus sitesMeasured={true} raspOn={true} raspUpdated="18:00 SUN" />);
+    expect(getByTestId("source-status-rasp-time").textContent).toContain("18:00 SUN");
   });
 });

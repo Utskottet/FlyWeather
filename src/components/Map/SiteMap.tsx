@@ -5,7 +5,8 @@ import type { LocatedSite } from "../../domain/sites.ts";
 import type { SiteForecast, WindSample } from "../../domain/types.ts";
 import { MODEL_HEIGHTS_M } from "../../domain/types.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
-import { classifyFreshness, formatAge } from "../../domain/freshness.ts";
+import { classifyFreshness, formatDownloadTime } from "../../domain/freshness.ts";
+import { isNightAt } from "../../domain/skyBand.ts";
 import { selectEffectiveSample, type EffectiveSample } from "../../domain/effectiveSample.ts";
 import { interpolateWindAtHeight } from "../../domain/heightInterpolation.ts";
 import { WindRose } from "../WindRose/index.ts";
@@ -143,6 +144,7 @@ function buildRoseHtml(
   selected: boolean,
   sample: EffectiveSample,
   weatherKind: SiteForecast["weatherKind"][number],
+  isNight: boolean,
 ): { html: string; size: number } {
   const size = selected ? SELECTED_MARKER_SIZE : MARKER_SIZE;
   const sector = site.sector ? site.sector.ranges.map((r) => ({ fromDeg: r.from_deg, toDeg: r.to_deg })) : null;
@@ -162,6 +164,7 @@ function buildRoseHtml(
       windDirectionDeg={sample.windDirectionDeg}
       windSpeedMs={sample.windSpeedMs}
       weatherKind={weatherKind}
+      isNight={isNight}
     />,
   );
   return { html, size };
@@ -283,12 +286,13 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
     oldestGeneratedAt !== null &&
     classifyFreshness(oldestGeneratedAt, new Date(), FORECAST_FRESH_MINUTES, FORECAST_STALE_MINUTES) === "stale";
 
-  // "how old" labels for SourceStatus's provenance chips - the regional
-  // wind field uses the grid publish time (not the per-site forecast's,
-  // which can differ), RASP uses its own manifest's generatedAt. Both
-  // null until their respective data has actually loaded.
-  const windAge = gridGeneratedAt !== null ? formatAge(gridGeneratedAt, new Date()) : null;
-  const raspAge = soaringManifest !== null ? formatAge(soaringManifest.source.generatedAt, new Date()) : null;
+  // Literal download-time labels for SourceStatus's provenance chips (e.g.
+  // "06:00 TODAY") - the regional wind field uses the grid publish time
+  // (not the per-site forecast's, which can differ), RASP uses its own
+  // manifest's generatedAt. Both null until their respective data has
+  // actually loaded.
+  const windUpdated = gridGeneratedAt !== null ? formatDownloadTime(gridGeneratedAt, new Date()) : null;
+  const raspUpdated = soaringManifest !== null ? formatDownloadTime(soaringManifest.source.generatedAt, new Date()) : null;
 
   if (!bounds) {
     return <div className="app-status">No sites with known coordinates yet.</div>;
@@ -348,7 +352,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
           21) - Roads/Airspace/RASP/Ridge/Winch never live down here. */}
       <div className="source-status-bar" data-testid="source-status-bar" ref={sourceStatusBarRef}>
         <StartButton isLiveMode={isLiveMode} onStart={handleStart} />
-        <SourceStatus sitesMeasured={isLiveMode} raspOn={showRasp} windAge={windAge} raspAge={raspAge} />
+        <SourceStatus sitesMeasured={isLiveMode} raspOn={showRasp} windUpdated={windUpdated} raspUpdated={raspUpdated} />
       </div>
       {visibleSites.length === 0 && (
         <div className="site-mode-empty-notice">
@@ -420,7 +424,8 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
             {visibleSites.map((site) => {
               const { sample, weatherKind } = effectiveSampleFor(site);
               const selected = site.id === selectedId;
-              const { html } = buildRoseHtml(site, selected, sample, weatherKind);
+              const isNight = isNightAt(selectedHourIso, site.coordinates);
+              const { html } = buildRoseHtml(site, selected, sample, weatherKind, isNight);
               return (
                 <MapMarker
                   key={site.id}
@@ -445,6 +450,7 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
           effectiveHeightM={selectedResult.effectiveHeightM}
           heightSupported={selectedResult.heightSupported}
           selectedTimestamp={hours[sliderIndex] ?? null}
+          isNight={isNightAt(selectedHourIso, selectedSite.coordinates)}
           onClose={() => setSelectedId(null)}
         />
       )}

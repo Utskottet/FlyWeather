@@ -3,10 +3,10 @@ export interface SourceStatusProps {
   sitesMeasured: boolean;
   /** RASP is always a model product - shown only while the overlay is on, and only ever FORECAST, never MEASURED. */
   raspOn: boolean;
-  /** "how old" label (e.g. "8m", "1h 20m") for the regional wind field's generatedAt, from freshness.ts's formatAge - omitted (no age shown) until the data has actually loaded. */
-  windAge?: string | null;
+  /** Literal download-time label (e.g. "06:00 TODAY") for the regional wind field's generatedAt, from freshness.ts's formatDownloadTime - an absolute clock time, not a relative age, per explicit feedback that an age still requires mental math against the current time. Omitted (no time shown) until the data has actually loaded. */
+  windUpdated?: string | null;
   /** Same, for RASP's own manifest generatedAt - only ever shown alongside the RASP chip, which itself is already gated on raspOn. */
-  raspAge?: string | null;
+  raspUpdated?: string | null;
 }
 
 /**
@@ -19,7 +19,7 @@ export interface SourceStatusProps {
  * on an irrelevant status (item 17). Never color-only (item 16): the words
  * MEASURED/FORECAST are always in the DOM text, the LED is a redundant cue.
  */
-export function SourceStatus({ sitesMeasured, raspOn, windAge, raspAge }: SourceStatusProps) {
+export function SourceStatus({ sitesMeasured, raspOn, windUpdated, raspUpdated }: SourceStatusProps) {
   return (
     <div className="source-status" data-testid="source-status">
       <span
@@ -32,13 +32,13 @@ export function SourceStatus({ sitesMeasured, raspOn, windAge, raspAge }: Source
       <span className="source-status-item led-forecast" data-testid="source-status-wind">
         <span className="source-status-led" aria-hidden="true" />
         WIND FIELD FORECAST
-        {windAge != null && <span data-testid="source-status-wind-age"> · {windAge}</span>}
+        {windUpdated != null && <span data-testid="source-status-wind-time"> {windUpdated}</span>}
       </span>
       {raspOn && (
         <span className="source-status-item led-forecast" data-testid="source-status-rasp">
           <span className="source-status-led" aria-hidden="true" />
           RASP FORECAST
-          {raspAge != null && <span data-testid="source-status-rasp-age"> · {raspAge}</span>}
+          {raspUpdated != null && <span data-testid="source-status-rasp-time"> {raspUpdated}</span>}
         </span>
       )}
     </div>

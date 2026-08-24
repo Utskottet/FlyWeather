@@ -25,7 +25,7 @@ export function StartButton({ isLiveMode, onStart }: StartButtonProps) {
       aria-pressed={isLiveMode}
       data-testid="start-button"
     >
-      START
+      LIVE SITE
     </button>
   );
 }

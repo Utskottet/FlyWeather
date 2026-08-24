@@ -64,6 +64,17 @@ export function classifySkyBand(instant: Date, location: GeoCoordinate): SkyBand
   return "night";
 }
 
+/**
+ * True only in the real "night" phase (not "transition"/twilight) at the
+ * given instant and location - used to swap a site marker's Sun for a
+ * Moon (WeatherGlyph's `isNight`). Defaults to the real current instant
+ * when `instantIso` is null (no forecast hour selected yet).
+ */
+export function isNightAt(instantIso: string | null, location: GeoCoordinate): boolean {
+  const instant = instantIso ? new Date(instantIso) : new Date();
+  return classifySkyBand(instant, location) === "night";
+}
+
 export interface SkyBandBlock {
   phase: SkyBandPhase;
   startPercent: number; // 0..100, position along `hours`

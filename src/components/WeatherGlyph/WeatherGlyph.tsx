@@ -3,6 +3,8 @@ import type { WeatherKind } from "../../domain/weather.ts";
 export interface WeatherGlyphProps {
   kind: WeatherKind;
   size?: number;
+  /** Swaps the Sun for a crescent Moon on "clear"/"partly-cloudy" (the only two kinds that render a Sun at all) - every other kind looks the same after dark, so this is a no-op for them. */
+  isNight?: boolean;
 }
 
 // Bold, filled, high-contrast palette - matches the user's uploaded
@@ -15,6 +17,8 @@ const CLOUD_STROKE = "#222";
 const RAIN = "#248bd6";
 const MUTED = "#607d8b"; // fog/snow accent - darker than the old #90a4ae for contrast, no reference equivalent exists for these kinds
 const BOLT = "#f57f17";
+const MOON = "#e8d9a0";
+const MOON_STROKE = "#222";
 
 function Sun({ size, cx, cy }: { size: number; cx: number; cy: number }) {
   const r = size * 0.22;
@@ -36,6 +40,26 @@ function Sun({ size, cx, cy }: { size: number; cx: number; cy: number }) {
       </g>
     </g>
   );
+}
+
+/**
+ * A crescent, not a full disc, so it reads unambiguously as "moon" rather
+ * than a dim/miscolored sun. Built from two circular arcs (outer circle
+ * radius R, a second circle of radius R*sqrt(1.25) offset by R*0.5 - the
+ * two circles intersect exactly at the top and bottom poles of the outer
+ * circle, giving a closed lune shape) rather than a mask/clipPath, since
+ * these glyphs are rendered many times per page via renderToStaticMarkup
+ * (one call per site marker) - a fixed element id would collide across
+ * markers once inserted into the live DOM, which mask/clipPath both need
+ * and a plain filled path doesn't. Verified visually before use (Playwright
+ * render of all 8 sweep/large-arc-flag combinations) rather than derived
+ * from arc-direction reasoning alone.
+ */
+function Moon({ size, cx, cy }: { size: number; cx: number; cy: number }) {
+  const r = size * 0.22; // matches Sun's own radius for equal visual weight
+  const r2 = r * Math.sqrt(1.25);
+  const d = `M ${cx} ${cy - r} A ${r} ${r} 0 0 1 ${cx} ${cy + r} A ${r2} ${r2} 0 0 0 ${cx} ${cy - r} Z`;
+  return <path d={d} fill={MOON} stroke={MOON_STROKE} strokeWidth={size * 0.045} strokeLinejoin="round" />;
 }
 
 // Raw cloud silhouette lifted from the reference's own cloud path (a single
@@ -119,17 +143,23 @@ function SnowDots({ size, cy, count }: { size: number; cy: number; count: number
   );
 }
 
-export function WeatherGlyph({ kind, size = 20 }: WeatherGlyphProps) {
+export function WeatherGlyph({ kind, size = 20, isNight = false }: WeatherGlyphProps) {
   const cloudY = size * 0.44;
   const dropY = size * 0.72;
+  const label = isNight && (kind === "clear" || kind === "partly-cloudy") ? `Weather: ${kind}, night` : `Weather: ${kind}`;
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Weather: ${kind}`}>
-      {kind === "clear" && <Sun size={size} cx={size / 2} cy={size / 2} />}
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={label}>
+      {kind === "clear" &&
+        (isNight ? <Moon size={size} cx={size / 2} cy={size / 2} /> : <Sun size={size} cx={size / 2} cy={size / 2} />)}
 
       {kind === "partly-cloudy" && (
         <>
-          <Sun size={size * 0.9} cx={size * 0.68} cy={size * 0.3} />
+          {isNight ? (
+            <Moon size={size * 0.9} cx={size * 0.68} cy={size * 0.3} />
+          ) : (
+            <Sun size={size * 0.9} cx={size * 0.68} cy={size * 0.3} />
+          )}
           <Cloud size={size} cy={cloudY} />
         </>
       )}

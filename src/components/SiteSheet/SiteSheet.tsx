@@ -24,6 +24,8 @@ export interface SiteSheetProps {
   heightSupported: boolean;
   /** ISO-8601 UTC timestamp of the currently-selected slider time. */
   selectedTimestamp: string | null;
+  /** Whether the selected instant is after dark at this site - see domain/skyBand.ts's isNightAt. */
+  isNight: boolean;
   onClose: () => void;
 }
 
@@ -49,6 +51,7 @@ export function SiteSheet({
   effectiveHeightM,
   heightSupported,
   selectedTimestamp,
+  isNight,
   onClose,
 }: SiteSheetProps) {
   const sector = site.sector ? site.sector.ranges.map((r) => ({ fromDeg: r.from_deg, toDeg: r.to_deg })) : null;
@@ -82,6 +85,7 @@ export function SiteSheet({
           windDirectionDeg={sample.windDirectionDeg}
           windSpeedMs={sample.windSpeedMs}
           weatherKind={sample.weatherKind}
+          isNight={isNight}
         />
       </div>
       <h2>{site.name}</h2>
