@@ -37,3 +37,10 @@ commitment log.
   `wind.verified: true` so far. Every other site in the catalogue still
   shows `speedFit: "unknown"` (never green) until its real min/max safe
   wind speed is confirmed and entered, site by site.
+- **`admin-experiment/` - standalone visual site editor prototype**:
+  password-protected CRUD editor with a draggable compass-rose wind-sector
+  tool (green core + authored orange margins on each side), built and
+  iterated 2026-08-25. Isolated from this app's build/deploy (own
+  package.json, own schema) - not connected to real site data yet, by
+  design. See `admin-experiment/PROGRESS.md` for what was built and where
+  to pick it up, `admin-experiment/README.md` to run it locally.
