@@ -59,6 +59,29 @@ export function createGitHubGateway(config: GitHubConfig): RepoGateway {
 
     if (!response.ok) {
       const body = await response.text();
+
+      // GitHub answers an under-permissioned fine-grained token with
+      // "Resource not accessible by personal access token", which reads
+      // like a bug in the caller. It is a configuration problem, and it
+      // shows up only on the first WRITE - reads succeed, so everything
+      // looks fine until someone actually publishes. Say what to fix.
+      if (response.status === 403 && /not accessible by personal access token/i.test(body)) {
+        throw new GitHubError(
+          "The GitHub token can read this repository but not write to it. Give it " +
+            '"Contents: Read and write" (a fine-grained token on an organisation repo ' +
+            "may also need the organisation to approve it), then set it again with " +
+            "`wrangler secret put GITHUB_TOKEN`.",
+          response.status,
+        );
+      }
+      if (response.status === 401) {
+        throw new GitHubError(
+          "The GitHub token was rejected - it has probably expired. Issue a new one and " +
+            "set it again with `wrangler secret put GITHUB_TOKEN`.",
+          response.status,
+        );
+      }
+
       // 422 on a ref update is GitHub's "not a fast forward" - surfaced
       // with that wording so publish.ts can recognise it as a conflict
       // rather than a generic upstream failure.
