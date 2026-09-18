@@ -374,19 +374,24 @@ describe("daylight fade", () => {
     expect(fillAt(undefined)).toBe("#27c93f");
   });
 
-  it("goes fully black once the site is dark, whatever the wind verdict was", () => {
-    expect(fillAt(0, "green")).toBe("#000000");
-    expect(fillAt(0, "orange")).toBe("#000000");
-    expect(fillAt(0, "red")).toBe("#000000");
+  it("goes dark once the site is dark, but stays a visible marker", () => {
+    // Deliberately not #000000: a night map whose markers vanish into it
+    // is worst exactly when someone is looking at it.
+    for (const state of ["green", "orange", "red"] as const) {
+      const night = fillAt(0, state)!;
+      expect(night, state).not.toBe("#000000");
+      expect(night, state).not.toBe(fillAt(1, state));
+    }
   });
 
   it("keeps the verdict legible while fading - a dimmed green is still green", () => {
-    const half = fillAt(0.5, "green")!;
-    const [r, g, b] = [1, 3, 5].map((i) => parseInt(half.slice(i, i + 2), 16));
-    expect(g).toBeGreaterThan(r);
-    expect(g).toBeGreaterThan(b);
-    expect(half).not.toBe("#27c93f");
-    expect(half).not.toBe("#000000");
+    for (const daylight of [0, 0.5]) {
+      const dimmed = fillAt(daylight, "green")!;
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(dimmed.slice(i, i + 2), 16));
+      expect(g, `green at ${daylight}`).toBeGreaterThan(r);
+      expect(g, `green at ${daylight}`).toBeGreaterThan(b);
+      expect(dimmed).not.toBe("#27c93f");
+    }
   });
 
   it("darkens monotonically as the light goes", () => {

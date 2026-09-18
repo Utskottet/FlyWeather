@@ -14,7 +14,8 @@ interface Props {
 // Same 100x100 viewBox / opacity convention as the production
 // src/components/WindRose/WindRose.tsx, deliberately not imported (that
 // component assumes a single overall RoseState, not per-band authored
-// margins) - see admin-experiment plan for the reuse-vs-reimplement call.
+// margins) - see docs/EDITOR_INTEGRATION.md for the reuse-vs-reimplement
+// call; the prototype itself has been deleted.
 const VIEWBOX = 100;
 const CENTER = VIEWBOX / 2;
 const OUTER_R = 46;

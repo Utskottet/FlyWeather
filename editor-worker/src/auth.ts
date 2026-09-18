@@ -1,9 +1,11 @@
 /**
  * Stateless, signed session tokens for the publishing endpoints.
  *
- * Adapted from admin-experiment/worker/auth.ts (same HMAC-SHA256 approach,
- * same no-session-store design) with one deliberate change: the session is
- * a bearer token in an Authorization header, not a cookie.
+ * Adapted from the admin-experiment prototype's worker/auth.ts (same
+ * HMAC-SHA256 approach, same no-session-store design) with one deliberate
+ * change: the session is a bearer token in an Authorization header, not a
+ * cookie. That prototype has since been deleted - see git history before
+ * 2026-09-18 if the original is ever wanted.
  *
  * Cookies were right when the prototype served its own frontend from one
  * origin. Here the website is on GitHub Pages and the Worker is on a

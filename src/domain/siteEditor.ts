@@ -5,8 +5,9 @@ import type { SiteFile } from "./siteFile.ts";
  * The bridge between the in-app site editor's working shape and the real
  * catalogue (domain/siteFile.ts + the sites/ folder layout).
  *
- * The editor once had a schema of its own (admin-experiment's
- * `siteDraft.ts`) because it was a separately-hosted prototype. Keeping two
+ * The editor once had a schema of its own (the admin-experiment
+ * prototype's `siteDraft.ts`, since deleted) because it was separately
+ * hosted. Keeping two
  * definitions of what a site is meant they drifted apart in eleven places,
  * so there is now exactly one - `siteFileSchema` - and this module only
  * translates between it and what a form needs to hold:

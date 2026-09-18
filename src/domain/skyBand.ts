@@ -144,6 +144,22 @@ export function daylightFactor(
 }
 
 /**
+ * How dark a rose is allowed to get. Below this it stops being a marker.
+ *
+ * The fade originally bottomed out at pure black, which is what the brief
+ * asked for and what it does physically - but on the pale map the result
+ * was a night map whose site markers were the hardest thing on it to see,
+ * which is precisely when a pilot is looking. Night is still unmistakably
+ * night; it is just still a readable marker.
+ *
+ * Applied here rather than in daylightFactor because the factor is a
+ * physical quantity - how lit the site actually is - and should stay
+ * honest at 0. This is a drawing decision about legibility, so it belongs
+ * with the drawing.
+ */
+const NIGHT_FLOOR = 0.32;
+
+/**
  * The same colour, dimmed toward black by a daylight factor. Multiplying
  * each channel keeps the hue and just drains the light out of it, so a
  * half-dark green still reads as green rather than as some other colour -
@@ -151,8 +167,8 @@ export function daylightFactor(
  * to fly.
  */
 export function dimForDaylight(hexColor: string, factor: number): string {
-  const f = clamp01(factor);
-  if (f === 1) return hexColor;
+  const f = NIGHT_FLOOR + clamp01(factor) * (1 - NIGHT_FLOOR);
+  if (f >= 1) return hexColor;
   const hex = hexColor.replace("#", "");
   const full = hex.length === 3 ? hex.split("").map((c) => c + c).join("") : hex;
   const channels = [0, 2, 4].map((i) => Math.round(parseInt(full.slice(i, i + 2), 16) * f));

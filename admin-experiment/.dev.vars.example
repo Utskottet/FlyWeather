@@ -1,3 +1,0 @@
-# Copy this file to .dev.vars (gitignored) for local `wrangler dev`.
-ADMIN_PASSWORD=changeme
-SESSION_SECRET=change-this-to-a-long-random-string

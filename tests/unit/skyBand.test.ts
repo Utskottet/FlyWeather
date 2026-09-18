@@ -237,14 +237,29 @@ describe("dimForDaylight", () => {
     expect(dimForDaylight("#27c93f", 1)).toBe("#27c93f");
   });
 
-  it("goes to black in full darkness", () => {
-    expect(dimForDaylight("#27c93f", 0)).toBe("#000000");
-    expect(dimForDaylight("#f23535", 0)).toBe("#000000");
+  it("goes dark in full darkness, but never to pure black", () => {
+    // Bottoming out at #000000 made the night map's site markers the
+    // hardest thing on it to see, which is exactly when they are being
+    // looked at. Dark, unmistakably night, still a marker.
+    expect(dimForDaylight("#27c93f", 0)).toBe("#0c4014");
+    expect(dimForDaylight("#f23535", 0)).toBe("#4d1111");
+    expect(dimForDaylight("#27c93f", 0)).not.toBe("#000000");
+  });
+
+  it("keeps the night colour clearly darker than the land it sits on", () => {
+    // Land is #c1d3da; the check that matters is that a night rose still
+    // separates from it rather than any particular hex value.
+    const land = [0xc1, 0xd3, 0xda].reduce((a, b) => a + b, 0);
+    for (const colour of ["#27c93f", "#ff9800", "#f23535", "#757575"]) {
+      const night = dimForDaylight(colour, 0);
+      const sum = [1, 3, 5].reduce((a, i) => a + parseInt(night.slice(i, i + 2), 16), 0);
+      expect(sum, `${colour} at night`).toBeLessThan(land * 0.5);
+    }
   });
 
   it("keeps the hue while draining the light, so green still reads as green", () => {
     const half = dimForDaylight("#27c93f", 0.5);
-    expect(half).toBe("#146520"); // each channel halved: 0x27->0x14, 0xc9->0x65, 0x3f->0x20
+    expect(half).toBe("#1a852a"); // factor 0.5 maps to 0.66 of full brightness once NIGHT_FLOOR is applied
     // green still dominates red and blue, exactly as in the full colour
     const [r, g, b] = [1, 3, 5].map((i) => parseInt(half.slice(i, i + 2), 16));
     expect(g).toBeGreaterThan(r);
@@ -253,8 +268,8 @@ describe("dimForDaylight", () => {
 
   it("accepts shorthand hex and clamps an out-of-range factor", () => {
     expect(dimForDaylight("#fff", 1)).toBe("#fff");
-    expect(dimForDaylight("#fff", 0)).toBe("#000000");
+    expect(dimForDaylight("#fff", 0)).toBe("#525252"); // 255 * NIGHT_FLOOR
     expect(dimForDaylight("#27c93f", 5)).toBe("#27c93f");
-    expect(dimForDaylight("#27c93f", -2)).toBe("#000000");
+    expect(dimForDaylight("#27c93f", -2)).toBe(dimForDaylight("#27c93f", 0));
   });
 });
