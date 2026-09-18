@@ -913,13 +913,17 @@
    between the tick marks (0-9px) and their labels (18px+) so it never
    needs to share contrast with either - see domain/skyBand.ts. Deliberately
    slim, not a decorative banner, per the task's own instruction. */
+/* Thin and behind everything else: this marks the nights, it is not a
+   chart. The reference design has no colour bar here at all, so the aim is
+   for it to be noticed only when looked for. */
 .time-slider-sky-band {
   position: absolute;
   left: 0;
   right: 0;
-  top: 11px;
-  height: 6px;
-  border-radius: 3px;
+  top: 12px;
+  height: 4px;
+  border-radius: 2px;
+  z-index: 0;
 }
 
 .time-slider-tick-label,

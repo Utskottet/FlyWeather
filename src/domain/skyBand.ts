@@ -24,10 +24,23 @@ export const SKY_BAND_TRANSITION_MINUTES = 30;
 
 export type SkyBandPhase = "night" | "transition" | "day";
 
+/**
+ * Deliberately quiet, and deliberately not three equal colours.
+ *
+ * This used to paint deep blue / orange / light blue in full strength,
+ * which made the busiest band on screen out of information you only need
+ * peripherally - the reference design has no colour bar here at all. Day
+ * is now simply absent, so the strip marks the nights and says nothing the
+ * rest of the time, and the twilight step is a soft neutral rather than a
+ * saturated orange stripe between them.
+ *
+ * Translucent rather than solid so the strip sits *under* the tick marks
+ * instead of competing with them.
+ */
 const PHASE_COLORS: Record<SkyBandPhase, string> = {
-  night: "#1a2456", // deep blue
-  transition: "#e8912a", // orange
-  day: "#bfe3fb", // light blue
+  night: "rgba(32, 42, 64, 0.55)",
+  transition: "rgba(120, 132, 152, 0.26)",
+  day: "transparent",
 };
 
 function sunriseSunsetForDay(date: Date, location: GeoCoordinate): { sunrise: number; sunset: number } {
