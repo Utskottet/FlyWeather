@@ -3,8 +3,8 @@ id: test-knackebrodhult
 name: Test Knäckebrödhult
 short_name: Test Knäckebrödhult
 coordinates:
-  lat: 57.626945269
-  lon: 15.03264583
+  lat: 57.6269452696953
+  lon: 15.032645838226
   verified: true
 sector:
   ranges:
@@ -23,9 +23,9 @@ station:
   station_id: "206"
   url: https://viva.sjofartsverket.se/station/206
   verified: true
-  note: en bit bort
+  note: avstånd vindmätare
 pilot_level: difficult
 ridge_height_m: 99
-description: ta bort mig 57.6269452696953, 15.032645838226077
+description: ta bort mig 57.6269452696953, 15.032645838226077f
 last_edited_by: håkan bråkan
-last_edited_at: 2026-09-18T22:29:10.907Z
+last_edited_at: 2026-09-18T22:30:24.989Z
