@@ -65,9 +65,24 @@ function constantTimeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+/**
+ * Surrounding whitespace is stripped from BOTH sides before comparing.
+ *
+ * Not laziness - two real failure modes otherwise present as "incorrect
+ * password" with nothing to debug. `wrangler secret put` fed from a pipe
+ * or a file captures the trailing newline, so the stored secret ends in
+ * one and can never be typed. And phone keyboards routinely append a
+ * space after an autocompleted or pasted value.
+ *
+ * The security cost is that " hunter2 " also opens the door, which is
+ * worth essentially nothing to an attacker who must already know
+ * "hunter2". The comparison itself stays length-independent.
+ */
 export function passwordMatches(candidate: unknown, expected: string): boolean {
-  if (typeof candidate !== "string" || expected.length === 0) return false;
-  return constantTimeEqual(candidate, expected);
+  if (typeof candidate !== "string") return false;
+  const want = expected.trim();
+  if (want.length === 0) return false;
+  return constantTimeEqual(candidate.trim(), want);
 }
 
 export async function issueToken(sub: string, secret: string, now: Date = new Date()): Promise<{

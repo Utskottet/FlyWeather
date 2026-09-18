@@ -398,6 +398,20 @@ describe("worker auth", () => {
     expect(passwordMatches("wrong", "correct horse")).toBe(false);
     expect(passwordMatches("", "")).toBe(false);
     expect(passwordMatches(undefined, "correct horse")).toBe(false);
+    expect(passwordMatches("   ", "   ")).toBe(false);
+  });
+
+  it("tolerates whitespace a secret store or a phone keyboard added", () => {
+    // `wrangler secret put` fed from a pipe keeps the trailing newline,
+    // which otherwise makes the password literally untypable.
+    expect(passwordMatches("hunter2", "hunter2\n")).toBe(true);
+    expect(passwordMatches("hunter2", "hunter2\r\n")).toBe(true);
+    expect(passwordMatches("hunter2", " hunter2 ")).toBe(true);
+    // ...and a pasted value with a trailing space still works.
+    expect(passwordMatches("hunter2 ", "hunter2")).toBe(true);
+    // But it is still the whole password that has to match.
+    expect(passwordMatches("hunter", "hunter2")).toBe(false);
+    expect(passwordMatches("hunter 2", "hunter2")).toBe(false);
   });
 
   it("reads a bearer token out of the Authorization header only", () => {
