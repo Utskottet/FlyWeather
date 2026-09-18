@@ -2,7 +2,7 @@
 
 Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a generated view for humans, not authoritative - edit the YAML files under `sites/`, then re-run `npm run sites:index`.
 
-31 sites total, 12 active.
+32 sites total, 13 active.
 
 | Active | Country | Region | Group | Short name | Full name | Sector (deg) | Station | Pilot level | Coords verified | Sector verified |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -10,6 +10,7 @@ Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a
 | yes | dk | nordjylland | ridge | Løkken | Løkken | 270–315 |  |  | no | no |
 | no | dk | nordsjaelland |  | Gilbjerg | Gilbjerg Hoved | 326.25–348.75 |  |  | no | no |
 | no | dk | nordsjaelland |  | Rågeleje | Strandbjerggård / Rågeleje | 303.75–326.25 |  |  | no | no |
+| yes | se | halland | ridge | Kevik | Kevik | 191–238 | viva #76 |  | yes | no |
 | yes | se | skane | ridge | Ålabodarna | Ålabodarna | 215–265 | holfuy #216 |  | no | no |
 | yes | se | skane | ridge | Barsebäck | Barsebäck camping | 292.5–337.5 | viva #25 |  | no | no |
 | yes | se | skane | ridge | Hammar | Hammars backar | 190–255 | holfuy #214 |  | yes | no |
