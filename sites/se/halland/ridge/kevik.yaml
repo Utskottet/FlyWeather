@@ -1,0 +1,29 @@
+schema_version: 2
+id: kevik
+name: Kevik
+short_name: Kevik
+coordinates:
+  lat: 57.21430003525888
+  lon: 12.144786834477044
+  verified: true
+sector:
+  ranges:
+    - from_deg: 191
+      to_deg: 238
+      margin_under_deg: 5
+      margin_over_deg: 6
+  verified: false
+wind:
+  verified: true
+  min_ms: 5
+  max_ms: 7
+  margin_over_ms: 1
+station:
+  verified: true
+  provider: viva
+  station_id: "76"
+  url: https://viva.sjofartsverket.se/station/76
+  note: Ringhals
+description: 57.21430003525888, 12.144786834477044
+last_edited_by: Edvin Buregren
+last_edited_at: 2026-09-18T15:40:21.153Z
