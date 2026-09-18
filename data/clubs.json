@@ -1,0 +1,115 @@
+[
+  {
+    "name": "B-stället",
+    "region": "Stockholm"
+  },
+  {
+    "name": "Bohusläns Skärm- & Hängflygklubb Konvektionen",
+    "abbreviation": "Konvektionen",
+    "region": "Bohuslän"
+  },
+  {
+    "name": "Cirrus Skärmflygarklubb",
+    "abbreviation": "Cirrus",
+    "region": "Eckerö"
+  },
+  {
+    "name": "Club Parapente Syd",
+    "abbreviation": "CPS",
+    "region": "Skåne"
+  },
+  {
+    "name": "Fenix Skärmflygklubb",
+    "abbreviation": "Fenix",
+    "region": "Stockholm"
+  },
+  {
+    "name": "Glidflygarna Häng- & Skärmflygklubb",
+    "abbreviation": "Glidflygarna",
+    "region": "Skellefteå"
+  },
+  {
+    "name": "Hässleholms Modellflygklubb",
+    "region": "Skåne"
+  },
+  {
+    "name": "Norrköpings Skärmflygklubb",
+    "region": "Norrköping"
+  },
+  {
+    "name": "Norrsken Häng- & Skärmflygklubb",
+    "abbreviation": "Norrsken"
+  },
+  {
+    "name": "Paragliding Friends Gotland",
+    "region": "Gotland"
+  },
+  {
+    "name": "Paranordic Skärmflygklubb",
+    "abbreviation": "Paranordic",
+    "region": "Boden"
+  },
+  {
+    "name": "Pite Paramotor Pilots",
+    "region": "Piteå"
+  },
+  {
+    "name": "Sala Skärmflygklubb Silverflygarna",
+    "abbreviation": "Silverflygarna",
+    "region": "Västmanland/Uppland"
+  },
+  {
+    "name": "Skärmflygarna i Värmland",
+    "abbreviation": "SiV",
+    "region": "Värmland"
+  },
+  {
+    "name": "Skärmflygklubben Dalmåsarna",
+    "abbreviation": "Dalmåsarna",
+    "region": "Värmland"
+  },
+  {
+    "name": "Skärmflygklubben Göteborg",
+    "abbreviation": "SFG",
+    "region": "Göteborg"
+  },
+  {
+    "name": "Skärmflygklubben Pegasus",
+    "abbreviation": "Pegasus"
+  },
+  {
+    "name": "Skärmflygklubben Sydost",
+    "abbreviation": "Sydost",
+    "region": "Småland, Blekinge"
+  },
+  {
+    "name": "Smålands Skärmflygklubb",
+    "region": "Småland"
+  },
+  {
+    "name": "Svenska Skärmflygförbundet",
+    "abbreviation": "SSFF",
+    "region": "Riksförbund"
+  },
+  {
+    "name": "Tornedalens Skärmflygklubb",
+    "region": "Tornedalen"
+  },
+  {
+    "name": "Västra Skärmflygklubben",
+    "abbreviation": "VSK",
+    "region": "Göteborg"
+  },
+  {
+    "name": "Åre Skärm- & Drakflygklubb",
+    "region": "Åre"
+  },
+  {
+    "name": "Örebro Paramotorklubb",
+    "region": "Örebro"
+  },
+  {
+    "name": "Östergötlands Skärmflygklubb",
+    "region": "Östergötland"
+  }
+]
