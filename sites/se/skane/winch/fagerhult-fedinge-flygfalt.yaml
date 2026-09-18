@@ -1,0 +1,30 @@
+schema_version: 2
+id: fagerhult-fedinge-flygfalt
+name: "Fagerhult Fedinge Flygfält "
+short_name: "Fedinge "
+coordinates:
+  lat: 57.260768029226156
+  lon: 13.470881742838138
+  verified: true
+sector:
+  ranges:
+    - from_deg: 322
+      to_deg: 18
+      margin_under_deg: 7
+      margin_over_deg: 5
+    - from_deg: 129
+      to_deg: 199
+      margin_under_deg: 8
+      margin_over_deg: 10
+  verified: false
+wind:
+  verified: true
+  min_ms: 0
+  max_ms: 5
+  margin_over_ms: 1
+station:
+  verified: true
+  provider: "33"
+description: Flyfält, Winch, kontakta ägare.
+last_edited_by: håkan bråkan
+last_edited_at: 2026-09-18T22:27:37.379Z
