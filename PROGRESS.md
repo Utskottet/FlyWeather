@@ -1474,3 +1474,9 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
   scope for this milestone (architecture preserved for later, per the
   task). Not yet pushed - awaiting user confirmation per established
   pattern.
+
+## Worker deployment correction — 2026-09-18
+- Removed duplicate GitHub Actions Worker deployment; Cloudflare Builds is the deployment owner.
+- Updated publishing instructions to the existing Startvind account integration and dashboard secrets.
+- User supplied active version 3d5c9d86 linked to ea59f11 on main, confirming the password fix reached Cloudflare.
+- Validation: documentation/workflow diff check; no application code changed. Live successful sign-in and publishing remain unverified.

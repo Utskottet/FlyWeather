@@ -61,38 +61,34 @@ Create a **fine-grained personal access token**:
 
 ### 2. Cloudflare
 
-```bash
-npx wrangler login
+Use the existing Cloudflare Builds GitHub integration in the separate
+Startvind account. The public website stays on GitHub Pages.
 
-# From the repo root. Each prompts for the value - nothing is typed into
-# a file, a chat, or this repository.
-npx wrangler secret put GITHUB_TOKEN   --config editor-worker/wrangler.toml
-npx wrangler secret put ADMIN_PASSWORD --config editor-worker/wrangler.toml
-npx wrangler secret put SESSION_SECRET --config editor-worker/wrangler.toml
+- Repository: `Utskottet/FlyWeather`
+- Production branch: `main`
+- Worker name: `startvind-editor`
+- Root directory: repository root
+- Build command: empty
+- Deploy command: `npx wrangler deploy --config editor-worker/wrangler.toml`
+- Non-production branch builds: disabled
 
-npm run worker:deploy
-```
+Cloudflare deploys on push. Do not add a second GitHub Actions Worker
+deployment workflow or a `CLOUDFLARE_API_TOKEN` repository secret for it.
+In Cloudflare, inspect the build log and deployed commit to verify that a
+specific fix shipped. A healthy endpoint alone does not prove its version.
+If build watch paths are narrowed later, include shared domain modules and
+package manifests as well as `editor-worker/`.
 
-After the first deploy, put a Cloudflare API token into GitHub as the
-repository **secret** `CLOUDFLARE_API_TOKEN` (Settings -> Secrets and
-variables -> Actions -> Secrets). Create it in the Cloudflare dashboard
-from the "Edit Cloudflare Workers" template, scoped to this account.
+Set `GITHUB_TOKEN`, `ADMIN_PASSWORD`, and `SESSION_SECRET` as runtime
+Secrets in the Worker's Cloudflare settings. They persist across code
+deployments. Never put their values in source code or chat.
+`SESSION_SECRET` should be a long random string; rotating it signs out
+existing sessions.
 
-From then on `worker-deploy.yml` redeploys the Worker on any push that
-touches `editor-worker/` or the domain files it bundles - so a fix to the
-Worker ships the same way a fix to the website does, instead of looking
-shipped while still sitting on a laptop. `npm run worker:deploy` stays
-available for a manual deploy.
-
-The three secrets above are set once and persist across deploys, so the
-GitHub Actions environment never holds the GitHub token, the operator
-password, or the session key.
-
-`SESSION_SECRET` is any long random string. Rotating it signs everyone
-out immediately, which is the fastest way to revoke access.
-
-Deploying prints the Worker's address, e.g.
-`https://startvind-editor.<subdomain>.workers.dev`.
+The production backend address is
+`https://startvind-editor.startvind.workers.dev`.
+Manual `npm run worker:deploy` is only a troubleshooting fallback, not
+the normal publishing workflow.
 
 ### 3. Tell the website where the Worker is
 
