@@ -73,6 +73,21 @@ npx wrangler secret put SESSION_SECRET --config editor-worker/wrangler.toml
 npm run worker:deploy
 ```
 
+After the first deploy, put a Cloudflare API token into GitHub as the
+repository **secret** `CLOUDFLARE_API_TOKEN` (Settings -> Secrets and
+variables -> Actions -> Secrets). Create it in the Cloudflare dashboard
+from the "Edit Cloudflare Workers" template, scoped to this account.
+
+From then on `worker-deploy.yml` redeploys the Worker on any push that
+touches `editor-worker/` or the domain files it bundles - so a fix to the
+Worker ships the same way a fix to the website does, instead of looking
+shipped while still sitting on a laptop. `npm run worker:deploy` stays
+available for a manual deploy.
+
+The three secrets above are set once and persist across deploys, so the
+GitHub Actions environment never holds the GitHub token, the operator
+password, or the session key.
+
 `SESSION_SECRET` is any long random string. Rotating it signs everyone
 out immediately, which is the fastest way to revoke access.
 
