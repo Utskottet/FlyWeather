@@ -1,0 +1,31 @@
+schema_version: 2
+id: test-knackebrodhult
+name: Test Knäckebrödhult
+short_name: Test Knäckebrödhult
+coordinates:
+  lat: 56.260768029226114
+  lon: 11.548101680270634
+  verified: false
+sector:
+  ranges:
+    - from_deg: 11
+      to_deg: 38
+      margin_under_deg: 12
+      margin_over_deg: 7
+  verified: false
+wind:
+  verified: false
+  min_ms: 2
+  margin_under_ms: 3
+  margin_over_ms: 3
+station:
+  verified: true
+  provider: viva
+  station_id: "206"
+  url: https://viva.sjofartsverket.se/station/206
+  note: en bit bort
+pilot_level: difficult
+ridge_height_m: 99
+description: ta bort mig
+last_edited_by: håkan bråkan
+last_edited_at: 2026-09-18T22:17:44.836Z
