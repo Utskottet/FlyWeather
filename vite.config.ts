@@ -3,12 +3,17 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { siteWriterPlugin } from "./scripts/siteWriterPlugin.ts";
 
-export default defineConfig(({ command }) => ({
-  // GitHub Pages serves this as a project page under /FlyWeather/, not
-  // the domain root - only apply that base for the actual production
-  // build so `npm run dev`/preview and Playwright's page.goto("/") keep
-  // working against root-relative paths locally.
-  base: command === "build" ? "/FlyWeather/" : "/",
+export default defineConfig(() => ({
+  // Served from the domain root now that startvind.se points here, rather
+  // than from /FlyWeather/ as a GitHub Pages project page.
+  //
+  // This is not cosmetic. Every asset URL is baked in at build time, so a
+  // base that does not match where the site is actually served 404s every
+  // script and stylesheet - a blank page, not a degraded one. public/CNAME
+  // is what tells GitHub Pages the domain, and the two must change
+  // together: the old /FlyWeather/ path keeps working because Pages
+  // redirects a project URL to the custom domain once one is set.
+  base: "/",
   // siteWriterPlugin is `apply: "serve"`, so the in-app site editor can
   // write real files into sites/ while you run the app locally and never
   // exists in a production build - GitHub Pages has no server to run it.

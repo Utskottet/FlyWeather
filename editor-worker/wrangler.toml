@@ -21,4 +21,8 @@ ADMIN_SUBJECT = "edvin"
 # address is the live site today; localhost is there so the same publish
 # path can be exercised from a dev server. startvind.se gets added here
 # once the domain is connected.
-ALLOWED_ORIGINS = "https://utskottet.github.io,http://localhost:5173,http://localhost:4173"
+# startvind.se first - it is the real address now. utskottet.github.io is
+# kept because GitHub Pages still serves the project URL and redirects it,
+# and dropping it would break publishing for anyone who has the old link
+# bookmarked before the redirect settles.
+ALLOWED_ORIGINS = "https://startvind.se,https://www.startvind.se,https://utskottet.github.io,http://localhost:5173,http://localhost:4173"
