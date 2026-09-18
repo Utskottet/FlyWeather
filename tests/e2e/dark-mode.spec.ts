@@ -24,6 +24,11 @@ async function cssVar(page: Page, name: string): Promise<string> {
   );
 }
 
+async function brightnessOf(page: Page, token: string): Promise<number> {
+  const hex = (await cssVar(page, token)).replace("#", "");
+  return [0, 2, 4].reduce((sum, i) => sum + parseInt(hex.slice(i, i + 2), 16), 0) / 3;
+}
+
 async function load(page: Page) {
   await page.goto("/");
   await page.waitForSelector('[data-testid="site-map"]', { timeout: 60_000 });
@@ -36,8 +41,10 @@ test.describe("with the OS asking for light", () => {
 
   test("the site is still dark - there is no light theme to fall back to", async ({ page }) => {
     await load(page);
-    expect(await cssVar(page, "--panel-bg")).toBe("#1b222b");
-    expect(await cssVar(page, "--text")).toBe("#c2cdd8");
+    // Darkness, not a specific hex. The palette is allowed to be tuned;
+    // what must never change is which end of the range it sits at.
+    expect(await brightnessOf(page, "--panel-bg")).toBeLessThan(100);
+    expect(await brightnessOf(page, "--text")).toBeGreaterThan(150);
   });
 
   test("the header renders dark even so", async ({ page }) => {
@@ -60,8 +67,11 @@ test.describe("dark", () => {
 
   test("panels are dark and text is light", async ({ page }) => {
     await load(page);
-    expect(await cssVar(page, "--panel-bg")).toBe("#1b222b");
-    expect(await cssVar(page, "--text")).toBe("#c2cdd8");
+    expect(await brightnessOf(page, "--panel-bg")).toBeLessThan(100);
+    expect(await brightnessOf(page, "--text")).toBeGreaterThan(150);
+    // And far enough apart to actually read.
+    const gap = (await brightnessOf(page, "--text")) - (await brightnessOf(page, "--panel-bg"));
+    expect(gap).toBeGreaterThan(120);
   });
 
   test("nothing is pure black or pure white", async ({ page }) => {

@@ -16,8 +16,8 @@
      being light boxes punched into a dark page. */
   color-scheme: dark;
 
-  --panel-bg: #1b222b;
-  --panel-bg-translucent: rgba(27, 34, 43, 0.94);
+  --panel-bg: #242e3a;
+  --panel-bg-translucent: rgba(36, 46, 58, 0.94);
   --panel-radius: 12px;
   --panel-radius-sm: 8px;
   --panel-border: 1px solid rgba(255, 255, 255, 0.10);
@@ -42,10 +42,10 @@
   /* Surfaces in ascending elevation. Elevation is carried by these getting
      LIGHTER, not by heavier shadows - a shadow on a dark ground is
      invisible, a paler panel reads instantly. */
-  --surface-raised: #1b222b;
-  --surface-sunken: #141a22;
-  --control-bg: #262f3a;
-  --track-bg: #37424f;
+  --surface-raised: #242e3a;
+  --surface-sunken: #1b232d;
+  --control-bg: #303c4a;
+  --track-bg: #46525f;
   --divider: rgba(255, 255, 255, 0.10);
 
   /* Lightened to stay legible on a dark surface while keeping their
@@ -1667,9 +1667,4 @@
   background: #e8edf2;
 }
 
-/* The logo carries its own dark outline for legibility over the map.
-   On a dark panel that outline disappears into the background, so the
-   mark gets a faint lift of its own. */
-.app-header-logo {
-  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.45));
-}
+
