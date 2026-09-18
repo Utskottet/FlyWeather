@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { LngLatBoundsLike } from "maplibre-gl";
+import type { LngLatBoundsLike, Map as MapLibreGLMap } from "maplibre-gl";
 import type { LocatedSite } from "../../domain/sites.ts";
 import type { SiteForecast, WindSample } from "../../domain/types.ts";
 import { MODEL_HEIGHTS_M } from "../../domain/types.ts";
@@ -20,6 +20,9 @@ import { RaspControl } from "../RaspControl/RaspControl.tsx";
 import { HeightControl } from "../HeightControl/HeightControl.tsx";
 import { ParameterLegend } from "../ParameterLegend/ParameterLegend.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
+import { SiteEditorPanel } from "../SiteEditor/SiteEditorPanel.tsx";
+import { emptyDraft, siteToDraft, sitePathFor, type SiteDraft } from "../../domain/siteEditor.ts";
+import { ADMIN_MODE } from "../../app/adminMode.ts";
 import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
 import { MapLibreMap } from "./MapLibreMap.tsx";
@@ -172,11 +175,13 @@ function buildRoseHtml(
 
 export interface SiteMapProps {
   sites: LocatedSite[];
+  /** Every id in the catalogue (archived included), for the editor's duplicate check. */
+  allSiteIds?: string[];
   freshMinutes: number;
   staleMinutes: number;
 }
 
-export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
+export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: SiteMapProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sliderIndex, setSliderIndex] = useState(0);
   const [altitudeM, setAltitudeM] = useState(SURFACE_ALTITUDE_M);
@@ -186,6 +191,34 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
   // handleAltitudeChange below.
   const [isLiveMode, setIsLiveMode] = useState(true);
   const [siteMode, setSiteMode] = useState<SiteMode>("soaring");
+  // The open editor, or null. Only ever set from the admin-gated buttons,
+  // so a normal visitor can never reach it - see app/adminMode.ts.
+  const [editor, setEditor] = useState<
+    { mode: "create" | "edit"; draft: SiteDraft; previousPath?: string } | null
+  >(null);
+  // Captured from MapLibreMap's render prop purely so "Add site" can
+  // prefill the coordinates you are actually looking at - much nicer than
+  // typing a lat/lon, and the cheapest part of the whole feature.
+  const mapRef = useRef<MapLibreGLMap | null>(null);
+
+  function openCreateEditor() {
+    const centre = mapRef.current?.getCenter();
+    setEditor({ mode: "create", draft: emptyDraft(centre?.lat ?? 55.7, centre?.lng ?? 13.2) });
+  }
+
+  function openEditEditor(site: LocatedSite) {
+    const draft = siteToDraft(site);
+    setEditor({ mode: "edit", draft, previousPath: sitePathFor(draft) });
+  }
+
+  // The dev endpoint has already rewritten public/generated/sites.json, so
+  // a reload is the honest way to pick it up: it re-reads the catalogue
+  // through the app's normal load path rather than patching a second copy
+  // of the site list in memory and risking the two disagreeing.
+  function handleSaved() {
+    setEditor(null);
+    window.location.reload();
+  }
   const [showAirspace, setShowAirspace] = useState(false);
   const [showRoads, setShowRoads] = useState(false);
   const [showRasp, setShowRasp] = useState(false);
@@ -325,17 +358,30 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
       data-testid="site-map"
       style={{ "--source-status-height": `${sourceStatusBarHeight}px` } as React.CSSProperties}
     >
-      {/* Tiny centered top wordmark (§ Simplify DMI Wind v1 item 14) -
-          identity only, not a branding redesign. Non-interactive so it
-          never competes with map drag/zoom or the tool stack below it. */}
-      <div className="uppvind-wordmark" aria-hidden="true">
-        UPPVIND
-      </div>
+      {/* Top-right brand mark (replaces the old centered UPPVIND
+          wordmark) - identity only, never a control. Top-right is the one
+          map corner with no chrome in it: the tool stack and MapLibre's own
+          zoom control are both top-left, and everything else anchors to the
+          bottom. Non-interactive so it can't swallow a map drag. */}
+      <img
+        className="startvind-logo"
+        src={`${import.meta.env.BASE_URL}startvind-logo.png`}
+        alt="Startvind"
+        width={158}
+        height={74}
+      />
       {/* Top-left tool stack (§ FlyWeather GUI Reorganization + Coherent
           Height Wind items 2-8): site selection, map overlays, and the
           collapsible HEIGHT control - a deliberate hierarchy, not one
           generic button row. Never anchors against the bottom chrome. */}
       <div className="tool-stack" data-testid="tool-stack">
+        {/* Admin-only, and invisible to pilots - see app/adminMode.ts for
+            why a URL flag rather than a password. */}
+        {ADMIN_MODE && (
+          <button type="button" className="tool-button" onClick={openCreateEditor} data-testid="add-site-button">
+            + Add site
+          </button>
+        )}
         <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
         <RoadsToggle show={showRoads} onChange={setShowRoads} />
         <AirspaceToggle show={showAirspace} onChange={setShowAirspace} />
@@ -401,7 +447,9 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
         windMotionEnabled={!prefersReducedMotion}
         className="site-map"
       >
-        {(map) => (
+        {(map) => {
+          mapRef.current = map;
+          return (
           <>
             {prefersReducedMotion &&
               staticWindPoints.map((point, i) => {
@@ -441,7 +489,8 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
               );
             })}
           </>
-        )}
+          );
+        }}
       </MapLibreMap>
       {selectedSite && selectedResult && (
         <SiteSheet
@@ -452,6 +501,17 @@ export function SiteMap({ sites, freshMinutes, staleMinutes }: SiteMapProps) {
           selectedTimestamp={hours[sliderIndex] ?? null}
           isNight={isNightAt(selectedHourIso, selectedSite.coordinates)}
           onClose={() => setSelectedId(null)}
+          onEdit={ADMIN_MODE ? () => openEditEditor(selectedSite) : undefined}
+        />
+      )}
+      {editor && (
+        <SiteEditorPanel
+          initialDraft={editor.draft}
+          mode={editor.mode}
+          allIds={allSiteIds}
+          previousPath={editor.previousPath}
+          onClose={() => setEditor(null)}
+          onSaved={handleSaved}
         />
       )}
       <TimeSlider hours={hours} selectedIndex={sliderIndex} onChange={handleTimeChange} />

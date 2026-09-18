@@ -27,6 +27,8 @@ export interface SiteSheetProps {
   /** Whether the selected instant is after dark at this site - see domain/skyBand.ts's isNightAt. */
   isNight: boolean;
   onClose: () => void;
+  /** Supplied only in admin mode - absent means no Edit button at all, not a disabled one. */
+  onEdit?: () => void;
 }
 
 const STATE_LABEL: Record<"green" | "orange" | "red" | "gray", string> = {
@@ -53,6 +55,7 @@ export function SiteSheet({
   selectedTimestamp,
   isNight,
   onClose,
+  onEdit,
 }: SiteSheetProps) {
   const sector = site.sector ? site.sector.ranges.map((r) => ({ fromDeg: r.from_deg, toDeg: r.to_deg })) : null;
   const { state, reasons } = evaluateFlyability(
@@ -141,6 +144,11 @@ export function SiteSheet({
             </span>
           ))}
         </p>
+      )}
+      {onEdit && (
+        <button type="button" className="site-sheet-edit" onClick={onEdit} data-testid="site-sheet-edit">
+          Edit site
+        </button>
       )}
     </div>
   );

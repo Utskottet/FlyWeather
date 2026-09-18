@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { siteWriterPlugin } from "./scripts/siteWriterPlugin.ts";
 
 export default defineConfig(({ command }) => ({
   // GitHub Pages serves this as a project page under /FlyWeather/, not
@@ -8,7 +9,10 @@ export default defineConfig(({ command }) => ({
   // build so `npm run dev`/preview and Playwright's page.goto("/") keep
   // working against root-relative paths locally.
   base: command === "build" ? "/FlyWeather/" : "/",
-  plugins: [react()],
+  // siteWriterPlugin is `apply: "serve"`, so the in-app site editor can
+  // write real files into sites/ while you run the app locally and never
+  // exists in a production build - GitHub Pages has no server to run it.
+  plugins: [react(), siteWriterPlugin(__dirname)],
   optimizeDeps: {
     // MapLibre GL ships its own web worker as a separate file
     // (maplibre-gl-worker.mjs) for off-main-thread tile parsing; Vite's

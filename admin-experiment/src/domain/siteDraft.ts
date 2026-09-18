@@ -49,10 +49,32 @@ export const coordinatesSchema = z.object({
   verified: z.boolean(),
 });
 
+/**
+ * Wind speed uses the same shape as `bandSchema` above: a green core
+ * (`min_ms`/`max_ms` - the speeds the site actually reads as good) plus
+ * two optional orange margins authored per side. `margin_under_ms`
+ * extends orange downward from `min_ms`, `margin_over_ms` upward from
+ * `max_ms`, both defaulting to 0. Example: a 5-7 m/s green core with
+ * `margin_over_ms: 2` means 8.5 m/s reads orange but 10 m/s reads red.
+ *
+ * This is a real extension of production, not a restatement of it:
+ * `../../../src/domain/flyability.ts`'s `computeSpeedFit` is two-tier
+ * today - inside the band is good, everything else is bad, with no
+ * marginal speed tier at all. It also answers a standing `BACKLOG.md`
+ * item: Klamby's real numbers (green 0-5, orange 5-6, red 6+) had to be
+ * approximated by folding the orange tier into red, and are expressible
+ * here exactly as min 0 / max 5 / margin_over_ms 1.
+ *
+ * Margins never affect `verified`, which stays derived from whether the
+ * core min/max were actually typed in - an authored margin is optional
+ * extra precision, not evidence that the band itself was confirmed.
+ */
 export const windSchema = z.object({
   verified: z.boolean(),
   min_ms: z.number().nonnegative().optional(),
   max_ms: z.number().nonnegative().optional(),
+  margin_under_ms: z.number().nonnegative().default(0),
+  margin_over_ms: z.number().nonnegative().default(0),
 });
 
 export const stationSchema = z.object({
@@ -120,7 +142,10 @@ export function emptyDraftInput(): SiteDraftInput {
     name: "",
     coordinates: { lat: null, lon: null, verified: false },
     bands: [],
-    wind: { verified: false },
+    // Margins start at 0 rather than undefined so the form's number inputs
+    // are controlled from the first render - the schema default is there
+    // for raw API calls, not for the UI to lean on.
+    wind: { verified: false, margin_under_ms: 0, margin_over_ms: 0 },
     warnings: [],
     links: [],
     description: "",

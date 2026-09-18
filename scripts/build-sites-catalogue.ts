@@ -97,6 +97,8 @@ export function buildCatalogue(root: string = sitesRoot): GeneratedSitesFile {
       pilot_level: parsed.pilot_level,
       ridge_height_m: parsed.ridge_height_m,
       description: parsed.description,
+      last_edited_by: parsed.last_edited_by,
+      last_edited_at: parsed.last_edited_at,
       warnings: parsed.warnings,
       links: parsed.links,
       images: parsed.images,

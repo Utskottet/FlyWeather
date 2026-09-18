@@ -19,29 +19,42 @@
   pointer-events: none;
 }
 
-/* Tiny centered top wordmark (§ Simplify DMI Wind v1 item 14) - identity
-   only, still deliberately small and never intercepts map drag/zoom or
-   the tool stack (which starts lower, at top:76px, and is left-aligned -
-   no overlap by construction). Warm gold rather than plain white (per
-   explicit feedback: "a bit more logo colored") - evokes thermals/
-   sunlight (UPPVIND = updraft), distinct from the app's own interactive
-   blue so it never reads as a tappable control. */
-.uppvind-wordmark {
+/* Top-right brand mark - identity only, never intercepts map drag/zoom.
+   Top-right because the tool stack and MapLibre's own zoom control both
+   live top-left and every other control anchors to the bottom, so this is
+   the one corner where a mark can sit without competing with anything.
+   The artwork carries its own dark outline, so it holds its shape over any
+   basemap tone (pale land, sea, forest, dark satellite) without a plate or
+   pill behind it. An earlier version relied on a soft glow instead, which
+   only read against dark ground and vanished over pale land. */
+.startvind-logo {
   position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 4px;
+  right: 8px;
   z-index: 500;
+  width: 158px;
+  height: auto;
   pointer-events: none;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  color: #ffd166;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-  background: rgba(20, 20, 20, 0.45);
-  padding: 3px 10px;
-  border-radius: 20px;
   user-select: none;
+}
+
+/* Narrow phones: the mark shrinks rather than crowding the map's usable
+   width - it is decoration, not information. The top-left notices are
+   capped in the same breakpoint because their 240px max-width plus
+   padding reaches just far enough at 390px to clip the mark's first
+   letter (seen in a real 390px screenshot, not theorized). */
+@media (max-width: 420px) {
+  .startvind-logo {
+    width: 116px;
+  }
+
+  /* Kept in step with the mark's width above: at 390px the notices' own
+     max-width plus padding reaches just far enough to clip the mark's
+     first letter, so widening the logo has to widen this reservation too. */
+  .data-staleness-notice,
+  .rasp-unavailable-notice {
+    max-width: calc(100% - 150px);
+  }
 }
 
 /* Top-left vertical tool stack (§ FlyWeather GUI Reorganization + Coherent
@@ -642,4 +655,168 @@
   font-family: system-ui, sans-serif;
   text-align: center;
   padding: 0 24px;
+}
+
+/* ---------------------------------------------------------------------
+   Site editor (admin only - see app/adminMode.ts). Everything below is
+   invisible to a normal visitor: the buttons are not rendered at all
+   unless the admin flag is set, so these rules simply never match.
+   --------------------------------------------------------------------- */
+
+/* "+ Add site" sits at the top of the tool stack, styled as the same pill
+   as its neighbours so it reads as part of the stack rather than an
+   afterthought bolted on top. */
+.tool-button {
+  position: relative;
+  border: none;
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1565c0;
+  cursor: pointer;
+}
+
+.tool-button::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+.site-sheet-edit {
+  margin-top: 12px;
+  border: 1px solid #1565c0;
+  background: #fff;
+  color: #1565c0;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* A right-hand sheet rather than a centred modal: the map stays visible
+   while you edit, which matters because the coordinates being edited are
+   a point on it. Above every other overlay (the tool stack is z-index
+   900, markers 1000) since nothing should sit on top of an open editor. */
+.site-editor-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  width: min(560px, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.25);
+}
+
+.site-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.site-editor-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.site-editor-header button {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* The form is the only scrolling region - the header and the footer's
+   Save/Cancel stay reachable however long the form gets, which matters
+   most on a phone where the sector editor alone fills the screen. */
+.site-editor-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.site-editor-footer {
+  border-top: 1px solid #e0e0e0;
+  padding: 12px 16px;
+  background: #fafafa;
+}
+
+.site-editor-path {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #555;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  word-break: break-all;
+}
+
+.site-editor-problems {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 13px;
+  color: #b00020;
+}
+
+.site-editor-error {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #b00020;
+  white-space: pre-wrap;
+}
+
+.site-editor-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.site-editor-actions button {
+  border: 1px solid #1565c0;
+  background: #fff;
+  color: #1565c0;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.site-editor-actions button:last-child {
+  background: #1565c0;
+  color: #fff;
+}
+
+.site-editor-actions button:disabled {
+  border-color: #bbb;
+  background: #eee;
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* Sits directly above Save because it describes the edit, not the site -
+   a site does not "have" an editor, a change does. */
+.site-editor-signature {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #333;
+}
+
+.site-editor-signature input {
+  flex: 1;
+  padding: 6px;
+  box-sizing: border-box;
 }

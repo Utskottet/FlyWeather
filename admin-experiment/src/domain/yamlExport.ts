@@ -1,5 +1,6 @@
 import { stringify } from "yaml";
 import type { SiteDraftInput } from "./siteDraft";
+import { describeSpeedBands } from "./speedFit";
 
 /**
  * Exportable shape: the editable form fields plus an id - deliberately NOT
@@ -21,13 +22,18 @@ export type ExportableDraft = SiteDraftInput & { id?: string };
  * commented block rather than silently dropped or force-fit into `sector`.
  */
 export function draftToYaml(draft: ExportableDraft): string {
+  const wind = draft.wind;
   const doc: Record<string, unknown> = {
     schema_version: 2,
     id: draft.id ?? "(unsaved)",
     name: draft.name,
     ...(draft.short_name ? { short_name: draft.short_name } : {}),
     coordinates: draft.coordinates,
-    wind: draft.wind,
+    // Margins are split out of `wind` for the same reason bands are held
+    // back below: production's windSchema has no margin_*_ms keys, and
+    // zod strips unknown keys silently rather than erroring - so emitting
+    // them inside `wind:` would look accepted while doing nothing at all.
+    wind: { verified: wind.verified, ...(wind.min_ms !== undefined ? { min_ms: wind.min_ms } : {}), ...(wind.max_ms !== undefined ? { max_ms: wind.max_ms } : {}) },
     ...(draft.station ? { station: draft.station } : {}),
     ...(draft.pilot_level ? { pilot_level: draft.pilot_level } : {}),
     ...(draft.ridge_height_m != null ? { ridge_height_m: draft.ridge_height_m } : {}),
@@ -50,6 +56,21 @@ export function draftToYaml(draft: ExportableDraft): string {
       "# constant, not per-side authored margins - a human needs to decide",
       "# how/whether these map onto that before this site goes live):",
       bandLines,
+      "",
+    ].join("\n");
+  }
+
+  if (wind.margin_under_ms > 0 || wind.margin_over_ms > 0) {
+    yaml += [
+      "",
+      "# wind margins (experimental, no production equivalent yet - see",
+      "# admin-experiment/src/domain/speedFit.ts. Production's computeSpeedFit",
+      "# is two-tier on the speed axis: inside min_ms/max_ms is good and",
+      "# everything else is bad, with no marginal tier to put these in. A",
+      "# human needs to decide whether production grows a third tier before",
+      "# this site goes live):",
+      `#   margin_under_ms: ${wind.margin_under_ms}, margin_over_ms: ${wind.margin_over_ms}`,
+      `#   => ${describeSpeedBands(wind)}`,
       "",
     ].join("\n");
   }

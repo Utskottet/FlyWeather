@@ -1,7 +1,7 @@
-import type { SiteDraftInput } from "../../domain/siteDraft";
-import { describeSpeedBands } from "../../domain/speedFit";
+import type { SiteDraft } from "../../domain/siteEditor.ts";
+import { describeSpeedBands } from "../../domain/speedBands.ts";
 
-type Wind = SiteDraftInput["wind"];
+type Wind = SiteDraft["wind"];
 
 interface Props {
   value: Wind;
@@ -68,7 +68,7 @@ export function WindFields({ value, onChange }: Props) {
             type="number"
             step="any"
             min={0}
-            value={value.margin_under_ms}
+            value={value.margin_under_ms ?? 0}
             onChange={(e) => set({ margin_under_ms: marginOrZero(e.target.value) })}
             style={numberInput}
           />
@@ -79,7 +79,7 @@ export function WindFields({ value, onChange }: Props) {
             type="number"
             step="any"
             min={0}
-            value={value.margin_over_ms}
+            value={value.margin_over_ms ?? 0}
             onChange={(e) => set({ margin_over_ms: marginOrZero(e.target.value) })}
             style={numberInput}
           />
