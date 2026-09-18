@@ -122,7 +122,32 @@ export function MapLibreMap({
       bounds,
       fitBoundsOptions: { padding: boundsPadding, maxZoom },
       attributionControl: { compact: true },
+      // The map is never tilted and never rotated. North is up, always.
+      //
+      // This is not a default being accepted - every route into a tilted or
+      // turned map is closed deliberately, because there are several and
+      // disabling one leaves the others: ctrl/right-drag on desktop, a
+      // two-finger twist or drag on a phone, and the keyboard arrows. A
+      // pilot reading wind directions off a rose needs the compass fixed;
+      // a map that has quietly rotated 20 degrees makes every bearing on
+      // screen a lie.
+      //
+      // maxPitch/maxBearing are the backstop: even a programmatic easeTo
+      // or a gesture that slips past a handler cannot tilt or turn it.
+      pitch: 0,
+      bearing: 0,
+      maxPitch: 0,
+      pitchWithRotate: false,
+      dragRotate: false,
+      touchPitch: false,
+      rollEnabled: false,
     });
+    // Rotation via the two-finger touch gesture is part of touchZoomRotate
+    // rather than its own option, so it has to be switched off separately -
+    // otherwise pinch-zooming on a phone still turns the map.
+    instance.touchZoomRotate.disableRotation();
+    // The keyboard handler rotates with the arrow keys by default.
+    instance.keyboard.disableRotation();
     // Top right: the app's own control column (Ridge/Winch + Map layers)
     // owns the top left corner (§ Startvind UX Direction), and two control
     // stacks in one corner is exactly the pile this milestone removed.
