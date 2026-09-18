@@ -18,7 +18,7 @@ import { ParameterLegend } from "../ParameterLegend/ParameterLegend.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { SiteEditorPanel } from "../SiteEditor/SiteEditorPanel.tsx";
 import { emptyDraft, siteToDraft, sitePathFor, type SiteDraft } from "../../domain/siteEditor.ts";
-import { ADMIN_MODE } from "../../app/adminMode.ts";
+import { CAN_EDIT } from "../../app/adminMode.ts";
 import { useIsCompact } from "../../app/useIsCompact.ts";
 import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
@@ -375,14 +375,12 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
         // a save could only ever fail, so the button is not offered at all
         // - see app/editorApi.ts. Where one exists, the editor opens for
         // anyone and the Worker's sign-in gates publishing, not this button.
-        // ADMIN_MODE, not PUBLISH_TARGET: the two are not the same test, and
-        // using the wrong one put an "Add site" button in front of every
-        // visitor to the public site. ADMIN_MODE already implies a publish
-        // target exists (see app/adminMode.ts) AND that the ?admin=1 flag
-        // was set, which is what keeps the editor out of pilots' way. Edit
-        // site below has always used it; this is the pair being made
-        // consistent again.
-        onAddSite={ADMIN_MODE ? openCreateEditor : undefined}
+        // Shown to every visitor, deliberately (decided 2026-09-18) - see
+        // app/adminMode.ts's CAN_EDIT. It appeared by accident once and
+        // was hidden again; this is the considered version of the same
+        // thing, with Add site inside the header menu rather than as a
+        // button competing with the map.
+        onAddSite={CAN_EDIT ? openCreateEditor : undefined}
         compact={isCompact}
       />
       <div
@@ -535,7 +533,8 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
             selectedSite.coordinates,
           )}
           onClose={() => setSelectedId(null)}
-          onEdit={ADMIN_MODE ? () => openEditEditor(selectedSite) : undefined}
+          // Always present on an open site, same reasoning as Add site.
+          onEdit={CAN_EDIT ? () => openEditEditor(selectedSite) : undefined}
         />
       )}
       {editor && (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SourceStatus } from "../SourceStatus/SourceStatus.tsx";
 
 export interface AppHeaderProps {
@@ -7,26 +7,26 @@ export interface AppHeaderProps {
   raspOn: boolean;
   windUpdated: string | null;
   raspUpdated: string | null;
-  /** Undefined when there is nowhere for a save to go (see app/editorApi.ts's PUBLISH_TARGET) - the button is then not rendered at all rather than shown and guaranteed to fail. */
+  /** Undefined when there is nowhere for a save to go (see app/editorApi.ts's PUBLISH_TARGET) - the menu item is then not rendered at all rather than shown and guaranteed to fail. */
   onAddSite?: () => void;
   compact: boolean;
 }
 
 /**
- * Top header (§ Startvind UX Direction): brand, beta badge, real data-update
- * status, and Add site. Identity and status only - no map tool lives up
+ * Top header (§ Startvind UX Direction): brand, beta badge, data-update
+ * status, and a menu. Identity and status only - no map tool lives up
  * here, and nothing in it moves the map.
  *
- * On a phone the status cluster does not shrink into unreadable chips; it
- * collapses behind one "Data" button and opens as a panel under the header,
- * so the header itself stays a single short row and the map keeps the
- * screen (the reference image's desktop arrangement is not simply scaled
- * down - see MASTER_SPEC §15).
+ * Add site lives inside the menu rather than as a button of its own. It is
+ * meant to be findable by the pilots who fly these sites - an editor
+ * nobody can see is an editor nobody contributes to - but it is not what
+ * someone opened the app for. A menu is the honest weight for it: present,
+ * discoverable, not competing with the map.
  *
- * The wording inside the status cluster is still SourceStatus's own
- * (SITES MEASURED / WIND FIELD FORECAST ...) - matching the reference's
- * "Forecast updated 15:30" phrasing is chunk 2's truthful-data-status
- * work, not this chunk's re-layout.
+ * On a phone the status cluster does not shrink into unreadable chips; it
+ * shares that same menu, so the header stays a single short row and the
+ * map keeps the screen (the reference image's desktop arrangement is not
+ * simply scaled down - see MASTER_SPEC §15).
  */
 export function AppHeader({
   sitesMeasured,
@@ -36,7 +36,27 @@ export function AppHeader({
   onAddSite,
   compact,
 }: AppHeaderProps) {
-  const [statusOpen, setStatusOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // A menu that only closes via its own button is a menu people leave open
+  // over the map by accident.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onPointerDown(event: PointerEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
+
   const status = (
     <SourceStatus
       sitesMeasured={sitesMeasured}
@@ -61,33 +81,52 @@ export function AppHeader({
         </span>
       </div>
 
-      {compact ? (
-        <button
-          type="button"
-          className={`app-header-status-button${statusOpen ? " active" : ""}`}
-          aria-expanded={statusOpen}
-          onClick={() => setStatusOpen((open) => !open)}
-          data-testid="header-status-toggle"
-        >
-          Data
-        </button>
-      ) : (
+      {/* Desktop keeps the status inline - there is room, and it is the
+          thing most worth reading at a glance. The phone gets it in the
+          menu instead. */}
+      {!compact && (
         <div className="app-header-status" data-testid="app-header-status">
           {status}
         </div>
       )}
 
-      {onAddSite && (
-        <button type="button" className="app-header-add" onClick={onAddSite} data-testid="add-site-button">
-          Add site
+      <div className="app-header-menu" ref={menuRef}>
+        <button
+          type="button"
+          className={`app-header-menu-button${menuOpen ? " active" : ""}`}
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
+          aria-label="Menu"
+          onClick={() => setMenuOpen((open) => !open)}
+          data-testid="header-menu-toggle"
+        >
+          <span aria-hidden="true">☰</span>
         </button>
-      )}
 
-      {compact && statusOpen && (
-        <div className="app-header-status-panel" data-testid="app-header-status-panel">
-          {status}
-        </div>
-      )}
+        {menuOpen && (
+          <div className="app-header-menu-panel" role="menu" data-testid="header-menu-panel">
+            {onAddSite && (
+              <button
+                type="button"
+                role="menuitem"
+                className="app-header-menu-item"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onAddSite();
+                }}
+                data-testid="add-site-button"
+              >
+                Add site
+              </button>
+            )}
+            {compact && (
+              <div className="app-header-menu-status" data-testid="app-header-status-panel">
+                {status}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </header>
   );
 }

@@ -63,3 +63,28 @@ export const ADMIN_MODE: boolean =
   PUBLISH_TARGET !== null && typeof window !== "undefined"
     ? resolveAdminMode(window.location.search, window.localStorage)
     : false;
+
+/**
+ * Whether the editing controls are shown at all.
+ *
+ * Deliberately NOT ADMIN_MODE. The controls are visible to every visitor
+ * wherever publishing is configured, because Startvind's site data is
+ * meant to be improved by the pilots who fly these sites, and an editor
+ * nobody can see is an editor nobody contributes to. Add site sits inside
+ * the header menu rather than as a button of its own, which is the honest
+ * weight for it: findable, not competing with the map.
+ *
+ * Showing a control is not granting access. Publishing requires a session
+ * from the Worker, every unauthenticated write is refused, and the Worker
+ * can only ever write a site YAML file under sites/ - it cannot reach
+ * workflows, source or secrets. The worst a curious visitor finds is a
+ * sign-in prompt.
+ *
+ * The one real cost is that this advertises a login, so the sign-in
+ * endpoint wants rate limiting - see BACKLOG.md.
+ *
+ * ADMIN_MODE stays for anything that genuinely should not be shown to
+ * everyone. The two were the same test until this was decided; keeping
+ * both names makes the distinction explicit rather than implied.
+ */
+export const CAN_EDIT: boolean = PUBLISH_TARGET !== null;

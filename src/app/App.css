@@ -1505,3 +1505,70 @@
     box-shadow: var(--panel-shadow);
   }
 }
+
+/* Header menu. Add site lives in here rather than as a button of its own:
+   findable by the pilots who fly these sites, without competing with the
+   map for the attention of everyone else. */
+.app-header-menu {
+  position: relative;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.app-header-menu-button {
+  border: none;
+  background: #f1f4f8;
+  color: var(--text);
+  border-radius: var(--panel-radius-sm);
+  min-height: var(--control-height);
+  min-width: 44px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.app-header-menu-button.active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.app-header-menu-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1300;
+  min-width: 220px;
+  max-width: calc(100vw - 24px);
+  background: var(--panel-bg);
+  border: var(--panel-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--panel-shadow);
+  padding: 6px;
+}
+
+.app-header-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  border-radius: var(--panel-radius-sm);
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-strong);
+  cursor: pointer;
+}
+
+.app-header-menu-item:hover {
+  background: var(--accent-soft);
+}
+
+/* The phone's data-status cluster lives under the same menu, so the header
+   stays one short row. */
+.app-header-menu-status {
+  border-top: var(--panel-border);
+  margin-top: 6px;
+  padding: 10px 12px 4px;
+}

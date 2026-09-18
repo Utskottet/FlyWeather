@@ -1,18 +1,18 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * The editing controls are invisible to ordinary visitors.
+ * The editing controls are visible to everyone - and grant nothing.
  *
- * This regressed once already: the header redesign wired "Add site" to
- * PUBLISH_TARGET (does a publish target exist?) instead of ADMIN_MODE (does
- * one exist AND did this browser ask for the editor?), which put an Add
- * site button in front of every pilot on the public site. Publishing was
- * still gated by the Worker's password, so nothing could actually be
- * written - but a button nobody can use is an invitation to try, and it
- * advertises a sign-in worth guessing at.
+ * That visibility is deliberate (decided 2026-09-18): Startvind's site data
+ * is meant to be improved by the pilots who fly these sites, and an editor
+ * nobody can see is an editor nobody contributes to. Add site sits inside
+ * the header menu rather than as a button of its own, which is the honest
+ * weight for it.
  *
- * The two buttons are checked together on purpose: they are gated
- * separately in the code, so testing one would not have caught that.
+ * What these tests actually protect is the other half: that being visible
+ * is not being open. No session, no publishing - the form must be
+ * unreachable and the Worker must refuse the write. Those are separate
+ * mechanisms, so both are checked here.
  */
 
 test.beforeEach(async ({ page }) => {
@@ -21,15 +21,44 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 60_000 });
 });
 
-test("a plain visitor sees no Add site button", async ({ page }) => {
+test("Add site is in the menu, not loose in the header", async ({ page }) => {
+  // Findable, but not competing with the map for attention.
   await expect(page.locator('[data-testid="add-site-button"]')).toHaveCount(0);
-  await expect(page.getByText("Add site", { exact: false })).toHaveCount(0);
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await expect(page.locator('[data-testid="add-site-button"]')).toBeVisible();
 });
 
-test("a plain visitor sees no Edit site button on a site", async ({ page }) => {
+test("the menu closes on Escape rather than sitting over the map", async ({ page }) => {
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await expect(page.locator('[data-testid="header-menu-panel"]')).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator('[data-testid="header-menu-panel"]')).toHaveCount(0);
+});
+
+test("Edit site is always on an open site", async ({ page }) => {
   await page.locator('[data-testid^="site-marker-"]').first().click({ force: true });
   await page.waitForSelector('[data-testid="site-sheet"]', { timeout: 20_000 });
-  await expect(page.locator('[data-testid="site-sheet-edit"]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="site-sheet-edit"]')).toBeVisible();
+});
+
+test("the editor opens against whatever this build can actually publish to", async ({ page }) => {
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+  await expect(page.locator('[data-testid="site-editor"]')).toBeVisible();
+
+  // Which of the two appears depends on where a save would go, and the
+  // suite runs against a dev server with no Worker configured - so here it
+  // is the form, writing straight to disk on localhost.
+  //
+  // With a Worker (the deployed site) it is the sign-in screen instead,
+  // and THAT is the guarantee which makes showing the control to everyone
+  // safe. It is not asserted here because this environment cannot produce
+  // it; it is covered by tests/unit/editorApi.test.ts ("requires a session
+  // before it will call the Worker") and by the Worker itself refusing
+  // every unauthenticated publish - see tests/unit/editorWorker.test.ts.
+  const signIn = await page.locator('[data-testid="editor-signin"]').count();
+  const form = await page.locator('[data-testid="editor-save"]').count();
+  expect(signIn + form).toBeGreaterThan(0);
 });
 
 test("the map itself is unaffected - a visitor still gets every site", async ({ page }) => {
@@ -39,23 +68,12 @@ test("the map itself is unaffected - a visitor still gets every site", async ({ 
   expect(markers).toBeGreaterThan(5);
 });
 
-test("?admin=1 brings the editor back", async ({ page }) => {
-  await page.goto("/?admin=1");
-  await page.waitForSelector('[data-testid="site-map"]', { timeout: 60_000 });
-  await expect(page.locator('[data-testid="add-site-button"]')).toHaveCount(1);
-});
-
-test("?admin=0 turns it off again, and it stays off on a plain reload", async ({ page }) => {
-  await page.goto("/?admin=1");
-  await page.waitForSelector('[data-testid="add-site-button"]', { timeout: 60_000 });
-
+test("the editing controls do not depend on the admin flag any more", async ({ page }) => {
+  // ?admin=1 used to be what revealed them. It no longer gates these, and
+  // ?admin=0 must not hide them - otherwise a visitor who once turned the
+  // flag off would silently lose the editor for good.
   await page.goto("/?admin=0");
   await page.waitForSelector('[data-testid="site-map"]', { timeout: 60_000 });
-  await expect(page.locator('[data-testid="add-site-button"]')).toHaveCount(0);
-
-  // The flag is remembered, so "off" has to survive a reload with no query
-  // string - otherwise turning it off would only last one page view.
-  await page.goto("/");
-  await page.waitForSelector('[data-testid="site-map"]', { timeout: 60_000 });
-  await expect(page.locator('[data-testid="add-site-button"]')).toHaveCount(0);
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await expect(page.locator('[data-testid="add-site-button"]')).toBeVisible();
 });
