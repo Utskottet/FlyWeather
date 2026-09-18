@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+const WINCH_SITE_COUNT = 1; // Klamby - the only winch site with a verified coordinate so far
 const LOCATED_SITE_COUNT = 12; // 12 sites disabled to shrink the working set (see PROGRESS.md's site-catalogue-trim entry) - was 24 pre-trim
 
 test.describe("Site map", () => {
@@ -39,13 +40,14 @@ test.describe("Site map", () => {
       return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
     });
 
-    // Neither winch-brandstad nor winch-urasa has a verified coordinate
-    // yet (see docs/SITE_DATA_AUDIT.md) - Winch mode is honestly empty,
-    // not a fabricated placement, so this checks the empty-state notice
-    // rather than any markers.
+    // Winch mode shows only the winch group - one located site (Klamby)
+    // today, the rest still without a verified coordinate (see
+    // docs/SITE_DATA_AUDIT.md), so this checks that the displayed set
+    // really changes rather than that it is empty. The empty-state notice
+    // only appears when the selected group has no located site at all.
     await page.getByTestId("site-mode-winch").click();
-    await expect(markers).toHaveCount(0);
-    await expect(page.locator(".site-mode-empty-notice")).toBeVisible();
+    await expect(markers).toHaveCount(WINCH_SITE_COUNT);
+    await expect(page.locator(".site-mode-empty-notice")).not.toBeVisible();
 
     const viewDuringWinch = await page.evaluate(() => {
       const m = window.__flyweatherMap!;

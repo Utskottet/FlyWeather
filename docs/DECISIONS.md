@@ -1696,3 +1696,102 @@ sibling element into the rose's own SVG.
   ({technicalLabel}) · {unit}"` to `"{label} · {technicalLabel} · {unit}"`
   (e.g. `"Thermal strength · W* · m/s"`) - the task's exact requested
   format, a wording-only change.
+
+---
+
+## 2026-09-18 — Startvind UX Direction, chunk 1 (layout structure)
+
+The reference image supplied by the user is stored in the repository at
+`docs/design/ux-reference-2026-09-18.png` and linked from MASTER_SPEC §15,
+which the new arrangement replaces the conflicting parts of. Screenshots of
+this chunk's result are beside it (`chunk1-desktop-1336.png`,
+`chunk1-desktop-rasp-on.png`, `chunk1-mobile-390.png`).
+
+### What the image specifies (implemented as shown)
+
+- Three regions of chrome around a dominant map: a real top header, an
+  upper-right control column, and a bottom bar.
+- Header contents and order: logo, BETA badge, forecast update time, RASP
+  update time, current site-data mode, Add site (right-aligned).
+- Upper-right: RIDGE/WINCH segmented selector above a single titled
+  "Map layers" panel whose overlays are switch rows.
+- Bottom bar: Current Wind on the left, "Forecast time (local time)" with
+  the timeline in the middle, altitude with a numeric readout on the right.
+- Panel language: white cards, one radius, one soft shadow, a blue accent
+  for active/primary controls. Implemented as CSS custom properties in
+  `App.css` (`--panel-*`, `--accent*`, `--text*`) so chunk 3 has one place
+  to tune, rather than three separately-styled overlays.
+
+### My own choices (not specified by the image)
+
+- **Breakpoint and phone layout.** `app/useIsCompact.ts` at 760px, chosen
+  in JS rather than CSS because the two arrangements render *different*
+  components; rendering both and hiding one would put two copies of every
+  slider and every `data-testid` in the DOM. On a phone: the header keeps
+  one row with the status cluster behind a "Data" button; the layer panel
+  starts collapsed; the bottom bar becomes two rows (Current Wind +
+  collapsible HEIGHT above the full-width timeline).
+- **Where unpictured features went.** RASP's parameter selector nests
+  under its own switch row inside the layer panel (the rule that its
+  submenu belongs to the control is older than this milestone and still
+  holds). The site detail sheet becomes a left-column card on desktop so
+  it stops covering the map it describes; unchanged on phones. The RASP
+  legend still sits bottom-left above the bar.
+- **`SourceStatus` moved into the header** rather than being re-written.
+  It already carried exactly the three things the image's header shows
+  (sites mode, wind-field update time, RASP update time), so chunk 1 moved
+  and restyled it; the reference's wording ("Forecast updated 15:30") is
+  chunk 2's job, together with the honesty rules that go with it.
+- **Timeline and altitude keep their existing components** (`TimeSlider`,
+  `AltitudeSlider`); only their container and chrome changed.
+- **Map fit padding** now reserves the bottom bar's height and, on
+  desktop, the 300px right-hand column, so a fitted marker cannot land
+  behind either. This has been a recurring class of bug (three prior
+  instances in `DECISIONS.md`), and the bottom bar's real height is again
+  measured with a `ResizeObserver` into `--bottom-bar-height` rather than
+  guessed.
+
+### Deliberate deviations from the image
+
+- **AMSL → AGL.** The image labels the altitude control "m AMSL". The
+  behaviour is AGL and unchanged, so the label stays "Altitude (m AGL)".
+  Unresolved: whether the product should offer AMSL at all — that is a
+  data and interpolation question (terrain elevation per site), not a
+  label change, and nothing about it should be implied by wording before
+  it is decided.
+- **No Wind switch.** The image shows a Wind row in the layer panel.
+  Animated wind is unconditional today (§9; only `prefers-reduced-motion`
+  turns it off, which was never a user control), so adding the switch
+  would be a behaviour change, not a re-layout. Unresolved: whether to
+  add it back as a real toggle in chunk 2.
+- **The RASP chip is still only shown while the RASP overlay is on**, as
+  before; the image shows update times unconditionally. Unresolved, chunk
+  2 — showing a RASP time while RASP is off is arguably information, not
+  noise, but it must not imply the overlay is active.
+- **Add site is no longer behind `?admin=1`.** The image puts it in the
+  header as a normal control, and the user's direction says authentication
+  is required for *publishing*. It is now rendered wherever a publish
+  target exists (`editorApi.ts`'s `PUBLISH_TARGET`), so on the deployed
+  site every visitor can open the editor and the Worker's sign-in gates
+  the save. The per-site **Edit** button is still `ADMIN_MODE`-gated, and
+  no editor behaviour changed. This is the one visitor-visible change in
+  chunk 1 that is not purely presentational — flagged for the visual
+  review.
+- **Current Wind** replaces the "LIVE SITE" label on the same control
+  (`StartButton`), wording only.
+
+### Test changes
+
+- `tests/e2e/altitude-slider.spec.ts` now drives the permanent desktop
+  slider directly, and the collapsible-HEIGHT coverage moved to a phone
+  viewport, where that control actually lives.
+- Two **pre-existing** stale assertions were corrected while touching
+  these files, both unrelated to the re-layout: the altitude axis ceiling
+  has been 2000m since the UPPVIND recovery milestone (the test still
+  expected 450m), and Klamby gave the winch group a verified coordinate
+  (the test still expected Winch mode to be empty).
+- A real regression was caught by the existing overflow test: the
+  upper-right column's border and padding sat outside its width, pushing
+  the page 2px wider than a 390px viewport. Fixed with `box-sizing` on
+  `.map-controls > *`.
+

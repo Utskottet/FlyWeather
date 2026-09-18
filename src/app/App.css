@@ -1,7 +1,50 @@
+/* ---------------------------------------------------------------------
+   Shared surface tokens (§ Startvind UX Direction).
+
+   Every panel in the reference image is the same object: a white card,
+   one radius, one shadow, one border. Defining that once here is what
+   keeps the header, the upper-right controls and the bottom bar reading
+   as one system rather than three separately-tuned overlays - and it is
+   the single place to adjust in chunk 3's visual-matching pass.
+   --------------------------------------------------------------------- */
+:root {
+  --panel-bg: #ffffff;
+  --panel-bg-translucent: rgba(255, 255, 255, 0.96);
+  --panel-radius: 12px;
+  --panel-radius-sm: 8px;
+  --panel-border: 1px solid rgba(16, 42, 67, 0.08);
+  --panel-shadow: 0 2px 10px rgba(16, 42, 67, 0.16);
+  --panel-gap: 10px;
+  --panel-pad: 12px;
+
+  --accent: #1a73e8;
+  --accent-strong: #1565c0;
+  --accent-soft: #e8f1fd;
+
+  --text-strong: #14202b;
+  --text: #3c4b59;
+  --text-muted: #77838f;
+
+  --control-height: 34px;
+  --header-height: 56px;
+}
+
+/* App shell: header on top, everything else below it. The map is no
+   longer the page - it is the dominant surface *inside* the page, which
+   is what lets the header be a real bar rather than a floating overlay. */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--text);
+}
+
 .site-map-container {
   position: relative;
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  height: 100%;
 }
 
 .site-map {
@@ -19,110 +62,203 @@
   pointer-events: none;
 }
 
-/* Top-right brand mark - identity only, never intercepts map drag/zoom.
-   Top-right because the tool stack and MapLibre's own zoom control both
-   live top-left and every other control anchors to the bottom, so this is
-   the one corner where a mark can sit without competing with anything.
-   The artwork carries its own dark outline, so it holds its shape over any
-   basemap tone (pale land, sea, forest, dark satellite) without a plate or
-   pill behind it. An earlier version relied on a soft glow instead, which
-   only read against dark ground and vanished over pale land. */
-.startvind-logo {
-  position: absolute;
-  top: 4px;
-  right: 8px;
-  z-index: 500;
-  width: 158px;
+/* ---------------------------------------------------------------------
+   Top header - brand, beta badge, data status, Add site.
+   --------------------------------------------------------------------- */
+.app-header {
+  position: relative;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: var(--header-height);
+  padding: 4px 16px;
+  background: var(--panel-bg);
+  border-bottom: var(--panel-border);
+  box-shadow: 0 1px 6px rgba(16, 42, 67, 0.12);
+  flex-shrink: 0;
+}
+
+.app-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* The mark keeps its own dark outline from when it floated over the map;
+   on the header's white ground it simply reads as artwork. */
+.app-header-logo {
+  width: 132px;
   height: auto;
-  pointer-events: none;
+  display: block;
   user-select: none;
 }
 
-/* Narrow phones: the mark shrinks rather than crowding the map's usable
-   width - it is decoration, not information. The top-left notices are
-   capped in the same breakpoint because their 240px max-width plus
-   padding reaches just far enough at 390px to clip the mark's first
-   letter (seen in a real 390px screenshot, not theorized). */
-@media (max-width: 420px) {
-  .startvind-logo {
-    width: 116px;
-  }
-
-  /* Kept in step with the mark's width above: at 390px the notices' own
-     max-width plus padding reaches just far enough to clip the mark's
-     first letter, so widening the logo has to widen this reservation too. */
-  .data-staleness-notice,
-  .rasp-unavailable-notice {
-    max-width: calc(100% - 150px);
-  }
+.app-header-beta {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
-/* Top-left vertical tool stack (§ FlyWeather GUI Reorganization + Coherent
-   Height Wind items 2-8) - site selection, map overlays, and the
-   collapsible HEIGHT control in one deliberate hierarchy, replacing the
-   old single horizontal control-bar row entirely. Sits below MapLibre's
-   own top-left zoom control (NavigationControl, ~62px tall) so the two
-   never overlap. Deliberately compact, not "five equally huge pills" -
-   each row is its own naturally-sized pill, left-aligned, not stretched. */
-.tool-stack {
+/* Status cluster sits between brand and Add site, separated by a rule
+   rather than by empty space so the header reads as grouped fields. */
+.app-header-status {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border-left: var(--panel-border);
+  padding-left: 16px;
+}
+
+.app-header .source-status {
+  gap: 18px;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.app-header .source-status-item {
+  gap: 6px;
+}
+
+.app-header-add,
+.app-header-status-button {
+  position: relative;
+  border: none;
+  border-radius: var(--panel-radius-sm);
+  min-height: var(--control-height);
+  padding: 0 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.app-header-add {
+  margin-left: auto;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(26, 115, 232, 0.35);
+}
+
+/* Phone only: the whole status cluster behind one chip, opening as a
+   panel under the header. The header itself stays one short row. */
+.app-header-status-button {
+  margin-left: auto;
+  background: #f1f4f8;
+  color: var(--text);
+  padding: 0 14px;
+}
+
+.app-header-status-button.active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.app-header-status-panel {
   position: absolute;
-  top: 76px;
-  left: 10px;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1200;
+  background: var(--panel-bg);
+  border-bottom: var(--panel-border);
+  box-shadow: var(--panel-shadow);
+  padding: 10px 16px;
+}
+
+/* ---------------------------------------------------------------------
+   Upper-right map controls - Ridge/Winch + the Map layers panel.
+   --------------------------------------------------------------------- */
+.map-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
   z-index: 900;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  max-width: calc(100vw - 20px);
+  align-items: stretch;
+  gap: var(--panel-gap);
+  width: 248px;
+  max-width: calc(100% - 24px);
 }
 
-.tool-stack-item {
+/* Border and padding are part of the panel width, not added to it - at
+   390px the Ridge/Winch control's 4px padding + 1px border pushed the
+   column 10px past the viewport edge and gave the whole page a horizontal
+   scrollbar (caught by tests/e2e/site-map.spec.ts's overflow check). */
+.map-controls > * {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.map-layers-panel {
+  background: var(--panel-bg-translucent);
+  border: var(--panel-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--panel-shadow);
+  overflow: hidden;
+}
+
+.map-layers-panel-header {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 12px var(--panel-pad);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-strong);
+  cursor: pointer;
 }
 
-/* RASP/HEIGHT's disclosure chevron (▸/▾) - purely visual, distinguishes
-   "has an associated submenu" (RASP, HEIGHT) from a plain toggle (Roads,
-   Airspace) at a glance, per the task's own ASCII mockup. */
-.tool-stack-chevron {
-  font-size: 9px;
-  margin-left: 2px;
-  opacity: 0.7;
+.map-layers-panel-chevron {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
-.tool-stack-submenu {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  padding: 8px;
+.map-layers-panel-body {
+  padding: 0 var(--panel-pad) 6px;
 }
 
-/* HEIGHT's own compact slider, revealed only while expanded (never a
-   permanent full-width bar) - narrower than the old bottom altitude-bar
-   since it now lives in a small top-left popover. */
-.tool-stack-submenu .altitude-slider {
-  width: 160px;
+/* Every layer row is the same object; the divider comes from the row
+   above it, so the first row never carries a stray top rule. */
+.map-layers-panel-body > * + * {
+  border-top: var(--panel-border);
 }
 
-/* RASP's parameter popover - a compact 2x2 grid (not a full pill row) so
-   4 parameter names fit a small popover instead of needing the full
-   screen width the old horizontal toolbar row had available. */
-.tool-stack-submenu .rasp-param-selector {
+.map-layers-panel-body .tool-stack-item {
+  display: block;
+}
+
+.map-layers-panel-body .tool-stack-submenu {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0 0 10px;
+}
+
+.map-layers-panel-body .rasp-param-selector {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
-  width: 176px;
+  width: 100%;
   background: transparent;
   box-shadow: none;
   border-radius: 0;
   overflow: visible;
 }
 
-.tool-stack-submenu .rasp-param-selector button {
+.map-layers-panel-body .rasp-param-selector button {
   border-radius: 6px;
-  background: #f0f0f0;
+  background: #f1f4f8;
   min-height: 30px;
   padding: 0 4px;
   font-size: 10.5px;
@@ -131,6 +267,37 @@
   text-overflow: ellipsis;
 }
 
+/* Ridge/Winch: a segmented control, deliberately not styled like the
+   layer switches - it selects which sites exist on the map, which is a
+   different kind of decision from turning an overlay on. */
+.map-controls .site-mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  border-radius: var(--panel-radius);
+  border: var(--panel-border);
+  box-shadow: var(--panel-shadow);
+  background: var(--panel-bg);
+  padding: 4px;
+  gap: 4px;
+}
+
+.map-controls .site-mode-toggle button {
+  min-height: 36px;
+  border-radius: var(--panel-radius-sm);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.map-controls .site-mode-toggle button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---------------------------------------------------------------------
+   Toggles.
+   --------------------------------------------------------------------- */
 .site-mode-toggle,
 .rasp-param-selector {
   display: inline-flex;
@@ -150,16 +317,17 @@
   font-size: 11px;
   font-weight: 600;
   color: #444;
+  cursor: pointer;
 }
 
 /* Hit-area technique (§ FlyWeather Mobile UI Correction item 1): the
-   visible pill stays ~32px tall for a compact stack, but an invisible
-   pseudo-element pads the actual tap target a few px on every side
-   without affecting layout size - a plain absolutely-positioned element
-   contributes nothing to flex sizing. */
+   visible pill stays compact, but an invisible pseudo-element pads the
+   actual tap target a few px on every side without affecting layout size -
+   a plain absolutely-positioned element contributes nothing to flex
+   sizing. */
 .site-mode-toggle button::before,
 .rasp-param-selector button::before,
-.press-toggle::before,
+.press-toggle-pill::before,
 .start-button::before {
   content: "";
   position: absolute;
@@ -177,59 +345,10 @@
   cursor: not-allowed;
 }
 
-/* One-tap reset to START (§ FlyWeather Interaction Model) - visually the
-   most prominent control in the bottom bar, since it's the app's single
-   way back to live mode. Never disabled (§ FlyWeather Mobile UI
-   Correction) - unpressed/white means "tap to return to START" (an
-   available action, like the other toggles' OFF state), pressed/blue
-   (.active) means "you are at START now", matching the same pressed-state
-   convention as .press-toggle instead of a grayed-out "unavailable" look. */
-.start-button {
-  position: relative;
-  border: none;
-  background: #fff;
-  color: #1565c0;
-  border-radius: 999px;
-  min-height: 34px;
-  padding: 0 16px;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.02em;
-  flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.start-button.active {
-  background: #1565c0;
-  color: #fff;
-}
-
-/* Nonlinear Surface-180m slider (§ FlyWeather Mobile UI Correction - capped
-   at the real data ceiling) - label is fixed-width-ish via
-   white-space:nowrap so the range input doesn't jitter as the label text
-   length changes between "Surface" and "180 m AGL". */
-.altitude-slider {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.altitude-slider-range {
-  flex: 1;
-  min-width: 0;
-}
-
-.altitude-slider-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #444;
-  white-space: nowrap;
-}
-
 /* Shared single-label pressed-state toggle (§ FlyWeather Next UI) - label
-   text never changes between on/off; state is conveyed only by aria-pressed
-   + this .active styling, replacing the old two-button "X off"/"X on"
-   AirspaceToggle/RaspToggle pattern. Used for AIRSPACE, RASP, ROADS. */
+   text never changes between on/off; state is conveyed only by
+   aria-pressed + this .active styling. Two drawings, one behaviour:
+   `pill` standalone, `switch` as a row inside the Map layers panel. */
 .press-toggle {
   position: relative;
   display: inline-flex;
@@ -245,36 +364,188 @@
   font-size: 11px;
   font-weight: 600;
   color: #444;
+  cursor: pointer;
 }
 
-.press-toggle.active {
+.press-toggle-pill.active {
   background: #1565c0;
   color: #fff;
 }
 
-/* Bottom chrome: forecast navigation + data provenance only (§ FlyWeather
-   GUI Reorganization + Coherent Height Wind item 21) - Roads/Airspace/
-   RASP/Ridge/Winch never live down here anymore, only live in the
-   top-left tool stack above. Its measured height drives
-   --source-status-height, read by .site-sheet/.rasp-legend below. */
-.source-status-bar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 98px;
-  z-index: 1000;
+.press-toggle-switch {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.1);
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 11px 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-strong);
 }
 
-/* Compact SITES/WIND FIELD/RASP status strip (items 15-18) - replaces the
-   old single prose sentence. Never color-only (item 16): MEASURED/FORECAST
-   is always real text, the LED is a redundant visual cue on top of it. */
+/* The switch is the state indicator; aria-pressed is the accessible one.
+   Colour is never the only cue - the knob's position carries it too. */
+.press-toggle-track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: #d4dae1;
+  flex-shrink: 0;
+  transition: background 120ms ease;
+}
+
+.press-toggle-switch.active .press-toggle-track {
+  background: var(--accent);
+}
+
+.press-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(16, 42, 67, 0.3);
+  transition: transform 120ms ease;
+}
+
+.press-toggle-switch.active .press-toggle-knob {
+  transform: translateX(20px);
+}
+
+/* ---------------------------------------------------------------------
+   Bottom bar - Current Wind, forecast timeline, altitude.
+   --------------------------------------------------------------------- */
+.bottom-bar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 1000;
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+  padding: 10px 16px;
+  background: var(--panel-bg-translucent);
+  border: var(--panel-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--panel-shadow);
+  box-sizing: border-box;
+}
+
+.bottom-bar-live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.bottom-bar-time {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.bottom-bar-altitude {
+  width: 280px;
+  flex-shrink: 0;
+  border-left: var(--panel-border);
+  padding-left: 20px;
+}
+
+/* One title style for both bottom-bar sections, so "Forecast time" and
+   "Altitude" read as peers rather than two different kinds of label. */
+.bottom-bar-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+/* One-tap reset to START (§ FlyWeather Interaction Model) - visually the
+   most prominent control in the bottom bar, since it is the app's single
+   way back to live mode. Never disabled (§ FlyWeather Mobile UI
+   Correction): unpressed means "tap to return to START", pressed/blue
+   (.active) means "you are at START now". */
+.start-button {
+  position: relative;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--panel-radius-sm);
+  min-height: 52px;
+  padding: 0 20px;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(26, 115, 232, 0.35);
+  cursor: pointer;
+}
+
+/* Unpressed is the quieter state here: at START the button is the filled
+   accent block of the reference image, away from START it is an offer. */
+.start-button:not(.active) {
+  background: var(--panel-bg);
+  color: var(--accent-strong);
+  box-shadow: inset 0 0 0 1px rgba(26, 115, 232, 0.5);
+}
+
+/* Altitude section: title, slider, and the value box on the right (the
+   label element itself), with the real range's ends beneath. */
+.altitude-control {
+  display: flex;
+  flex-direction: column;
+}
+
+.altitude-slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.altitude-slider-range {
+  flex: 1;
+  min-width: 0;
+}
+
+.altitude-slider-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  white-space: nowrap;
+}
+
+.altitude-control .altitude-slider-label {
+  min-width: 64px;
+  text-align: center;
+  border: var(--panel-border);
+  border-radius: var(--panel-radius-sm);
+  padding: 7px 8px;
+  font-size: 13px;
+  color: var(--text-strong);
+  background: var(--panel-bg);
+}
+
+.altitude-control-ends {
+  display: flex;
+  justify-content: space-between;
+  /* the value box's width plus the slider's gap - keeps 0 and the ceiling
+     under the actual ends of the track, not under the whole row */
+  padding-right: 84px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ---------------------------------------------------------------------
+   Data-status strip (SourceStatus) - now a header cluster rather than its
+   own bar above the timeline. Never color-only: MEASURED/FORECAST is
+   always real text, the LED is a redundant visual cue on top of it.
+   --------------------------------------------------------------------- */
 .source-status {
   display: flex;
   align-items: center;
@@ -300,8 +571,7 @@
   flex-shrink: 0;
 }
 
-/* Green = measured/live observation, blue = forecast/model (item 16's
-   suggested visual language). */
+/* Green = measured/live observation, blue = forecast/model. */
 .source-status-item.led-measured .source-status-led {
   background: #2e7d32;
 }
@@ -361,12 +631,13 @@
 
 .rasp-legend {
   position: absolute;
-  /* Anchored above the bottom chrome (real height measured in SiteMap.tsx,
-     same --source-status-height variable as .site-sheet) rather than a
-     fixed value - the bar's height varies (RASP badge appearing, text
-     wrapping on narrow phones), which used to grow tall enough to sit
-     behind/hide this legend entirely. */
-  bottom: calc(98px + var(--source-status-height, 0px) + 8px);
+  /* Anchored above the bottom bar (real height measured in SiteMap.tsx,
+     same --bottom-bar-height variable as .site-sheet) rather than a fixed
+     value - the bar's height varies (phone's two-row arrangement, labels
+     wrapping), and it used to grow tall enough to sit behind/hide this
+     legend entirely. The +24px is the bar's own bottom offset plus a
+     gap. */
+  bottom: calc(var(--bottom-bar-height, 120px) + 24px);
   left: 12px;
   z-index: 500;
   background: rgba(255, 255, 255, 0.95);
@@ -377,7 +648,7 @@
   max-width: calc(100vw - 24px);
   /* Read-only (§ FlyWeather GUI Reorganization + Coherent Height Wind) -
      the RASP parameter selector now lives on the RASP control itself in
-     the top-left tool stack, not behind a tap on this legend. */
+     the upper-right Map layers panel, not behind a tap on this legend. */
   pointer-events: none;
 }
 
@@ -440,11 +711,11 @@
   position: absolute;
   left: 0;
   right: 0;
-  /* Anchored above the bottom chrome (its real height is measured in
-     SiteMap.tsx, since it varies with content) rather than directly above
-     the timeline - otherwise the sheet's z-index would either bury the
-     source-status bar or it'd sit as a dead strip over the sheet. */
-  bottom: calc(98px + var(--source-status-height, 0px));
+  /* Anchored above the bottom bar (its real height is measured in
+     SiteMap.tsx, since it varies with content) rather than at a fixed
+     offset - otherwise the sheet's z-index would either bury the bar or
+     it'd sit as a dead strip over the sheet. */
+  bottom: calc(var(--bottom-bar-height, 120px) + 24px);
   max-height: 55%;
   overflow-y: auto;
   background: #fff;
@@ -485,34 +756,33 @@
   margin: 0;
 }
 
-/* Height trimmed from 112px (§ FlyWeather Mobile UI Correction item 14) -
-   the tick/label region below is untouched for readability; only the top
-   row and outer padding shrank. */
+/* The timeline is now a section inside the bottom bar (§ Startvind UX
+   Direction), not its own bar pinned to the bottom of the screen - the bar
+   supplies the surface, the padding and the shadow, so this only owns the
+   slider itself. */
 .time-slider {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 98px;
-  background: #fff;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 900;
-  padding: 6px 16px;
+  position: relative;
+  width: 100%;
   box-sizing: border-box;
 }
 
 .time-slider-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
-  margin-bottom: 3px;
-  min-height: 34px;
+  min-height: 24px;
 }
 
+/* The selected time as the reference image's filled chip, rather than
+   plain text - it is a readout of where the thumb is, so it is styled
+   like a value, not like a heading. */
 .time-slider-label {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  padding: 3px 10px;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 13px;
   flex-shrink: 0;
 }
 
@@ -927,4 +1197,102 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------
+   Phone arrangement - deliberately a different layout, not the desktop
+   one scaled down (§ Startvind UX Direction / MASTER_SPEC §15).
+   --------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  :root {
+    --header-height: 48px;
+  }
+
+  .app-header {
+    gap: 8px;
+    padding: 4px 10px;
+  }
+
+  .app-header-logo {
+    width: 104px;
+  }
+
+  .app-header-add {
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  /* Controls keep the map's full width available: the layer panel is
+     collapsed by default (MapLayersPanel's defaultOpen) and both controls
+     are narrower than on desktop. */
+  .map-controls {
+    top: 8px;
+    right: 8px;
+    width: 176px;
+    gap: 8px;
+  }
+
+  .map-controls .site-mode-toggle button {
+    min-height: 32px;
+    font-size: 13px;
+  }
+
+  .map-layers-panel-header {
+    padding: 9px 10px;
+    font-size: 14px;
+  }
+
+  .press-toggle-switch {
+    padding: 8px 0;
+    font-size: 14px;
+  }
+
+  /* Two rows, not three columns: Current Wind + HEIGHT above, timeline
+     across the full width below. */
+  .bottom-bar-compact {
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .bottom-bar-compact .bottom-bar-live {
+    justify-content: space-between;
+  }
+
+  .bottom-bar-compact .start-button {
+    min-height: 40px;
+    font-size: 14px;
+  }
+
+  .bottom-bar-compact .bottom-bar-section-title {
+    display: none;
+  }
+
+  /* The map notices sit top-left and the controls top-right, so a notice
+     has to stop short of the control panel's width rather than of the old
+     top-right logo's - measured against the .map-controls width above. */
+  .data-staleness-notice,
+  .rasp-unavailable-notice {
+    max-width: calc(100% - 200px);
+  }
+}
+
+/* Desktop: the site detail sheet becomes a card in the left column rather
+   than a full-width drawer across the bottom. The drawer shape is a phone
+   idiom - on a wide screen it covered most of the map it is describing,
+   and the reference image keeps the map dominant at all times. Same
+   component, same content, same close/edit behaviour. */
+@media (min-width: 761px) {
+  .site-sheet {
+    left: 12px;
+    right: auto;
+    width: 400px;
+    max-height: calc(100% - var(--bottom-bar-height, 120px) - 48px);
+    border-radius: var(--panel-radius);
+    border: var(--panel-border);
+    box-shadow: var(--panel-shadow);
+  }
 }

@@ -46,3 +46,19 @@ commitment log.
   `docs/EDITOR_INTEGRATION.md` for what connecting it to the live site
   would actually take - the schema gaps and the three decisions that gate
   any of it.
+
+- **Editor reliability — still open, and not touched by the Startvind UX
+  Direction redesign** (the redesign only moved Add site into the header;
+  none of these were fixed by it):
+  - a site **move through the publishing Worker against the real
+    repository is still unverified** - the move bug (commit e3767dc) is
+    proven fixed by unit test and through the dev server only;
+  - **19 of 32 sites are unreachable from the map** (archived or
+    unlocated), so the editor cannot open them - a list view is still
+    missing;
+  - `admin-experiment/` is superseded by `src/components/SiteEditor/` and
+    can be deleted whenever.
+- **Add site is now visible to every visitor** wherever a publish target is
+  configured (§ Startvind UX Direction chunk 1). Publishing is still gated
+  by the Worker's sign-in, but the editor UI itself is now public - worth a
+  deliberate yes/no at the chunk 1 visual review.

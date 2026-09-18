@@ -775,9 +775,73 @@ No heavy backend framework in V1.
 
 ---
 
-# 15. Main mobile UI
+# 15. Main UI
 
-> **Current, authoritative design note (FlyWeather GUI Reorganization +
+> **Current, authoritative design note (Startvind UX Direction milestone,
+> adopted 2026-09-18 - supersedes every layout note below it, including
+> the FlyWeather GUI Reorganization one, which described a top-left
+> vertical tool stack and a bottom source-status bar that no longer
+> exist).** The reference image this milestone implements is kept in the
+> repository at `docs/design/ux-reference-2026-09-18.png`; it is the
+> authority for the *arrangement*, and the notes below record where the
+> implementation deliberately differs from it and why (see also
+> `docs/DECISIONS.md`).
+>
+> The layout has three regions of chrome around one dominant map:
+>
+> - **Top header** (`AppHeader`, a real bar - not an overlay): Startvind
+>   logo, BETA badge, the real forecast/RASP update times and the current
+>   site-data mode (all from `SourceStatus`, which is fed by the actual
+>   published `generatedAt` timestamps - never a decorative constant), and
+>   **Add site**. Identity and status only: no map tool lives in the
+>   header and nothing in it moves the map. Add site opens the existing
+>   `SiteEditorPanel`; publishing from it still requires signing in to the
+>   publishing Worker (`docs/PUBLISHING.md`), which is where authentication
+>   belongs - the button itself is shown wherever a publish target exists.
+> - **Upper-right controls** (`.map-controls`): the RIDGE/WINCH selector
+>   (`SiteModeToggle`, a segmented control - selecting which sites exist
+>   is a different kind of decision from switching an overlay on, and it
+>   is never styled like one), and below it **one organised map-layer
+>   panel** (`MapLayersPanel`) holding every overlay as a switch row:
+>   Airspace, RASP, Roads. RASP keeps its own associated submenu - the
+>   parameter selector (Thermals / Thermal top / Usable height /
+>   Cloudbase) appears under its row the moment RASP is on and disappears
+>   when it is off, never as four permanent rows. There is no WIND toggle
+>   (§9): animated wind is unconditional, so the reference image's Wind
+>   row is deliberately not implemented - see the open question in
+>   `docs/DECISIONS.md`.
+> - **Bottom bar** (`BottomBar`): **Current Wind** (the START control,
+>   renamed; same one-tap reset of time + altitude + site-source, still
+>   never disabled, still the only way back into live mode), the forecast
+>   timeline, and the altitude control. Forecast navigation only - no map
+>   layer and no site selection lives down here.
+>
+> **Altitude is labelled AGL, not AMSL.** The reference image says "m
+> AMSL"; the behaviour behind the control is height *above ground level*
+> (§7, `domain/heightInterpolation.ts`), and it is unchanged. The accurate
+> label is kept until the question is explicitly decided - relabelling
+> alone would make the app state something untrue about its own numbers.
+>
+> **The phone arrangement is a different layout, not the desktop one
+> scaled down** (`app/useIsCompact.ts`, 760px):
+>
+> - the header stays one short row - the status cluster collapses behind
+>   a single "Data" button that opens a panel under the header;
+> - the layer panel is collapsed by default and narrower, so the map keeps
+>   the screen;
+> - the bottom bar becomes two rows: Current Wind plus the collapsible
+>   HEIGHT control (`HeightControl` - a disclosure button; collapsing it
+>   never resets the altitude, only Current Wind does) above the
+>   full-width timeline. Desktop shows the altitude slider permanently
+>   (`AltitudeControl`) because it has the width for it.
+>
+> **The site detail sheet** (§15.2) keeps its content and behaviour; on
+> desktop it is a card in the left column rather than a full-width drawer,
+> so the map stays dominant while a site is open.
+>
+> Older note, kept for history:
+
+> **Superseded design note (FlyWeather GUI Reorganization +
 > Coherent Height Wind milestone - supersedes both the FlyWeather
 > Interaction Model and FlyWeather Mobile UI Correction milestones' notes
 > below, which described a horizontal bottom toolbar that no longer
@@ -834,6 +898,10 @@ No heavy backend framework in V1.
 > visual cue on top of the text, never the only signal.
 
 ## 15.1 Initial screen
+
+*(Obsolete in its particulars - the current arrangement is the Startvind
+UX Direction note at the top of §15. The map/marker and time-slider rules
+below still hold.)*
 
 Full-screen map.
 

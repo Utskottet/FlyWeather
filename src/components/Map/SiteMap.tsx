@@ -10,19 +10,17 @@ import { daylightFactor, isNightAt } from "../../domain/skyBand.ts";
 import { selectEffectiveSample, type EffectiveSample } from "../../domain/effectiveSample.ts";
 import { interpolateWindAtHeight } from "../../domain/heightInterpolation.ts";
 import { WindRose } from "../WindRose/index.ts";
-import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
-import { StartButton } from "../StartButton/StartButton.tsx";
-import { SourceStatus } from "../SourceStatus/SourceStatus.tsx";
+import { AppHeader } from "../AppHeader/AppHeader.tsx";
+import { BottomBar } from "../BottomBar/BottomBar.tsx";
 import { SiteModeToggle, type SiteMode } from "../SiteModeToggle/SiteModeToggle.tsx";
-import { AirspaceToggle } from "../AirspaceToggle/AirspaceToggle.tsx";
-import { RoadsToggle } from "../RoadsToggle/RoadsToggle.tsx";
-import { RaspControl } from "../RaspControl/RaspControl.tsx";
-import { HeightControl } from "../HeightControl/HeightControl.tsx";
+import { MapLayersPanel } from "../MapLayersPanel/MapLayersPanel.tsx";
 import { ParameterLegend } from "../ParameterLegend/ParameterLegend.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { SiteEditorPanel } from "../SiteEditor/SiteEditorPanel.tsx";
 import { emptyDraft, siteToDraft, sitePathFor, type SiteDraft } from "../../domain/siteEditor.ts";
 import { ADMIN_MODE } from "../../app/adminMode.ts";
+import { PUBLISH_TARGET } from "../../app/editorApi.ts";
+import { useIsCompact } from "../../app/useIsCompact.ts";
 import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
 import { MapLibreMap } from "./MapLibreMap.tsx";
@@ -221,24 +219,25 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
     setEditor(null);
     window.location.reload();
   }
+  const isCompact = useIsCompact();
   const [showAirspace, setShowAirspace] = useState(false);
   const [showRoads, setShowRoads] = useState(false);
   const [showRasp, setShowRasp] = useState(false);
   const [selectedRaspParam, setSelectedRaspParam] = useState<RaspParamKey>("wstar");
-  // The source-status bar's real height varies (RASP badge appearing,
-  // text wrapping on narrow screens) - measured rather than guessed so
+  // The bottom bar's real height varies (phone's two-row arrangement,
+  // labels wrapping on narrow screens) - measured rather than guessed so
   // SiteSheet/ParameterLegend can anchor themselves just above it instead
   // of sliding underneath and becoming unclickable (found via an E2E
-  // diagnostic in an earlier milestone). The top-left tool stack is
+  // diagnostic in an earlier milestone, and the same class of bug has
+  // since appeared three times). The right-hand control panel is
   // positioned independently and never anchors against this - only the
-  // bottom chrome (source-status bar + timeline) does (§ FlyWeather GUI
-  // Reorganization + Coherent Height Wind item 21).
-  const sourceStatusBarRef = useRef<HTMLDivElement>(null);
-  const [sourceStatusBarHeight, setSourceStatusBarHeight] = useState(0);
+  // bottom chrome does (§ Startvind UX Direction).
+  const bottomBarRef = useRef<HTMLDivElement>(null);
+  const [bottomBarHeight, setBottomBarHeight] = useState(0);
   useEffect(() => {
-    const el = sourceStatusBarRef.current;
+    const el = bottomBarRef.current;
     if (!el) return;
-    const observer = new ResizeObserver((entries) => setSourceStatusBarHeight(entries[0].contentRect.height));
+    const observer = new ResizeObserver((entries) => setBottomBarHeight(entries[0].contentRect.height));
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
@@ -355,53 +354,46 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
   const selectedResult = selectedSite ? effectiveSampleFor(selectedSite) : null;
 
   return (
-    <div
-      className="site-map-container"
-      data-testid="site-map"
-      style={{ "--source-status-height": `${sourceStatusBarHeight}px` } as React.CSSProperties}
-    >
-      {/* Top-right brand mark (replaces the old centered UPPVIND
-          wordmark) - identity only, never a control. Top-right is the one
-          map corner with no chrome in it: the tool stack and MapLibre's own
-          zoom control are both top-left, and everything else anchors to the
-          bottom. Non-interactive so it can't swallow a map drag. */}
-      <img
-        className="startvind-logo"
-        src={`${import.meta.env.BASE_URL}startvind-logo.png`}
-        alt="Startvind"
-        width={158}
-        height={74}
+    <div className="app-shell">
+      {/* Top header (§ Startvind UX Direction): brand, beta badge, real
+          data-update status and Add site. The brand mark used to float over
+          the map's top-right corner; it is part of the header now, so the
+          map surface below carries no identity chrome at all. */}
+      <AppHeader
+        sitesMeasured={isLiveMode}
+        raspOn={showRasp}
+        windUpdated={windUpdated}
+        raspUpdated={raspUpdated}
+        // No publish target (a built copy with no Worker configured) means
+        // a save could only ever fail, so the button is not offered at all
+        // - see app/editorApi.ts. Where one exists, the editor opens for
+        // anyone and the Worker's sign-in gates publishing, not this button.
+        onAddSite={PUBLISH_TARGET !== null ? openCreateEditor : undefined}
+        compact={isCompact}
       />
-      {/* Top-left tool stack (§ FlyWeather GUI Reorganization + Coherent
-          Height Wind items 2-8): site selection, map overlays, and the
-          collapsible HEIGHT control - a deliberate hierarchy, not one
-          generic button row. Never anchors against the bottom chrome. */}
-      <div className="tool-stack" data-testid="tool-stack">
-        {/* Admin-only, and invisible to pilots - see app/adminMode.ts for
-            why a URL flag rather than a password. */}
-        {ADMIN_MODE && (
-          <button type="button" className="tool-button" onClick={openCreateEditor} data-testid="add-site-button">
-            + Add site
-          </button>
-        )}
-        <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
-        <RoadsToggle show={showRoads} onChange={setShowRoads} />
-        <AirspaceToggle show={showAirspace} onChange={setShowAirspace} />
-        <RaspControl
-          show={showRasp}
-          onChange={setShowRasp}
-          selectedParam={selectedRaspParam}
-          onParamChange={setSelectedRaspParam}
-          availableParams={availableRaspParams}
-        />
-        <HeightControl altitudeM={altitudeM} onChange={handleAltitudeChange} />
-      </div>
-      {/* Bottom chrome: forecast navigation + data provenance only (item
-          21) - Roads/Airspace/RASP/Ridge/Winch never live down here. */}
-      <div className="source-status-bar" data-testid="source-status-bar" ref={sourceStatusBarRef}>
-        <StartButton isLiveMode={isLiveMode} onStart={handleStart} />
-        <SourceStatus sitesMeasured={isLiveMode} raspOn={showRasp} windUpdated={windUpdated} raspUpdated={raspUpdated} />
-      </div>
+      <div
+        className="site-map-container"
+        data-testid="site-map"
+        style={{ "--bottom-bar-height": `${bottomBarHeight}px` } as React.CSSProperties}
+      >
+        {/* Upper-right controls (§ Startvind UX Direction): the Ridge/Winch
+            selector and one organised map-layer panel, in that order. This
+            replaces the old top-left vertical tool stack entirely. */}
+        <div className="map-controls" data-testid="map-controls">
+          <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
+          <MapLayersPanel
+            showAirspace={showAirspace}
+            onAirspaceChange={setShowAirspace}
+            showRasp={showRasp}
+            onRaspChange={setShowRasp}
+            selectedRaspParam={selectedRaspParam}
+            onRaspParamChange={setSelectedRaspParam}
+            availableRaspParams={availableRaspParams}
+            showRoads={showRoads}
+            onRoadsChange={setShowRoads}
+            defaultOpen={!isCompact}
+          />
+        </div>
       {visibleSites.length === 0 && (
         <div className="site-mode-empty-notice">
           No winch sites with a verified location yet - see docs/SITE_DATA_AUDIT.md.
@@ -431,13 +423,19 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
       <MapLibreMap
         style={mapStyle}
         bounds={maplibreBounds}
-        // Bottom padding keeps fitted markers clear of the persistent
-        // 98px time-slider bar PLUS the source-status bar now sitting
-        // directly above it (App.css's .time-slider/.source-status-bar
-        // heights) so they never land unclickable behind either - found via
-        // an E2E diagnostic during the MapLibre port, revisited each time
-        // the bottom chrome's shape changed since.
-        boundsPadding={{ top: 40, bottom: 200, left: 40, right: 40 }}
+        // Keeps fitted markers clear of the persistent chrome so they
+        // never land unclickable behind it - found via an E2E diagnostic
+        // during the MapLibre port, and revisited every time the chrome's
+        // shape changed since (this is one of those times). Bottom clears
+        // the bottom bar; right clears the upper-right control panel on
+        // desktop, where it is permanently open and ~260px wide. Read once,
+        // at map creation - fitBounds only runs on mount, which is exactly
+        // what gives "no map jump" later.
+        boundsPadding={
+          isCompact
+            ? { top: 40, bottom: 210, left: 24, right: 24 }
+            : { top: 40, bottom: 180, left: 40, right: 300 }
+        }
         maxZoom={12}
         showAirspace={showAirspace}
         raspOverlay={raspOverlay}
@@ -527,7 +525,21 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
           onSaved={handleSaved}
         />
       )}
-      <TimeSlider hours={hours} selectedIndex={sliderIndex} onChange={handleTimeChange} />
+        {/* Bottom bar (§ Startvind UX Direction): Current Wind, the
+            forecast timeline, and altitude. Forecast navigation only -
+            map layers and site selection live in the upper-right panel. */}
+        <BottomBar
+          isLiveMode={isLiveMode}
+          onStart={handleStart}
+          hours={hours}
+          selectedIndex={sliderIndex}
+          onTimeChange={handleTimeChange}
+          altitudeM={altitudeM}
+          onAltitudeChange={handleAltitudeChange}
+          compact={isCompact}
+          barRef={bottomBarRef}
+        />
+      </div>
     </div>
   );
 }

@@ -504,6 +504,75 @@ Definition of done:
 
 ---
 
+# Phase 3 — Startvind UX Direction
+
+Adopted 2026-09-18 from the reference image at
+`docs/design/ux-reference-2026-09-18.png`, which is the authority for the
+arrangement (MASTER_SPEC §15). Weather logic, wind-rose semantics and the
+publishing architecture are explicitly **out of scope** for all four
+chunks — this is a re-layout of controls that already work.
+
+## Chunk 1 — Layout structure and responsive arrangement
+
+Deliverables:
+- Header / upper-right control panel / bottom bar as three real regions
+  around the map, with the existing components moved into them and their
+  behaviour still connected.
+- Shared surface tokens (one panel background, radius, shadow, border,
+  accent) so the three regions read as one system.
+- A phone arrangement that is genuinely different from the desktop one,
+  not a scaled copy.
+- Features not pictured in the reference given a place (RASP parameter
+  selector inside the layer panel, data-status behind the header's Data
+  button on a phone, site sheet as a desktop left card).
+
+Definition of done:
+- `npm run typecheck`, `npm run lint`, `npm test`, `npx playwright test`
+  and a production build all pass.
+- Desktop and phone screenshots taken from the running app and compared
+  with the reference.
+- MASTER_SPEC/BLOCKS/PROGRESS/DECISIONS updated; committed; stop for
+  visual review.
+
+## Chunk 2 — Controls, interactions and truthful data status
+
+Deliverables:
+- Header status reworded to the reference's shape ("Forecast updated
+  15:30", "RASP updated 16:30", "Sites show: forecast") **without losing
+  honesty**: the times must stay the real published `generatedAt` values,
+  the site-data mode must keep saying measured vs forecast, and staleness
+  must still be visible.
+- Decide and implement the RASP chip's behaviour while RASP is off
+  (currently omitted entirely).
+- Interaction polish on the panel rows, the segmented control, the
+  timeline chip and the altitude readout.
+
+Definition of done: as chunk 1, plus no data-status string that cannot be
+traced to a real timestamp or mode.
+
+## Chunk 3 — Visual matching and polish
+
+Deliverables:
+- Panel styling, spacing, typography and control hierarchy matched
+  against the reference image side by side.
+- Timeline chip following the thumb; tick/label treatment; altitude
+  section proportions.
+
+Definition of done: as chunk 1, plus a documented side-by-side comparison.
+
+## Chunk 4 — Full regression checks and deployment
+
+Deliverables:
+- Desktop and phone regression pass over every preserved feature
+  (site sheet, editor, RASP, airspace, roads, winch mode, reduced
+  motion, staleness notices).
+- Deploy and verify live.
+
+Definition of done: as chunk 1, plus verified on the deployed site from a
+clean browser.
+
+---
+
 ## Notes for whoever (human or agent) revises this list
 
 - Blocks are ordered for dependency reasons (schema before data, rose before

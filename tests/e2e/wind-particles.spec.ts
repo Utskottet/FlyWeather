@@ -78,8 +78,9 @@ test.describe("Animated wind particle field", () => {
     await page.waitForTimeout(300);
     const before = await arrow.screenshot();
 
-    await page.getByTestId("height-control-button").click();
-    await page.getByTestId("altitude-slider-range").fill("1"); // 450m - the far end from Surface/10m
+    // The altitude slider is permanently visible in the bottom bar at this
+    // (desktop) viewport - § Startvind UX Direction.
+    await page.getByTestId("altitude-slider-range").fill("1"); // the far end from Surface/10m
     await page.waitForTimeout(300);
 
     const after = await arrow.screenshot();

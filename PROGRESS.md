@@ -29,6 +29,10 @@ the block's work.
 | 17    | Airspace layer                                | done        | commit 683b777; CI green; live; needs OPENAIP_KEY GitHub secret for future weekly refreshes |
 | 18    | Skyways layer                                 | done        | commit e7aeece; CI green; live; lower priority per user |
 | 19    | Live tracking                                 | skipped     | user decision 2026-08-19: not worth the persistent-backend architecture change right now |
+| UX1   | Startvind UX Direction: layout structure      | done        | header / upper-right panel / bottom bar + phone arrangement; awaiting visual review |
+| UX2   | Startvind UX Direction: controls + data status| not_started | next chunk |
+| UX3   | Startvind UX Direction: visual matching       | not_started | |
+| UX4   | Startvind UX Direction: regression + deploy   | not_started | |
 
 Status values: `not_started`, `in_progress`, `blocked`, `done`.
 
@@ -1558,3 +1562,75 @@ One long session. Everything below is on `main` and live unless stated.
   the editor cannot open them; a list view is still missing.
 - `admin-experiment/` is superseded by `src/components/SiteEditor/` and can
   be deleted whenever.
+
+## Startvind UX Direction — current objective (adopted 2026-09-18)
+
+**Objective.** Adopt the supplied reference image
+(`docs/design/ux-reference-2026-09-18.png`, linked from MASTER_SPEC §15) as
+the overall UX direction: one dominant map with a real top header, an
+upper-right control column and a bottom bar. Weather logic, wind-rose
+semantics and the publishing architecture are unchanged by this work.
+Split into four chunks in `BLOCKS.md` (Phase 3).
+
+### Chunk 1 complete: layout structure and responsive arrangement
+- Status: done — **stop for visual review before chunk 2**.
+- Definition of Done: [x] typecheck  [x] lint  [x] 578 unit tests
+  [x] e2e 33 passed / 3 skipped (the skips are the live-publishing
+  acceptance test, which needs a password)  [x] production build
+  [x] desktop + phone screenshots taken from the running app and compared
+  with the reference  [x] docs updated
+- What moved where:
+  - **Header** (`components/AppHeader`): logo, BETA badge, `SourceStatus`
+    (real forecast/RASP publish times + measured-vs-forecast site mode),
+    Add site. The logo no longer floats over the map.
+  - **Upper-right** (`.map-controls`): RIDGE/WINCH segmented selector and
+    one `MapLayersPanel` holding Airspace / RASP / Roads as switch rows,
+    RASP's parameter selector nested under its own row. The old top-left
+    tool stack is gone.
+  - **Bottom bar** (`components/BottomBar`): Current Wind (the START
+    control, renamed), "Forecast time (local time)" + `TimeSlider`, and
+    the altitude control — permanent `AltitudeControl` slider on desktop,
+    the existing collapsible `HeightControl` on phones.
+  - Shared surface tokens in `App.css` (`--panel-*`, `--accent*`,
+    `--text*`) so the three regions read as one system.
+  - Phone arrangement is genuinely different (`app/useIsCompact.ts`,
+    760px), not a scaled desktop: status behind a "Data" button, layer
+    panel collapsed by default, bottom bar in two rows.
+  - Site sheet becomes a left-column card on desktop so it stops covering
+    the map; unchanged on phones.
+- Behaviour deliberately unchanged: weather/flyability calculations, data
+  collection, hosting, editor backend, START semantics, RASP submenu rule,
+  reduced-motion fallback.
+- **Visitor-visible change to confirm at review**: Add site is no longer
+  behind `?admin=1` — it now appears wherever a publish target is
+  configured, with the Worker's sign-in still gating publishing (per the
+  direction's "authentication required for publishing"). Per-site Edit is
+  still admin-gated.
+- **Altitude stays labelled AGL**, not the image's AMSL, until that is
+  explicitly decided — the behaviour is AGL and unchanged.
+- **Not implemented from the image**: the Wind switch (animated wind is
+  unconditional today, so adding it would be a behaviour change) and the
+  reference's header wording ("Forecast updated 15:30") — both are chunk 2
+  questions, recorded in `docs/DECISIONS.md`.
+- Two pre-existing stale e2e assertions were corrected in passing (450m
+  altitude ceiling → 2000m; Winch mode is no longer empty now that Klamby
+  has a verified coordinate), and one real regression the existing
+  overflow test caught was fixed (the upper-right column overflowed a
+  390px viewport by 2px).
+- Editor reliability items are explicitly still open and now listed in
+  `BACKLOG.md` — this redesign did not touch them.
+- Files: `src/app/App.css`, `src/app/useIsCompact.ts` (new),
+  `src/components/AppHeader/` (new), `src/components/MapLayersPanel/`
+  (new), `src/components/BottomBar/` (new),
+  `src/components/AltitudeControl/` (new),
+  `src/components/Map/SiteMap.tsx`, `src/components/PressToggle/`,
+  `src/components/{Airspace,Roads}Toggle/`, `src/components/RaspControl/`,
+  `src/components/StartButton/`, `tests/e2e/{altitude-slider,site-map,
+  wind-particles}.spec.ts`, `docs/design/` (reference image + chunk 1
+  screenshots), `MASTER_SPEC.md`, `BLOCKS.md`, `docs/DECISIONS.md`,
+  `BACKLOG.md`.
+- Deferred / unresolved: AMSL vs AGL; the Wind switch; whether the RASP
+  update time should show while the overlay is off; the header's exact
+  wording; the timeline chip following the thumb (chunk 3).
+- Next: chunk 2 — controls, interactions and truthful data-status display.
+

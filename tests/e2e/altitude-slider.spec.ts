@@ -1,6 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("HEIGHT control + START (§ FlyWeather GUI Reorganization + Coherent Height Wind)", () => {
+/**
+ * Desktop (the default Playwright viewport) now shows the altitude slider
+ * permanently in the bottom bar (§ Startvind UX Direction); the collapsible
+ * HEIGHT button is the phone arrangement, covered at a phone viewport
+ * below. The behaviour being tested - altitude drives the roses, moving it
+ * leaves live mode, START brings it back - is unchanged.
+ */
+test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
   test("moving HEIGHT above Surface exits live mode and updates the sheet without a map jump; START returns to Surface", async ({
     page,
   }) => {
@@ -17,35 +24,26 @@ test.describe("HEIGHT control + START (§ FlyWeather GUI Reorganization + Cohere
     });
 
     const startButton = page.getByTestId("start-button");
-    const heightButton = page.getByTestId("height-control-button");
+    const altitudeLabel = page.getByTestId("altitude-slider-label");
     // Never disabled (§ FlyWeather Mobile UI Correction) - START stays
     // clickable at all times; aria-pressed conveys "you are here now".
     await expect(startButton).toBeEnabled();
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
-    await expect(heightButton).toContainText("HEIGHT");
-    await expect(heightButton).not.toContainText(/[0-9]/);
+    await expect(altitudeLabel).toHaveText("Surface");
     await expect(page.getByTestId("source-status-sites")).toContainText("MEASURED");
     await expect(page.getByTestId("source-status-wind")).toContainText("FORECAST");
 
     await markers.first().click({ force: true });
     const heightFact = page.getByTestId("site-sheet-height");
     await expect(heightFact).toContainText("10 m AGL");
-    // The site-sheet is a modal-like drawer (role="dialog") that sits above
-    // the top-left tool stack while open (z-index) - close it before
-    // reaching for HEIGHT, the same as a real user would have to.
+    // The site sheet is a card in the left column on desktop and sits above
+    // the map - close it before reaching for the bottom bar, the same as a
+    // real user would.
     await page.getByRole("button", { name: "Close" }).click();
-
-    // HEIGHT is collapsible - the slider only exists once opened, and
-    // collapsing it again must never reset the selected altitude.
-    await expect(page.getByTestId("height-control-slider")).toHaveCount(0);
-    await heightButton.click();
-    const altitudeLabel = page.getByTestId("altitude-slider-label");
-    await expect(altitudeLabel).toHaveText("Surface");
 
     // f=0.25 -> 75m (§ Simplify DMI Wind v1: 0..0.5 spans 0..150m).
     await page.getByTestId("altitude-slider-range").fill("0.25");
     await expect(altitudeLabel).toHaveText("75 m AGL");
-    await expect(heightButton).toContainText("HEIGHT 75m");
     await expect(page.getByTestId("source-status-sites")).toContainText("FORECAST");
     await expect(startButton).toHaveAttribute("aria-pressed", "false");
 
@@ -61,27 +59,31 @@ test.describe("HEIGHT control + START (§ FlyWeather GUI Reorganization + Cohere
 
     // START is the only way back - it must restore Surface + live wind together.
     await startButton.click();
-    await expect(heightButton).toContainText("HEIGHT");
-    await expect(heightButton).not.toContainText(/[0-9]/);
+    await expect(altitudeLabel).toHaveText("Surface");
     await expect(heightFact).toContainText("10 m AGL");
     await expect(page.getByTestId("source-status-sites")).toContainText("MEASURED");
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("HEIGHT never offers a value above the real 450m data ceiling (§ Simplify DMI Wind v1)", async ({ page }) => {
+  test("altitude never offers a value above the real data ceiling (§ UPPVIND recovery milestone)", async ({
+    page,
+  }) => {
     await page.goto("/");
     const markers = page.locator(".rose-marker-icon");
     await markers.first().waitFor();
     await page.waitForTimeout(1500);
 
-    await page.getByTestId("height-control-button").click();
     const range = page.getByTestId("altitude-slider-range");
     await expect(range).toHaveAttribute("max", "1");
     await range.fill("1"); // the slider's own max
-    await expect(page.getByTestId("altitude-slider-label")).toHaveText("450 m AGL");
+    await expect(page.getByTestId("altitude-slider-label")).toHaveText("2000 m AGL");
   });
 
-  test("collapsing HEIGHT does not reset the selected altitude", async ({ page }) => {
+  test("phone: the collapsible HEIGHT control keeps its altitude while collapsed", async ({ page }) => {
+    // The phone arrangement, not the desktop one scaled down - the bottom
+    // bar has no room for a permanent slider at this width, so HEIGHT is a
+    // disclosure button there (§ Startvind UX Direction).
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await page.locator(".rose-marker-icon").first().waitFor();
     await page.waitForTimeout(1500);
@@ -127,9 +129,8 @@ test.describe("HEIGHT control + START (§ FlyWeather GUI Reorganization + Cohere
 
     // Set up: tomorrow, 350m, RASP on, Roads on, Airspace on.
     await page.getByTestId("time-slider-range").fill("24");
-    await page.getByTestId("height-control-button").click();
-    await page.getByTestId("altitude-slider-range").fill("0.8"); // 350m segment boundary (tests/unit/altitudeAxis.test.ts)
-    await expect(page.getByTestId("altitude-slider-label")).toHaveText("350 m AGL");
+    await page.getByTestId("altitude-slider-range").fill("0.75"); // 450m segment boundary (tests/unit/altitudeAxis.test.ts)
+    await expect(page.getByTestId("altitude-slider-label")).toHaveText("450 m AGL");
     await page.getByTestId("rasp-toggle").click();
     await page.getByTestId("roads-toggle").click();
     await page.getByTestId("airspace-toggle").click();

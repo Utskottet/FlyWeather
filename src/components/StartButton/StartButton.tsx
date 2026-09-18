@@ -15,6 +15,10 @@ export interface StartButtonProps {
  * is where you are". It now stays clickable at all times and shows an
  * active/pressed state instead; pressing it while already at START is a
  * harmless no-op (handleStart just re-applies the same values).
+ *
+ * Labelled "Current Wind" (§ Startvind UX Direction) rather than the
+ * earlier "LIVE SITE" - same control, same semantics, the reference
+ * image's wording.
  */
 export function StartButton({ isLiveMode, onStart }: StartButtonProps) {
   return (
@@ -25,7 +29,7 @@ export function StartButton({ isLiveMode, onStart }: StartButtonProps) {
       aria-pressed={isLiveMode}
       data-testid="start-button"
     >
-      LIVE SITE
+      Current Wind
     </button>
   );
 }
