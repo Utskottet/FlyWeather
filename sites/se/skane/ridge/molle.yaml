@@ -8,13 +8,17 @@ coordinates:
   verified: false
   source: OSM Nominatim place-name lookup ("Mölle" village, Höganäs kommun) - village-level approximation, not the exact launch point on Kullaberg
 sector:
-  from_deg: 185
-  to_deg: 255
+  ranges:
+    - from_deg: 185
+      to_deg: 255
+      margin_under_deg: 11.25
+      margin_over_deg: 11.25
   verified: false
 wind:
   verified: true
   min_ms: 4
   max_ms: 7
+  margin_over_ms: 2
 station:
   provider: holfuy
   station_id: "597"

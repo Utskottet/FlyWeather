@@ -2,7 +2,7 @@
 
 Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a generated view for humans, not authoritative - edit the YAML files under `sites/`, then re-run `npm run sites:index`.
 
-30 sites total, 11 active.
+31 sites total, 12 active.
 
 | Active | Country | Region | Group | Short name | Full name | Sector (deg) | Station | Pilot level | Coords verified | Sector verified |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -14,9 +14,10 @@ Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a
 | yes | se | skane | ridge | Barsebäck | Barsebäck camping | 292.5–337.5 | viva #25 |  | no | no |
 | yes | se | skane | ridge | Hammar | Hammars backar | 190–255 | holfuy #214 |  | yes | no |
 | yes | se | skane | ridge | Höganäs | Höganäs Strandbaden | 275.25–315 | holfuy #128 |  | no | yes |
-| yes | se | skane | ridge | Hovet NV | Hovs Hallar NV | 290–350 | holfuy #127 |  | no | yes |
+| yes | se | skane | ridge | Hovet NV | Hovs Hallar NV | 285–350 | holfuy #127 |  | no | yes |
 | yes | se | skane | ridge | Kåseberga | Kåseberga Sydhanget | 115–202 | holfuy #155 |  | no | no |
 | yes | se | skane | ridge | Mölle | Kullaberg / Mölle | 185–255 | holfuy #597 |  | no | no |
+| yes | se | skane | ridge | Lenacken | Lenacken | 177–228 | holfuy #589 | medium | yes | no |
 | yes | se | skane | ridge | Ravlunda | Ravlunda / Haväng | 60–120 | holfuy #126 |  | yes | yes |
 | yes | se | skane | winch | Klamby | Klamby | 45–145, 225–315 | sjoboflyg #esmi |  | yes | yes |
 | no | se | skane |  | Stenarna | Ales stenar / Stenarna | 213.75–236.25 | holfuy #214 |  | no | no |
