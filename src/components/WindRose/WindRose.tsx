@@ -1,4 +1,5 @@
 import { describeSector, polarToCartesian, sectorMidpointDeg } from "../../domain/direction.ts";
+import { dimForDaylight } from "../../domain/skyBand.ts";
 import { WeatherGlyph } from "../WeatherGlyph/WeatherGlyph.tsx";
 import type { WeatherKind } from "../../domain/weather.ts";
 
@@ -37,6 +38,17 @@ export interface WindRoseProps {
   weatherKind?: WeatherKind;
   /** Swaps the rose's Sun for a crescent Moon when the selected instant is after dark at this site - see domain/skyBand.ts's isNightAt. */
   isNight?: boolean;
+  /**
+   * How lit this site is at the shown instant: 1 in daylight, 0 once it is
+   * fully dark, fading between (domain/skyBand.ts's daylightFactor).
+   *
+   * Dims the wedge toward black rather than replacing its colour, so the
+   * wind verdict stays readable while it darkens - "this would have
+   * worked, but the day is gone" is more useful than a flat black disc
+   * that says nothing about the wind. Defaults to 1, so anything that does
+   * not care about the time of day is unaffected.
+   */
+  daylight?: number;
   historyPoints?: HistoryPoint[];
   siteName?: string;
 }
@@ -166,6 +178,7 @@ export function WindRose({
   windSpeedMs,
   weatherKind,
   isNight = false,
+  daylight = 1,
   historyPoints = [],
   siteName,
 }: WindRoseProps) {
@@ -196,7 +209,7 @@ export function WindRose({
           <path
             key={`sector-${i}`}
             d={describeSector(CENTER, CENTER, OUTER_R, range.fromDeg, range.toDeg)}
-            fill={STATE_SECTOR_COLOR[state]}
+            fill={dimForDaylight(STATE_SECTOR_COLOR[state], daylight)}
             opacity={SECTOR_OPACITY}
             data-testid="sector"
           />

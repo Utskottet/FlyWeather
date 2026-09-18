@@ -75,6 +75,77 @@ export function isNightAt(instantIso: string | null, location: GeoCoordinate): b
   return classifySkyBand(instant, location) === "night";
 }
 
+/**
+ * How long the rose takes to fade to black after sunset, and to come back
+ * before sunrise.
+ *
+ * Deliberately NOT the same constant as SKY_BAND_TRANSITION_MINUTES above.
+ * That one is a visual cue on the time slider - "roughly twilight",
+ * narrowed to read as a crisp band. This one stands for how long a site
+ * stays usable after the sun goes down, which is a flying judgement rather
+ * than a drawing choice. They are 30 and 40 today and either can move
+ * without dragging the other with it.
+ */
+export const DAYLIGHT_FADE_MINUTES = 40;
+
+function clamp01(value: number): number {
+  return value < 0 ? 0 : value > 1 ? 1 : value;
+}
+
+/**
+ * How lit a site is at an instant: 1 in full daylight, 0 in full darkness,
+ * and a linear ramp across DAYLIGHT_FADE_MINUTES either side of night.
+ *
+ * Daylight is exactly "between this location's sunrise and sunset" - the
+ * fade starts AT sunset, not before it, so nothing whatsoever changes
+ * while the sun is up. Symmetrically, the rose is fully lit again by
+ * sunrise, having started to recover DAYLIGHT_FADE_MINUTES earlier.
+ *
+ * The two ramps are combined with max() rather than handled as separate
+ * cases, which is what keeps a short summer night honest: when sunset+40
+ * would fall after sunrise-40, the windows overlap and the site simply
+ * never reaches full black, exactly as it never really gets dark.
+ */
+export function daylightFactor(
+  instant: Date,
+  location: GeoCoordinate,
+  fadeMinutes: number = DAYLIGHT_FADE_MINUTES,
+): number {
+  const t = instant.getTime();
+  const oneDayMs = 24 * 60 * 60_000;
+
+  // Yesterday, today and tomorrow, because the instant may sit either side
+  // of UTC midnight relative to the events that bracket it.
+  const days = [-1, 0, 1].map((offset) => sunriseSunsetForDay(new Date(t + offset * oneDayMs), location));
+
+  if (days.some((d) => t >= d.sunrise && t < d.sunset)) return 1;
+
+  const fadeMs = Math.max(1, fadeMinutes * 60_000);
+  const sunsetsBefore = days.map((d) => d.sunset).filter((ms) => ms <= t);
+  const sunrisesAfter = days.map((d) => d.sunrise).filter((ms) => ms >= t);
+
+  const sinceSunset = sunsetsBefore.length > 0 ? t - Math.max(...sunsetsBefore) : Infinity;
+  const untilSunrise = sunrisesAfter.length > 0 ? Math.min(...sunrisesAfter) - t : Infinity;
+
+  return Math.max(clamp01(1 - sinceSunset / fadeMs), clamp01(1 - untilSunrise / fadeMs));
+}
+
+/**
+ * The same colour, dimmed toward black by a daylight factor. Multiplying
+ * each channel keeps the hue and just drains the light out of it, so a
+ * half-dark green still reads as green rather than as some other colour -
+ * the wind verdict stays legible right up until it is genuinely too dark
+ * to fly.
+ */
+export function dimForDaylight(hexColor: string, factor: number): string {
+  const f = clamp01(factor);
+  if (f === 1) return hexColor;
+  const hex = hexColor.replace("#", "");
+  const full = hex.length === 3 ? hex.split("").map((c) => c + c).join("") : hex;
+  const channels = [0, 2, 4].map((i) => Math.round(parseInt(full.slice(i, i + 2), 16) * f));
+  return `#${channels.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+}
+
 export interface SkyBandBlock {
   phase: SkyBandPhase;
   startPercent: number; // 0..100, position along `hours`

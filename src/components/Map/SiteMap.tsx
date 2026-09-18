@@ -6,7 +6,7 @@ import type { SiteForecast, WindSample } from "../../domain/types.ts";
 import { MODEL_HEIGHTS_M } from "../../domain/types.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { classifyFreshness, formatDownloadTime } from "../../domain/freshness.ts";
-import { isNightAt } from "../../domain/skyBand.ts";
+import { daylightFactor, isNightAt } from "../../domain/skyBand.ts";
 import { selectEffectiveSample, type EffectiveSample } from "../../domain/effectiveSample.ts";
 import { interpolateWindAtHeight } from "../../domain/heightInterpolation.ts";
 import { WindRose } from "../WindRose/index.ts";
@@ -148,6 +148,7 @@ function buildRoseHtml(
   sample: EffectiveSample,
   weatherKind: SiteForecast["weatherKind"][number],
   isNight: boolean,
+  daylight: number,
 ): { html: string; size: number } {
   const size = selected ? SELECTED_MARKER_SIZE : MARKER_SIZE;
   const sector = site.sector ? site.sector.ranges.map((r) => ({ fromDeg: r.from_deg, toDeg: r.to_deg })) : null;
@@ -168,6 +169,7 @@ function buildRoseHtml(
       windSpeedMs={sample.windSpeedMs}
       weatherKind={weatherKind}
       isNight={isNight}
+      daylight={daylight}
     />,
   );
   return { html, size };
@@ -473,7 +475,14 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
               const { sample, weatherKind } = effectiveSampleFor(site);
               const selected = site.id === selectedId;
               const isNight = isNightAt(selectedHourIso, site.coordinates);
-              const { html } = buildRoseHtml(site, selected, sample, weatherKind, isNight);
+              // Each site's own sunset, not a shared one: Dokkedal is far
+              // enough north-west of Skane for the difference to be visible
+              // on the same map at the same hour.
+              const daylight = daylightFactor(
+                selectedHourIso ? new Date(selectedHourIso) : new Date(),
+                site.coordinates,
+              );
+              const { html } = buildRoseHtml(site, selected, sample, weatherKind, isNight, daylight);
               return (
                 <MapMarker
                   key={site.id}
@@ -500,6 +509,10 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
           heightSupported={selectedResult.heightSupported}
           selectedTimestamp={hours[sliderIndex] ?? null}
           isNight={isNightAt(selectedHourIso, selectedSite.coordinates)}
+          daylight={daylightFactor(
+            selectedHourIso ? new Date(selectedHourIso) : new Date(),
+            selectedSite.coordinates,
+          )}
           onClose={() => setSelectedId(null)}
           onEdit={ADMIN_MODE ? () => openEditEditor(selectedSite) : undefined}
         />

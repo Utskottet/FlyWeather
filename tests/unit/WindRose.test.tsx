@@ -352,3 +352,42 @@ describe("WindRose - adaptive weather placement (§ FlyWeather Mobile UI Correct
     expect(speedY).toBeGreaterThan(CENTER); // speed below center
   });
 });
+
+describe("daylight fade", () => {
+  function fillAt(daylight: number | undefined, state: RoseState = "green"): string | null {
+    const { container } = render(
+      <WindRose sector={SW_SECTOR} state={state} windDirectionDeg={225} windSpeedMs={6} daylight={daylight} />,
+    );
+    return container.querySelector('[data-testid="sector"]')?.getAttribute("fill") ?? null;
+  }
+
+  it("is unchanged in daylight, and unchanged when nothing is passed at all", () => {
+    expect(fillAt(1)).toBe("#27c93f");
+    expect(fillAt(undefined)).toBe("#27c93f");
+  });
+
+  it("goes fully black once the site is dark, whatever the wind verdict was", () => {
+    expect(fillAt(0, "green")).toBe("#000000");
+    expect(fillAt(0, "orange")).toBe("#000000");
+    expect(fillAt(0, "red")).toBe("#000000");
+  });
+
+  it("keeps the verdict legible while fading - a dimmed green is still green", () => {
+    const half = fillAt(0.5, "green")!;
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(half.slice(i, i + 2), 16));
+    expect(g).toBeGreaterThan(r);
+    expect(g).toBeGreaterThan(b);
+    expect(half).not.toBe("#27c93f");
+    expect(half).not.toBe("#000000");
+  });
+
+  it("darkens monotonically as the light goes", () => {
+    const brightness = [1, 0.75, 0.5, 0.25, 0].map((d) => {
+      const hex = fillAt(d, "red")!;
+      return [1, 3, 5].reduce((sum, i) => sum + parseInt(hex.slice(i, i + 2), 16), 0);
+    });
+    for (let i = 1; i < brightness.length; i++) {
+      expect(brightness[i]).toBeLessThan(brightness[i - 1]);
+    }
+  });
+});

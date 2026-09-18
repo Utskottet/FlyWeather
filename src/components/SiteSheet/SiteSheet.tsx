@@ -26,6 +26,8 @@ export interface SiteSheetProps {
   selectedTimestamp: string | null;
   /** Whether the selected instant is after dark at this site - see domain/skyBand.ts's isNightAt. */
   isNight: boolean;
+  /** How lit this site is at the selected instant - see domain/skyBand.ts's daylightFactor. */
+  daylight?: number;
   onClose: () => void;
   /** Supplied only in admin mode - absent means no Edit button at all, not a disabled one. */
   onEdit?: () => void;
@@ -54,6 +56,7 @@ export function SiteSheet({
   heightSupported,
   selectedTimestamp,
   isNight,
+  daylight = 1,
   onClose,
   onEdit,
 }: SiteSheetProps) {
@@ -89,6 +92,7 @@ export function SiteSheet({
           windSpeedMs={sample.windSpeedMs}
           weatherKind={sample.weatherKind}
           isNight={isNight}
+          daylight={daylight}
         />
       </div>
       <h2>{site.name}</h2>

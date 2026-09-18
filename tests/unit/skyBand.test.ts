@@ -4,6 +4,8 @@ import {
   SOUTH_SWEDEN_REPRESENTATIVE_LOCATION,
   buildSkyBandBlocks,
   classifySkyBand,
+  daylightFactor,
+  dimForDaylight,
   isNightAt,
   skyBandCssGradient,
 } from "../../src/domain/skyBand.ts";
@@ -167,5 +169,92 @@ describe("skyBandCssGradient", () => {
     expect(gradient).toContain("linear-gradient(to right,");
     expect(gradient).toContain("20%");
     expect(gradient).toContain("25%");
+  });
+});
+
+describe("daylightFactor", () => {
+  // Hammar, mid-September: sunset ~19:20 local, sunrise ~06:50 local.
+  const site = { lat: 55.41285, lon: 13.993881 };
+  const times = getTimes(new Date("2026-09-18T12:00:00Z"), site.lat, site.lon);
+  const sunset = times.sunset!.getTime();
+  const sunrise = times.sunrise!.getTime();
+  const minutes = (n: number) => n * 60_000;
+
+  it("is fully lit through the whole day - nothing changes while the sun is up", () => {
+    expect(daylightFactor(new Date(sunrise + minutes(1)), site)).toBe(1);
+    expect(daylightFactor(new Date((sunrise + sunset) / 2), site)).toBe(1);
+    expect(daylightFactor(new Date(sunset - minutes(1)), site)).toBe(1);
+  });
+
+  it("starts fading exactly at sunset, not before", () => {
+    expect(daylightFactor(new Date(sunset - 1000), site)).toBe(1);
+    expect(daylightFactor(new Date(sunset), site)).toBeCloseTo(1, 2);
+    expect(daylightFactor(new Date(sunset + minutes(10)), site)).toBeCloseTo(0.75, 2);
+    expect(daylightFactor(new Date(sunset + minutes(20)), site)).toBeCloseTo(0.5, 2);
+    expect(daylightFactor(new Date(sunset + minutes(30)), site)).toBeCloseTo(0.25, 2);
+  });
+
+  it("is fully black 40 minutes after sunset, and stays black", () => {
+    expect(daylightFactor(new Date(sunset + minutes(40)), site)).toBe(0);
+    expect(daylightFactor(new Date(sunset + minutes(90)), site)).toBe(0);
+    expect(daylightFactor(new Date(sunset + minutes(240)), site)).toBe(0);
+  });
+
+  it("recovers over the 40 minutes before sunrise, mirroring the evening", () => {
+    expect(daylightFactor(new Date(sunrise - minutes(41)), site)).toBe(0);
+    expect(daylightFactor(new Date(sunrise - minutes(30)), site)).toBeCloseTo(0.25, 2);
+    expect(daylightFactor(new Date(sunrise - minutes(20)), site)).toBeCloseTo(0.5, 2);
+    expect(daylightFactor(new Date(sunrise - minutes(10)), site)).toBeCloseTo(0.75, 2);
+    expect(daylightFactor(new Date(sunrise), site)).toBe(1);
+  });
+
+  it("uses each site's own position, not one shared location", () => {
+    // Dokkedal is ~1.5 degrees north and ~3.7 east of Hammar, so its
+    // sunset lands at a different instant - the whole point of computing
+    // this per site rather than for "South Sweden".
+    const dokkedal = { lat: 56.903551, lon: 10.253543 };
+    const atHammarSunset = new Date(sunset + minutes(20));
+    expect(daylightFactor(atHammarSunset, site)).not.toBeCloseTo(daylightFactor(atHammarSunset, dokkedal), 2);
+  });
+
+  it("never reaches full black on a short summer night", () => {
+    // Midsummer in Skane: sunset to sunrise is short, and with the two
+    // 40-minute ramps overlapping the site should stay partly lit all
+    // night rather than snapping to black.
+    const june = new Date("2026-06-21T22:30:00Z");
+    const factor = daylightFactor(june, site, 240);
+    expect(factor).toBeGreaterThan(0);
+  });
+
+  it("honours a custom fade length", () => {
+    expect(daylightFactor(new Date(sunset + minutes(20)), site, 20)).toBe(0);
+    expect(daylightFactor(new Date(sunset + minutes(20)), site, 80)).toBeCloseTo(0.75, 2);
+  });
+});
+
+describe("dimForDaylight", () => {
+  it("returns the colour untouched in full daylight", () => {
+    expect(dimForDaylight("#27c93f", 1)).toBe("#27c93f");
+  });
+
+  it("goes to black in full darkness", () => {
+    expect(dimForDaylight("#27c93f", 0)).toBe("#000000");
+    expect(dimForDaylight("#f23535", 0)).toBe("#000000");
+  });
+
+  it("keeps the hue while draining the light, so green still reads as green", () => {
+    const half = dimForDaylight("#27c93f", 0.5);
+    expect(half).toBe("#146520"); // each channel halved: 0x27->0x14, 0xc9->0x65, 0x3f->0x20
+    // green still dominates red and blue, exactly as in the full colour
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(half.slice(i, i + 2), 16));
+    expect(g).toBeGreaterThan(r);
+    expect(g).toBeGreaterThan(b);
+  });
+
+  it("accepts shorthand hex and clamps an out-of-range factor", () => {
+    expect(dimForDaylight("#fff", 1)).toBe("#fff");
+    expect(dimForDaylight("#fff", 0)).toBe("#000000");
+    expect(dimForDaylight("#27c93f", 5)).toBe("#27c93f");
+    expect(dimForDaylight("#27c93f", -2)).toBe("#000000");
   });
 });
