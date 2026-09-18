@@ -3,8 +3,18 @@
 What it takes to put an **Edit site** button on every site and an **Add
 site** button on the main map, with the editor running *inside* the app.
 
+> **SUPERSEDED — this was the plan, and it has been carried out.**
+> The editor now lives in `src/components/SiteEditor/`, publishes from the
+> public website through `editor-worker/`, and `admin-experiment/` is
+> obsolete. **For how any of it works today, read `docs/PUBLISHING.md`.**
+>
+> Kept because the reasoning is still worth having: the keep/discard call
+> on the prototype, the eleven schema divergences and how each was
+> resolved, and the three decisions that gated the work. What follows
+> describes the state on 2026-09-18 *before* implementation - treat every
+> "would need to" below as "was done".
+
 Written 2026-09-18 against `admin-experiment/` as built on 2026-08-25.
-Nothing here is implemented yet.
 
 ## What `admin-experiment/` actually is
 

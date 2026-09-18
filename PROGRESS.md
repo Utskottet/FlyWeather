@@ -1479,4 +1479,82 @@ are genuine credential-gate/architecture decisions per `AGENTS.md`:
 - Removed duplicate GitHub Actions Worker deployment; Cloudflare Builds is the deployment owner.
 - Updated publishing instructions to the existing Startvind account integration and dashboard secrets.
 - User supplied active version 3d5c9d86 linked to ea59f11 on main, confirming the password fix reached Cloudflare.
-- Validation: documentation/workflow diff check; no application code changed. Live successful sign-in and publishing remain unverified.
+- Validation: documentation/workflow diff check; no application code changed.
+- **Since resolved:** live sign-in and publishing are verified - see the entry below.
+
+## 2026-09-18 — margins, in-app editor, publishing from the web, sunset fade
+
+One long session. Everything below is on `main` and live unless stated.
+
+### Per-side wind margins (commit 4ee7cf2)
+- Direction margins were one hard-coded constant for every site
+  (`MARGINAL_SECTOR_PADDING_DEG`, 11.25deg); the speed axis had no marginal
+  tier at all. Both are now authored per site, per side.
+- All 30 existing sites migrated with the constant written out explicitly,
+  so the map renders identically. `tests/unit/flyabilityMigration.test.ts`
+  proves it by sweeping 360deg x 41 speeds per site against a frozen copy
+  of the old implementation, and keeps proving it for any site that has
+  not deliberately opted out (derived from the data, not a hard-coded
+  exception list).
+- Klamby's real 5-6 m/s orange, which its own description had carried as
+  prose for want of anywhere to put it, is now expressible.
+- `schema_version` deliberately stays 2: the change is purely additive.
+
+### In-app site editor + publishing Worker (commits d59e77f, 829bf99)
+- Add/Edit on the public website, publishing to this repository from a
+  phone with no localhost, no file copying and no manual push.
+- `editor-worker/` (Cloudflare) holds the GitHub credential; the browser
+  only ever holds a short-lived signed session. Bearer token, not a
+  cookie - the site and Worker are cross-origin, and Safari blocks
+  third-party cookies.
+- Deployed by **Cloudflare Builds**, not GitHub Actions (see the entry
+  above). `VITE_EDITOR_API_URL` is a repository *variable*, read by BOTH
+  `pages.yml` and `weather-refresh.yml` - the latter redeploys the whole
+  site every 5 minutes, so a build-time setting in only one is switched
+  back off within minutes.
+- **Verified live**: commit 221786b "Add Kevik via the site editor" was
+  published from the deployed website and confirmed from a clean browser.
+  Unauthorised writes rejected (no token / forged / wrong-secret / wrong
+  password all 401; CORS refuses unlisted origins).
+- Setup and the full safety-property table: `docs/PUBLISHING.md`.
+
+### The move bug (commit e3767dc)
+- Moving a site between folders destroyed every field the editor does not
+  model - it merged against the DESTINATION path, which on a move does not
+  exist, so the merge had no prior document. Reproduced (moving Hammar lost
+  `source: CPS`), fixed, re-verified.
+- Two further defects found while fixing it: rollback restored the wrong
+  content on a failed move (would have duplicated the site), and `wind` was
+  replaced wholesale so `wind.notes` survived only while the client echoed
+  it back.
+- **Still unverified**: a move through the Worker against the real repo.
+  Proven by unit test and through the dev server only.
+
+### Sunset fade (commit 72252ca)
+- A site's rose fades to black over 40 minutes from its own sunset, and
+  recovers over the 40 before sunrise. Per site, from its own coordinates.
+- Dims the colour rather than replacing it, so the wind verdict stays
+  readable. Costs nothing: suncalc was already being run per site for the
+  moon icon (0.05 ms per map render).
+- `DAYLIGHT_FADE_MINUTES` is deliberately separate from
+  `SKY_BAND_TRANSITION_MINUTES` (30): one is a flying judgement, the other
+  a drawing choice for the slider's twilight band.
+
+### Rebrand, analytics, visual tweaks (commits c76873d, a67c42b, 265af96, 2bfccf1, 4efa644)
+- Renamed to Startvind, new logo (top-right, dark-outlined so it reads over
+  any basemap tone).
+- Optional cookieless visitor counting, shipping inert until two repository
+  variables are set. Never enabled.
+- Map land base -> `#c1d3da` with hillshade shadow/accent DERIVED from it
+  rather than picked separately; the previous browns were what made the
+  land read as yellow. Weather glyph 36 -> 52 with protrusion 12% -> 15%.
+
+### Open items
+- A move through the Worker, live (above).
+- Orange now means three things (borderline direction, borderline speed,
+  unverified speed) - `BACKLOG.md` has the detail; `FlyabilityResult`
+  already carries the distinction, only the rendering is missing.
+- 19 of 32 sites are unreachable from the map (archived or unlocated), so
+  the editor cannot open them; a list view is still missing.
+- `admin-experiment/` is superseded by `src/components/SiteEditor/` and can
+  be deleted whenever.

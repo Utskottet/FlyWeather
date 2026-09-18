@@ -352,16 +352,30 @@ Boundary behavior must be deterministic and unit tested.
 Each site may define:
 
 ```yaml
-wind_speed:
+wind:
   verified: true
-  good_min_ms: 4.0
-  good_max_ms: 7.0
-  maybe_min_ms: 3.0
-  maybe_max_ms: 8.0
-  hard_max_gust_ms: 10.0
+  min_ms: 4.0            # green core
+  max_ms: 8.0
+  margin_under_ms: 0     # optional; orange below min_ms
+  margin_over_ms: 2      # optional; orange above max_ms
+  hard_max_gust_ms: 10.0 # optional; a gust past this is red regardless
 ```
 
 **These numbers are only an example schema, not default flying values.**
+
+> Updated 2026-09-18. The four-number `good_*`/`maybe_*` shape above was
+> replaced during the Site Catalogue Migration by a single green core,
+> and then given back its marginal tier as *authored per-side margins*
+> rather than a second pair of bounds. An absent margin means 0, which is
+> exactly the two-tier behaviour that preceded it - so a file authoring
+> none behaves as it always did.
+>
+> Direction works the same way: each range in `sector.ranges` may carry
+> `margin_under_deg`/`margin_over_deg`, and an absent one falls back to
+> `MARGINAL_SECTOR_PADDING_DEG` (11.25°), the constant that used to apply
+> to every site unconditionally. See `src/domain/flyability.ts` and
+> `tests/unit/flyabilityMigration.test.ts`, which proves that every site
+> authoring no margins still renders exactly as it did before.
 
 If `verified: false`, do not silently substitute generic numbers and call the site green.
 
