@@ -54,7 +54,17 @@ contourDemSource.setupMaplibre({ addProtocol });
  * hole in the background behind the glyph, so if it is lighter than the
  * land it stops reading as a hole and starts reading as a glow.
  */
-const LAND_COLOR = "#d3d3d0";
+const LAND_COLOR = "#c1d3da";
+
+/**
+ * Hillshade tones, derived from LAND_COLOR by scaling it rather than
+ * picked separately - each is the same hue at 25% and 48% lightness. That
+ * is what keeps the relief reading as shadow ON this land instead of as a
+ * second colour laid over it, and it is why the previous palette looked
+ * yellow: its browns had no relationship to the base at all.
+ */
+const LAND_SHADOW_COLOR = "#303536";
+const LAND_ACCENT_COLOR = "#5d6569";
 
 const CONTOUR_SOURCE_ID = "contour-source";
 const CONTOUR_LAYER = "contours";
@@ -99,15 +109,16 @@ export function buildReliefStyle(): StyleSpecification {
         paint: {
           "hillshade-exaggeration": 1,
           "hillshade-illumination-direction": 315,
-          // Neutral greys, not the browns these were (#39352c / #6b6250).
-          // The warm cast people read as "yellow land" came mostly from
-          // here rather than from the base colour: the hillshade covers
-          // every slope, so a brown shadow tints the whole landmass. The
-          // highlight stays pure white, so darkening the base costs no
-          // topographic contrast.
-          "hillshade-shadow-color": "#3a3b3d",
+          // Derived from LAND_COLOR, not chosen independently - see there.
+          // The hillshade covers every slope, so its shadow tone tints the
+          // whole landmass; a shadow unrelated to the base is exactly what
+          // made the old palette read as yellow.
+          "hillshade-shadow-color": LAND_SHADOW_COLOR,
+          // Still pure white rather than a tinted highlight: it is the far
+          // end of the contrast range, and the brief has been consistent
+          // that the topography has to keep reading.
           "hillshade-highlight-color": "#ffffff",
-          "hillshade-accent-color": "#6a6b6e",
+          "hillshade-accent-color": LAND_ACCENT_COLOR,
         },
       },
     ],
@@ -162,7 +173,7 @@ export function buildTopoStyle(): StyleSpecification {
         source: CONTOUR_SOURCE_ID,
         "source-layer": CONTOUR_LAYER,
         filter: ["==", ["get", "level"], 0],
-        paint: { "line-color": "#8a7f66", "line-width": 0.5, "line-opacity": 0.6 },
+        paint: { "line-color": "#7e878b", "line-width": 0.5, "line-opacity": 0.6 },
       },
       {
         id: "contours-major",
@@ -170,7 +181,7 @@ export function buildTopoStyle(): StyleSpecification {
         source: CONTOUR_SOURCE_ID,
         "source-layer": CONTOUR_LAYER,
         filter: ["==", ["get", "level"], 1],
-        paint: { "line-color": "#6b5f45", "line-width": 1, "line-opacity": 0.8 },
+        paint: { "line-color": LAND_ACCENT_COLOR, "line-width": 1, "line-opacity": 0.8 },
       },
       {
         id: "contour-labels",
@@ -184,7 +195,7 @@ export function buildTopoStyle(): StyleSpecification {
           "text-size": 10,
           "text-font": ["Noto Sans Regular"],
         },
-        paint: { "text-color": "#6b5f45", "text-halo-color": LAND_COLOR, "text-halo-width": 1 },
+        paint: { "text-color": LAND_ACCENT_COLOR, "text-halo-color": LAND_COLOR, "text-halo-width": 1 },
       },
       {
         id: "roads-major",
@@ -205,7 +216,7 @@ export function buildTopoStyle(): StyleSpecification {
           "text-font": ["Noto Sans Regular"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 8, 10, 14, 14],
         },
-        paint: { "text-color": "#3b352a", "text-halo-color": LAND_COLOR, "text-halo-width": 1.2 },
+        paint: { "text-color": "#2e3336", "text-halo-color": LAND_COLOR, "text-halo-width": 1.2 },
       },
     ],
   };

@@ -317,12 +317,14 @@ describe("WindRose - adaptive weather placement (§ FlyWeather Mobile UI Correct
     // drawing guideline. Raised to 55% after repeated feedback that the
     // glyph was unreadable at marker size on a phone - legibility beat the
     // guideline. The test is kept rather than deleted because the guard
-    // that still matters is the upper one: past roughly half the ring the
-    // glyph starts hiding the wedge and the speed it sits next to.
+    // that still matters is the upper one, and it is now the only thing
+    // standing between the glyph and the whole rose. Raising it further
+    // should mean pushing the icon further out too (ICON_PROTRUSION_
+    // FRACTION), not just growing it over the wedge.
     const { container } = render(<WindRose {...baseProps()} weatherKind="rain" />);
     const iconSize = Number(container.querySelector('[data-testid="rose-weather-icon"] svg')?.getAttribute("width"));
     expect(iconSize).toBeGreaterThanOrEqual(0.35 * (2 * OUTER_R));
-    expect(iconSize).toBeLessThanOrEqual(0.55 * (2 * OUTER_R));
+    expect(iconSize).toBeLessThanOrEqual(0.60 * (2 * OUTER_R));
   });
 
   it("keeps speed horizontal (a single text baseline, never rotated) regardless of sector", () => {

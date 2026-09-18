@@ -118,9 +118,9 @@ const DEFAULT_WEATHER_ANGLE = 0;
 // full 360deg ring does not.
 const WEATHER_ANGLE_PRESETS = [45, 135, 225, 315];
 
-// Half the ring's own diameter (2*OUTER_R), raised in two steps from the
-// original 36 on repeated feedback that the weather graphic was too small
-// to read at marker size - +28% across and +64% in area since.
+// ~57% of the ring's own diameter (2*OUTER_R), raised in three steps from
+// the original 36 on repeated feedback that the weather graphic was too
+// small to read at marker size - +44% across and +109% in area since.
 //
 // This is past the 35-45% band the original task specified, which is a
 // deliberate override rather than drift: the band was a drawing guideline,
@@ -130,13 +130,17 @@ const WEATHER_ANGLE_PRESETS = [45, 135, 225, 315];
 //
 // ICON_PLACEMENT_R below is derived from this, so the icon's outer edge
 // protrudes exactly as far as before however this number moves.
-const ICON_SIZE = 46;
+const ICON_SIZE = 52;
 
-// The graphic is allowed to protrude past the ring - within the task's
-// documented 10-15% range. ICON_PLACEMENT_R is the radius at which the
-// icon's CENTER sits, chosen so its outer edge lands exactly at
-// OUTER_R * (1 + ICON_PROTRUSION_FRACTION).
-const ICON_PROTRUSION_FRACTION = 0.12;
+// The graphic is allowed to protrude past the ring - now at the top of the
+// task's documented 10-15% range (was 12%), raised alongside ICON_SIZE
+// because pushing the icon further OUT is what stops a bigger glyph
+// covering the wedge and the speed it sits beside. Growing the size alone
+// would have bought legibility at the cost of the thing being read.
+//
+// ICON_PLACEMENT_R is the radius at which the icon's CENTER sits, chosen
+// so its outer edge lands exactly at OUTER_R * (1 + ICON_PROTRUSION_FRACTION).
+const ICON_PROTRUSION_FRACTION = 0.15;
 const ICON_PLACEMENT_R = OUTER_R * (1 + ICON_PROTRUSION_FRACTION) - ICON_SIZE / 2;
 
 // Speed keeps the reference's original below-center offset magnitude
