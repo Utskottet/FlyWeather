@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SiteForm } from "./SiteForm.tsx";
+import { SignInForm } from "./SignInForm.tsx";
+import { PublishProgress } from "./PublishProgress.tsx";
 import {
   draftToSiteFields,
   sitePathFor,
@@ -10,6 +12,14 @@ import {
 } from "../../domain/siteEditor.ts";
 import { hasOverlappingBands } from "../../domain/bandOverlap.ts";
 import { readRememberedEditor, rememberEditor } from "../../app/editorIdentity.ts";
+import {
+  PUBLISH_TARGET,
+  currentSession,
+  deploymentStatus,
+  publish,
+  readSessionToken,
+  type DeploymentState,
+} from "../../app/editorApi.ts";
 
 export interface SiteEditorPanelProps {
   initialDraft: SiteDraft;
@@ -17,22 +27,34 @@ export interface SiteEditorPanelProps {
   mode: "create" | "edit";
   /** Every id in the catalogue - the duplicate check must include archived sites, as the build's does. */
   allIds: string[];
-  /** Where the file currently lives, so a rename can delete the old one. Undefined when creating. */
+  /** Where the file currently lives, so a move can delete the old one in the same commit. */
   previousPath?: string;
   onClose: () => void;
   onSaved: (savedPath: string) => void;
 }
 
-type SaveState = { status: "idle" | "saving" } | { status: "error"; message: string };
+type Phase =
+  | { kind: "editing" }
+  | { kind: "publishing" }
+  | { kind: "committed"; commitSha: string; state: DeploymentState; detail: string; url?: string }
+  | { kind: "failed"; message: string; recoverable: boolean };
+
+const DRAFT_KEY = "startvind-editor-draft";
+const DEPLOY_POLL_MS = 6000;
+const DEPLOY_POLL_LIMIT = 50; // ~5 minutes, then stop nagging GitHub
 
 /**
  * The site editor as a panel over the map.
  *
- * Saving posts to /api/site, which only exists while running locally (see
- * scripts/siteWriterPlugin.ts) - it writes the YAML file into sites/ and
- * rebuilds the catalogue. That is a change to the working tree, exactly as
- * hand-editing the file would be; committing and pushing is still what
- * puts it on the live site.
+ * On the public website a save goes to the publishing Worker, which
+ * commits to the GitHub repository; the deploy that follows is reported
+ * step by step rather than left to guesswork. Under `npm run dev` with no
+ * Worker configured it writes straight into the working tree instead.
+ *
+ * A failed publish never costs work: the draft stays on screen AND is
+ * mirrored into sessionStorage, so even a reload or a closed tab mid-save
+ * can be resumed. It is cleared only once a publish has actually
+ * succeeded.
  */
 export function SiteEditorPanel({
   initialDraft,
@@ -42,63 +64,137 @@ export function SiteEditorPanel({
   onClose,
   onSaved,
 }: SiteEditorPanelProps) {
-  // Prefilled from this browser, not from the file - see SiteDraft's
-  // lastEditedBy for why the previous editor's name is never carried over.
-  const [draft, setDraft] = useState<SiteDraft>(() => ({
-    ...initialDraft,
-    lastEditedBy: initialDraft.lastEditedBy || readRememberedEditor(),
-  }));
-  const [save, setSave] = useState<SaveState>({ status: "idle" });
+  const isWorker = PUBLISH_TARGET?.kind === "worker";
 
-  // Creating: the id follows the name, deduped against the catalogue, so
-  // it is never typed by hand. Editing: it is left alone, because an id
-  // appears in URLs and changing one silently breaks any link to the site.
+  const [draft, setDraft] = useState<SiteDraft>(() => restoreDraft(initialDraft));
+  const [phase, setPhase] = useState<Phase>({ kind: "editing" });
+  const [signedIn, setSignedIn] = useState<boolean>(() => !isWorker || readSessionToken() !== null);
+  const [baseSha, setBaseSha] = useState<string | undefined>(undefined);
+  const pollCount = useRef(0);
+
+  // Confirms the stored token is still valid rather than trusting its
+  // presence, and picks up the head to base this edit on.
+  useEffect(() => {
+    if (!isWorker) return;
+    let cancelled = false;
+    void currentSession().then((session) => {
+      if (cancelled) return;
+      setSignedIn(session !== null);
+      setBaseSha(session?.headSha);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isWorker]);
+
+  // Mirrored on every keystroke so a crash, a reload or a phone switching
+  // apps mid-edit cannot lose the work.
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ id: initialDraft.id, mode, draft }));
+    } catch {
+      // Storage unavailable - the on-screen draft is still intact.
+    }
+  }, [draft, initialDraft.id, mode]);
+
   const draftWithId = useMemo<SiteDraft>(() => {
     if (mode === "edit") return draft;
     const base = suggestedId(draft.name, draft.country);
     return { ...draft, id: base ? uniqueId(base, allIds) : "" };
   }, [draft, mode, allIds]);
 
-  // An id belonging to *another* site is a clash; the site's own id is not.
-  const otherIds = useMemo(
-    () => allIds.filter((id) => id !== initialDraft.id),
-    [allIds, initialDraft.id],
-  );
+  const otherIds = useMemo(() => allIds.filter((id) => id !== initialDraft.id), [allIds, initialDraft.id]);
 
   const problems = validateDraft(draftWithId, otherIds);
   const overlapping = hasOverlappingBands(draftWithId.bands);
   const targetPath = draftWithId.id ? sitePathFor(draftWithId) : "";
-  const canSave = problems.length === 0 && !overlapping && save.status !== "saving";
+  const busy = phase.kind === "publishing";
+  const canPublish = problems.length === 0 && !overlapping && !busy && signedIn && targetPath !== "";
 
-  async function handleSave() {
-    setSave({ status: "saving" });
-    try {
-      const response = await fetch("/api/site", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          path: targetPath,
-          previousPath,
-          fields: draftToSiteFields(draftWithId),
-        }),
+  const pollDeployment = useCallback(async (commitSha: string) => {
+    const status = await deploymentStatus(commitSha);
+    setPhase((current) =>
+      current.kind === "committed" && current.commitSha === commitSha
+        ? { ...current, state: status.state, detail: status.detail, url: status.url }
+        : current,
+    );
+    return status.state;
+  }, []);
+
+  useEffect(() => {
+    if (phase.kind !== "committed") return;
+    if (phase.state === "published" || phase.state === "failed") return;
+    if (pollCount.current >= DEPLOY_POLL_LIMIT) return;
+
+    const timer = window.setTimeout(() => {
+      pollCount.current += 1;
+      void pollDeployment(phase.commitSha);
+    }, DEPLOY_POLL_MS);
+    return () => window.clearTimeout(timer);
+  }, [phase, pollDeployment]);
+
+  async function handlePublish() {
+    setPhase({ kind: "publishing" });
+    const outcome = await publish({
+      path: targetPath,
+      previousPath,
+      fields: draftToSiteFields(draftWithId),
+      baseSha,
+    });
+
+    if (!outcome.ok) {
+      setPhase({
+        kind: "failed",
+        message: outcome.message,
+        // A conflict or an expired session is fixable from here; the draft
+        // stays exactly as typed either way.
+        recoverable: outcome.code === "conflict" || outcome.code === "unauthorised",
       });
-      const body = (await response.json()) as { ok?: boolean; error?: string };
-      if (!response.ok || !body.ok) {
-        setSave({ status: "error", message: body.error ?? `Save failed (HTTP ${response.status}).` });
-        return;
-      }
-      // Only remembered once a save actually succeeded, so a name typed
-      // into a save that was then rejected doesn't stick.
-      rememberEditor(draftWithId.lastEditedBy);
-      onSaved(targetPath);
-    } catch (err) {
-      // The endpoint is dev-only, so the most likely cause by far is
-      // running against a built copy rather than `npm run dev`.
-      setSave({
-        status: "error",
-        message: `Could not reach the local save endpoint - is this running under "npm run dev"? (${(err as Error).message})`,
-      });
+      if (outcome.code === "unauthorised") setSignedIn(false);
+      return;
     }
+
+    rememberEditor(draftWithId.lastEditedBy);
+    clearStoredDraft();
+
+    if (outcome.kind === "local") {
+      onSaved(outcome.path);
+      return;
+    }
+
+    pollCount.current = 0;
+    setPhase({
+      kind: "committed",
+      commitSha: outcome.commitSha,
+      state: "pending",
+      detail: "Saved to GitHub. Waiting for the deploy to start.",
+    });
+    void pollDeployment(outcome.commitSha);
+  }
+
+  if (isWorker && !signedIn) {
+    return (
+      <div className="site-editor-panel" role="dialog" aria-label="Sign in to publish" data-testid="site-editor">
+        <header className="site-editor-header">
+          <h2>Sign in to publish</h2>
+          <button type="button" onClick={onClose} aria-label="Close editor">
+            ✕
+          </button>
+        </header>
+        <div className="site-editor-body">
+          <SignInForm
+            onSignedIn={() => {
+              setSignedIn(true);
+              void currentSession().then((s) => setBaseSha(s?.headSha));
+              if (phase.kind === "failed") setPhase({ kind: "editing" });
+            }}
+          />
+          <p className="site-editor-hint">
+            Your draft is kept while you sign in - nothing typed so far is lost.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -131,10 +227,24 @@ export function SiteEditorPanel({
           </ul>
         )}
 
-        {save.status === "error" && (
-          <p className="site-editor-error" data-testid="editor-save-error">
-            {save.message}
-          </p>
+        {phase.kind === "failed" && (
+          <div className="site-editor-error" data-testid="editor-save-error">
+            <p>{phase.message}</p>
+            <p className="site-editor-hint">
+              Nothing was published and your draft is untouched.
+              {phase.recoverable && " Fix the above and try again."}
+            </p>
+          </div>
+        )}
+
+        {phase.kind === "committed" && (
+          <PublishProgress
+            state={phase.state}
+            detail={phase.detail}
+            url={phase.url}
+            commitSha={phase.commitSha}
+            onDone={() => onSaved(targetPath)}
+          />
         )}
 
         <label className="site-editor-signature">
@@ -144,19 +254,46 @@ export function SiteEditorPanel({
             onChange={(e) => setDraft({ ...draft, lastEditedBy: e.target.value })}
             placeholder="First name and surname"
             autoComplete="name"
+            disabled={busy}
             data-testid="editor-signature"
           />
         </label>
 
         <div className="site-editor-actions">
-          <button type="button" onClick={onClose}>
-            Cancel
+          <button type="button" onClick={onClose} disabled={busy}>
+            {phase.kind === "committed" ? "Close" : "Cancel"}
           </button>
-          <button type="button" onClick={handleSave} disabled={!canSave} data-testid="editor-save">
-            {save.status === "saving" ? "Saving…" : "Save to sites/"}
-          </button>
+          {phase.kind !== "committed" && (
+            <button type="button" onClick={handlePublish} disabled={!canPublish} data-testid="editor-save">
+              {busy ? "Publishing…" : isWorker ? "Publish to the live site" : "Save to sites/"}
+            </button>
+          )}
         </div>
       </footer>
     </div>
   );
+}
+
+/** Brings back a draft left behind by a failed publish or a closed tab, for this same site only. */
+function restoreDraft(initial: SiteDraft): SiteDraft {
+  const withName = { ...initial, lastEditedBy: initial.lastEditedBy || readRememberedEditor() };
+  try {
+    const raw = window.sessionStorage.getItem(DRAFT_KEY);
+    if (!raw) return withName;
+    const stored = JSON.parse(raw) as { id?: string; draft?: SiteDraft };
+    // Only restore into the same site - a stale draft for a different one
+    // would silently overwrite whatever was actually opened.
+    if (stored.id !== initial.id || !stored.draft) return withName;
+    return { ...stored.draft, lastEditedBy: stored.draft.lastEditedBy || withName.lastEditedBy };
+  } catch {
+    return withName;
+  }
+}
+
+function clearStoredDraft(): void {
+  try {
+    window.sessionStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // Nothing to do - a stale draft is only ever restored for the same site.
+  }
 }

@@ -18,5 +18,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts", "scripts", "tests", "types"]
+  "include": ["vite.config.ts", "scripts", "tests", "types", "editor-worker/src"]
 }

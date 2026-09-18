@@ -1,0 +1,24 @@
+# Startvind's publishing Worker. Deploy from the repo root:
+#   npm run worker:deploy
+#
+# Secrets are set once with `wrangler secret put <NAME>` and never live in
+# this file, in the repository, or in the browser:
+#   GITHUB_TOKEN     fine-grained PAT, contents:write on this repo only
+#   ADMIN_PASSWORD   the operator's password
+#   SESSION_SECRET   random string; rotating it signs everyone out
+name = "startvind-editor"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+[vars]
+GITHUB_OWNER = "Utskottet"
+GITHUB_REPO = "FlyWeather"
+GITHUB_BRANCH = "main"
+ADMIN_SUBJECT = "edvin"
+
+# Exact origins allowed to call the Worker - never "*". The GitHub Pages
+# address is the live site today; localhost is there so the same publish
+# path can be exercised from a dev server. startvind.se gets added here
+# once the domain is connected.
+ALLOWED_ORIGINS = "https://utskottet.github.io,http://localhost:5173,http://localhost:4173"

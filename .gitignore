@@ -23,3 +23,12 @@ public/soaring-dev/
 
 .DS_Store
 *.log
+
+# Worker secrets for `wrangler dev`. Real secrets live in Cloudflare
+# (`wrangler secret put`), never in the repository.
+.dev.vars
+editor-worker/.dev.vars
+
+# wrangler's local build/state directory
+.wrangler/
+editor-worker/.wrangler/

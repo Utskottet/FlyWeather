@@ -5,7 +5,9 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "public/generated", "admin-experiment"] },
+  // .wrangler holds wrangler's own bundled output while `worker:dev` is
+  // running - generated code that is not ours to lint.
+  { ignores: ["dist", "public/generated", "admin-experiment", "**/.wrangler"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

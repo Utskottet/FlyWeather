@@ -820,3 +820,111 @@
   padding: 6px;
   box-sizing: border-box;
 }
+
+/* Sign-in, shown in place of the form until a session exists. The password
+   authenticates to the publishing Worker only; the GitHub credential that
+   can write to the repository never reaches the browser. */
+.site-editor-signin {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 320px;
+}
+
+.site-editor-signin label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.site-editor-signin input {
+  padding: 8px;
+  font-size: 16px; /* 16px stops iOS Safari zooming the page on focus */
+}
+
+.site-editor-signin button {
+  align-self: flex-start;
+  border: none;
+  background: #1565c0;
+  color: #fff;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.site-editor-signin button:disabled {
+  background: #bbb;
+  cursor: not-allowed;
+}
+
+.site-editor-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Publishing progress. The commit and the deploy are separate steps
+   because they fail separately - a failed deploy still means the change is
+   safely committed, and the wording has to say so. */
+.publish-progress {
+  border: 1px solid #c8e6c9;
+  background: #f1f8f2;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.publish-progress-failed {
+  border-color: #f0c0c0;
+  background: #fdf3f3;
+}
+
+.publish-progress-steps {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.publish-progress-steps .waiting {
+  color: #999;
+}
+
+.publish-progress-steps .done {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.publish-progress-steps .failed {
+  color: #b00020;
+  font-weight: 600;
+}
+
+.publish-progress-detail {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.publish-progress-meta {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.publish-progress button {
+  margin-top: 8px;
+  border: 1px solid #1565c0;
+  background: #fff;
+  color: #1565c0;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}

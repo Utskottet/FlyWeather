@@ -48,6 +48,12 @@ jobs:
         run: npm run build
         env:
           VITE_SOARING_BASE_URL: https://utskottet.github.io/FlyWeather-Soaring
+          # Address of the publishing Worker, not a secret - a repository
+          # variable so it can be set from the GitHub UI. Set in BOTH deploy
+          # workflows: weather-refresh.yml redeploys the whole site every 5
+          # minutes, so if only pages.yml had it, publishing would switch
+          # itself off again within the next refresh.
+          VITE_EDITOR_API_URL: ${{ vars.VITE_EDITOR_API_URL }}
           # Visitor counting stays off until these two repository
           # variables are set (Settings -> Secrets and variables ->
           # Actions -> Variables). Variables, not secrets: both

@@ -51,6 +51,18 @@ jobs:
         run: npm run build
         env:
           VITE_SOARING_BASE_URL: https://utskottet.github.io/FlyWeather-Soaring
+          # Address of the publishing Worker, not a secret - a repository
+          # variable so it can be set from the GitHub UI. Set in BOTH deploy
+          # workflows: weather-refresh.yml redeploys the whole site every 5
+          # minutes, so if only pages.yml had it, publishing would switch
+          # itself off again within the next refresh.
+          VITE_EDITOR_API_URL: ${{ vars.VITE_EDITOR_API_URL }}
+          # Same reasoning as VITE_EDITOR_API_URL above: this workflow
+          # rebuilds and redeploys the entire site every 5 minutes, so any
+          # build-time setting missing here is switched back off within
+          # minutes of pages.yml setting it.
+          VITE_ANALYTICS_PROVIDER: ${{ vars.VITE_ANALYTICS_PROVIDER }}
+          VITE_ANALYTICS_TOKEN: ${{ vars.VITE_ANALYTICS_TOKEN }}
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

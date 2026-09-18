@@ -1,0 +1,111 @@
+/**
+ * Stateless, signed session tokens for the publishing endpoints.
+ *
+ * Adapted from admin-experiment/worker/auth.ts (same HMAC-SHA256 approach,
+ * same no-session-store design) with one deliberate change: the session is
+ * a bearer token in an Authorization header, not a cookie.
+ *
+ * Cookies were right when the prototype served its own frontend from one
+ * origin. Here the website is on GitHub Pages and the Worker is on a
+ * different host, which makes any session cookie a third-party cookie -
+ * blocked outright by Safari's tracking prevention, which is to say
+ * blocked on the iPhone this has to work from. A bearer token is
+ * unaffected by cookie policy and cannot be sent by a cross-site form, so
+ * it is also immune to CSRF.
+ *
+ * What is NOT stored in the browser is the GitHub credential. That lives
+ * only in Worker secrets; the token below authorises a request to the
+ * Worker, and the Worker alone can write to the repository. Rotating
+ * SESSION_SECRET invalidates every outstanding session at once.
+ */
+
+const SESSION_TTL_SECONDS = 12 * 60 * 60;
+
+export interface SessionPayload {
+  /** Who the session belongs to - one operator today, a real check already. */
+  sub: string;
+  /** Unix seconds. */
+  exp: number;
+}
+
+function base64UrlEncode(bytes: Uint8Array): string {
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function base64UrlDecode(value: string): Uint8Array {
+  const padded = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+async function hmacKey(secret: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [
+    "sign",
+  ]);
+}
+
+async function sign(payload: string, secret: string): Promise<string> {
+  const key = await hmacKey(secret);
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  return base64UrlEncode(new Uint8Array(signature));
+}
+
+/** Length-independent compare, so a wrong password cannot be probed by timing. */
+function constantTimeEqual(a: string, b: string): boolean {
+  const ab = new TextEncoder().encode(a);
+  const bb = new TextEncoder().encode(b);
+  let diff = ab.length ^ bb.length;
+  for (let i = 0; i < Math.max(ab.length, bb.length); i++) {
+    diff |= (ab[i] ?? 0) ^ (bb[i] ?? 0);
+  }
+  return diff === 0;
+}
+
+export function passwordMatches(candidate: unknown, expected: string): boolean {
+  if (typeof candidate !== "string" || expected.length === 0) return false;
+  return constantTimeEqual(candidate, expected);
+}
+
+export async function issueToken(sub: string, secret: string, now: Date = new Date()): Promise<{
+  token: string;
+  expiresAt: string;
+}> {
+  const exp = Math.floor(now.getTime() / 1000) + SESSION_TTL_SECONDS;
+  const payload: SessionPayload = { sub, exp };
+  const encoded = base64UrlEncode(new TextEncoder().encode(JSON.stringify(payload)));
+  const signature = await sign(encoded, secret);
+  return { token: `${encoded}.${signature}`, expiresAt: new Date(exp * 1000).toISOString() };
+}
+
+export async function verifyToken(
+  token: string | null,
+  secret: string,
+  now: Date = new Date(),
+): Promise<SessionPayload | null> {
+  if (!token) return null;
+  const [encoded, signature] = token.split(".");
+  if (!encoded || !signature) return null;
+
+  const expected = await sign(encoded, secret);
+  if (!constantTimeEqual(signature, expected)) return null;
+
+  try {
+    const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(encoded))) as SessionPayload;
+    if (typeof payload.exp !== "number" || payload.exp * 1000 <= now.getTime()) return null;
+    if (typeof payload.sub !== "string" || payload.sub.length === 0) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+export function bearerFrom(request: Request): string | null {
+  const header = request.headers.get("Authorization");
+  if (!header) return null;
+  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
+  return match ? match[1] : null;
+}
