@@ -25,6 +25,21 @@
   --text: #3c4b59;
   --text-muted: #77838f;
 
+  /* Surfaces, in ascending elevation. In dark mode elevation is carried by
+     these getting LIGHTER rather than by heavier shadows, which is the one
+     rule that most separates a real dark theme from an inverted light one. */
+  --surface-raised: #ffffff;
+  --surface-sunken: #f5f7fa;
+  --control-bg: #f1f4f8;
+  --track-bg: #d4dae1;
+  --divider: #e0e0e0;
+  /* Text that sits ON an accent fill, not the accent itself. */
+  --on-accent: #ffffff;
+
+  --danger: #b00020;
+  --success: #2e7d32;
+  --now-marker: #e64a19;
+
   --control-height: 34px;
   --header-height: 56px;
 }
@@ -142,7 +157,7 @@
 .app-header-add {
   margin-left: auto;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   box-shadow: 0 1px 4px rgba(26, 115, 232, 0.35);
 }
 
@@ -150,7 +165,7 @@
    panel under the header. The header itself stays one short row. */
 .app-header-status-button {
   margin-left: auto;
-  background: #f1f4f8;
+  background: var(--control-bg);
   color: var(--text);
   padding: 0 14px;
 }
@@ -264,7 +279,7 @@
 
 .map-layers-panel-body .rasp-param-selector button {
   border-radius: 6px;
-  background: #f1f4f8;
+  background: var(--control-bg);
   min-height: 30px;
   padding: 0 4px;
   font-size: 10.5px;
@@ -298,7 +313,7 @@
 
 .map-controls .site-mode-toggle button.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 /* ---------------------------------------------------------------------
@@ -307,7 +322,7 @@
 .site-mode-toggle,
 .rasp-param-selector {
   display: inline-flex;
-  background: #fff;
+  background: var(--surface-raised);
   border-radius: 999px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   overflow: hidden;
@@ -322,7 +337,7 @@
   padding: 0 10px;
   font-size: 11px;
   font-weight: 600;
-  color: #444;
+  color: var(--text);
   cursor: pointer;
 }
 
@@ -342,12 +357,12 @@
 
 .site-mode-toggle button.active,
 .rasp-param-selector button.active {
-  background: #1565c0;
-  color: #fff;
+  background: var(--accent-strong);
+  color: var(--on-accent);
 }
 
 .rasp-param-selector button:disabled {
-  color: #bbb;
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 
@@ -363,19 +378,19 @@
   gap: 4px;
   border: none;
   border-radius: 999px;
-  background: #fff;
+  background: var(--surface-raised);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   min-height: 32px;
   padding: 0 10px;
   font-size: 11px;
   font-weight: 600;
-  color: #444;
+  color: var(--text);
   cursor: pointer;
 }
 
 .press-toggle-pill.active {
-  background: #1565c0;
-  color: #fff;
+  background: var(--accent-strong);
+  color: var(--on-accent);
 }
 
 .press-toggle-switch {
@@ -398,7 +413,7 @@
   width: 44px;
   height: 24px;
   border-radius: 999px;
-  background: #d4dae1;
+  background: var(--track-bg);
   flex-shrink: 0;
   transition: background 120ms ease;
 }
@@ -414,7 +429,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface-raised);
   box-shadow: 0 1px 3px rgba(16, 42, 67, 0.3);
   transition: transform 120ms ease;
 }
@@ -482,7 +497,7 @@
   position: relative;
   border: none;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: var(--panel-radius-sm);
   min-height: 52px;
   padding: 0 20px;
@@ -522,7 +537,7 @@
 .altitude-slider-label {
   font-size: 12px;
   font-weight: 600;
-  color: #444;
+  color: var(--text);
   white-space: nowrap;
 }
 
@@ -560,7 +575,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: #444;
+  color: var(--text);
 }
 
 .source-status-item {
@@ -579,11 +594,11 @@
 
 /* Green = measured/live observation, blue = forecast/model. */
 .source-status-item.led-measured .source-status-led {
-  background: #2e7d32;
+  background: var(--success);
 }
 
 .source-status-item.led-forecast .source-status-led {
-  background: #1565c0;
+  background: var(--accent-strong);
 }
 
 .site-mode-empty-notice {
@@ -592,14 +607,14 @@
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 500;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--panel-bg-translucent);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   padding: 12px 16px;
   max-width: 280px;
   text-align: center;
   font-size: 14px;
-  color: #444;
+  color: var(--text);
   pointer-events: none;
 }
 
@@ -627,14 +642,14 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 500;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--panel-bg-translucent);
   border: 1px solid #ccc;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   padding: 8px 12px;
   max-width: 400px;
   font-size: 13px;
-  color: #555;
+  color: var(--text);
   pointer-events: none;
 }
 
@@ -650,7 +665,7 @@
   /* Right, clear of the control column on the left. */
   right: 12px;
   z-index: 500;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--panel-bg-translucent);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   padding: 8px 12px 16px;
@@ -665,7 +680,7 @@
 .rasp-legend-title {
   font-size: 12px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-strong);
   margin-bottom: 6px;
 }
 
@@ -691,22 +706,22 @@
   transform: translateX(-50%);
   font-size: 9px;
   font-weight: 600;
-  color: #555;
+  color: var(--text);
   white-space: nowrap;
 }
 
 .rasp-legend-provenance {
   margin-top: 4px;
   font-size: 10px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .site-sheet-height-warning {
-  background: #f0f0f0;
+  background: var(--surface-sunken);
   border-radius: 4px;
   padding: 6px 10px;
   font-size: 13px;
-  color: #555;
+  color: var(--text);
 }
 
 .wind-rose-label {
@@ -728,7 +743,7 @@
   bottom: calc(var(--bottom-bar-height, 120px) + 24px);
   max-height: 55%;
   overflow-y: auto;
-  background: #fff;
+  background: var(--surface-raised);
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.2);
@@ -743,7 +758,7 @@
 }
 
 .site-sheet-reasons {
-  color: #555;
+  color: var(--text);
   font-size: 13px;
   margin: 4px 0 12px;
   padding-left: 20px;
@@ -758,7 +773,7 @@
 }
 
 .site-sheet-facts dt {
-  color: #555;
+  color: var(--text);
   font-weight: 600;
 }
 
@@ -795,7 +810,7 @@
      track - see TimeSlider.tsx. */
   transform: translateX(-50%);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: 7px;
   padding: 4px 10px;
   font-weight: 700;
@@ -857,13 +872,13 @@
 .time-slider-range::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 3px;
-  background: #d4dae1;
+  background: var(--track-bg);
 }
 
 .time-slider-range::-moz-range-track {
   height: 6px;
   border-radius: 3px;
-  background: #d4dae1;
+  background: var(--track-bg);
 }
 
 .time-slider-range::-webkit-slider-thumb {
@@ -952,13 +967,13 @@
 .time-slider-tick-label {
   font-size: 9px;
   font-weight: 700;
-  color: #444;
+  color: var(--text);
 }
 
 .time-slider-tick-hour-label {
   font-size: 8px;
   font-weight: 600;
-  color: #888;
+  color: var(--text-muted);
 }
 
 /* Real clock position - visually distinct from selected-time (native range
@@ -971,7 +986,7 @@
   transform: translateX(-50%);
   width: 2px;
   height: 23px;
-  background: #e64a19;
+  background: var(--now-marker);
   pointer-events: none;
 }
 
@@ -982,7 +997,7 @@
   transform: translateX(-50%);
   font-size: 8px;
   font-weight: 700;
-  color: #e64a19;
+  color: var(--now-marker);
   white-space: nowrap;
 }
 
@@ -1001,15 +1016,15 @@
 
 .site-sheet-status {
   font-weight: 600;
-  color: #555;
+  color: var(--text);
 }
 
 .site-sheet-source-badge {
   display: inline-block;
   font-size: 12px;
   font-weight: 600;
-  color: #444;
-  background: #eee;
+  color: var(--text);
+  background: var(--surface-sunken);
   border-radius: 4px;
   padding: 4px 8px;
   margin: 4px 0 8px;
@@ -1044,14 +1059,14 @@
 .tool-button {
   position: relative;
   border: none;
-  background: #fff;
+  background: var(--surface-raised);
   border-radius: 999px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   min-height: 32px;
   padding: 0 12px;
   font-size: 11px;
   font-weight: 700;
-  color: #1565c0;
+  color: var(--accent-strong);
   cursor: pointer;
 }
 
@@ -1063,9 +1078,9 @@
 
 .site-sheet-edit {
   margin-top: 12px;
-  border: 1px solid #1565c0;
-  background: #fff;
-  color: #1565c0;
+  border: 1px solid var(--accent-strong);
+  background: var(--surface-raised);
+  color: var(--accent-strong);
   border-radius: 6px;
   padding: 8px 14px;
   font-size: 13px;
@@ -1086,7 +1101,7 @@
   width: min(560px, 100vw);
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--surface-raised);
   box-shadow: -2px 0 12px rgba(0, 0, 0, 0.25);
 }
 
@@ -1096,7 +1111,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--divider);
 }
 
 .site-editor-header h2 {
@@ -1123,15 +1138,15 @@
 }
 
 .site-editor-footer {
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--divider);
   padding: 12px 16px;
-  background: #fafafa;
+  background: var(--surface-sunken);
 }
 
 .site-editor-path {
   margin: 0 0 8px;
   font-size: 12px;
-  color: #555;
+  color: var(--text);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   word-break: break-all;
 }
@@ -1140,13 +1155,13 @@
   margin: 0 0 8px;
   padding-left: 18px;
   font-size: 13px;
-  color: #b00020;
+  color: var(--danger);
 }
 
 .site-editor-error {
   margin: 0 0 8px;
   font-size: 13px;
-  color: #b00020;
+  color: var(--danger);
   white-space: pre-wrap;
 }
 
@@ -1157,9 +1172,9 @@
 }
 
 .site-editor-actions button {
-  border: 1px solid #1565c0;
-  background: #fff;
-  color: #1565c0;
+  border: 1px solid var(--accent-strong);
+  background: var(--surface-raised);
+  color: var(--accent-strong);
   border-radius: 6px;
   padding: 8px 16px;
   font-size: 13px;
@@ -1168,14 +1183,14 @@
 }
 
 .site-editor-actions button:last-child {
-  background: #1565c0;
-  color: #fff;
+  background: var(--accent-strong);
+  color: var(--on-accent);
 }
 
 .site-editor-actions button:disabled {
-  border-color: #bbb;
-  background: #eee;
-  color: #999;
+  border-color: var(--text-muted);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 
@@ -1187,7 +1202,7 @@
   gap: 8px;
   margin-bottom: 10px;
   font-size: 13px;
-  color: #333;
+  color: var(--text-strong);
 }
 
 .site-editor-signature input {
@@ -1221,8 +1236,8 @@
 .site-editor-signin button {
   align-self: flex-start;
   border: none;
-  background: #1565c0;
-  color: #fff;
+  background: var(--accent-strong);
+  color: var(--on-accent);
   border-radius: 6px;
   padding: 8px 16px;
   font-size: 13px;
@@ -1238,7 +1253,7 @@
 .site-editor-hint {
   margin: 8px 0 0;
   font-size: 12px;
-  color: #666;
+  color: var(--text-muted);
 }
 
 /* Publishing progress. The commit and the deploy are separate steps
@@ -1268,16 +1283,16 @@
 }
 
 .publish-progress-steps .waiting {
-  color: #999;
+  color: var(--text-muted);
 }
 
 .publish-progress-steps .done {
-  color: #2e7d32;
+  color: var(--success);
   font-weight: 600;
 }
 
 .publish-progress-steps .failed {
-  color: #b00020;
+  color: var(--danger);
   font-weight: 600;
 }
 
@@ -1289,14 +1304,14 @@
 .publish-progress-meta {
   margin: 0;
   font-size: 12px;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .publish-progress button {
   margin-top: 8px;
-  border: 1px solid #1565c0;
-  background: #fff;
-  color: #1565c0;
+  border: 1px solid var(--accent-strong);
+  background: var(--surface-raised);
+  color: var(--accent-strong);
   border-radius: 6px;
   padding: 6px 12px;
   font-size: 13px;
@@ -1517,7 +1532,7 @@
 
 .app-header-menu-button {
   border: none;
-  background: #f1f4f8;
+  background: var(--control-bg);
   color: var(--text);
   border-radius: var(--panel-radius-sm);
   min-height: var(--control-height);
@@ -1571,4 +1586,109 @@
   border-top: var(--panel-border);
   margin-top: 6px;
   padding: 10px 12px 4px;
+}
+
+/* ---------------------------------------------------------------------
+   Dark mode - the interface only. The map, the wind field and the site
+   roses keep their colours exactly: those encode meaning (land vs sea,
+   wind speed, whether a site is flyable) and re-tinting them would change
+   what the app says, not how it looks.
+
+   Followed from the system rather than offered as a switch. There is no
+   settings screen to put a switch in, and the OS already knows - asking
+   again is a question with an obvious answer.
+
+   Two rules separate a real dark theme from an inverted light one, and
+   both are applied here:
+
+   1. Elevation is carried by surfaces getting LIGHTER, not by heavier
+      shadows. A shadow on a dark ground is invisible; a panel that is a
+      shade paler than what is behind it reads instantly.
+   2. Nothing is pure black or pure white. #000 next to #fff on a screen
+      at night is glare, and the contrast is higher than anything print
+      would ever use. The darkest surface here is #12171d and the
+      brightest text #e8edf2.
+
+   The blue tint is deliberate and carried through every surface, so the
+   greys read as one family rather than as neutral boxes that happen to
+   sit near a blue accent.
+   --------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --panel-bg: #1b222b;
+    --panel-bg-translucent: rgba(27, 34, 43, 0.94);
+    --panel-border: 1px solid rgba(255, 255, 255, 0.10);
+    --panel-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+
+    --surface-raised: #1b222b;
+    --surface-sunken: #141a22;
+    --control-bg: #262f3a;
+    --track-bg: #37424f;
+    --divider: rgba(255, 255, 255, 0.10);
+
+    /* Lightened, not just reused: #1a73e8 on a dark ground falls below
+       readable contrast, and a saturated blue on near-black vibrates. */
+    --accent: #4d9bf5;
+    --accent-strong: #7fb8fa;
+    --accent-soft: rgba(77, 155, 245, 0.16);
+    /* An accent this light needs dark text on it, not white. */
+    --on-accent: #10161d;
+
+    --text-strong: #e8edf2;
+    --text: #c2cdd8;
+    --text-muted: #8b98a5;
+
+    /* Status colours lightened to stay legible on a dark surface while
+       keeping their meaning - a dark red on near-black reads as brown. */
+    --danger: #ff6b7a;
+    --success: #6fcf7f;
+    --now-marker: #ff8a5c;
+  }
+
+  /* Notices are tinted surfaces rather than pale washes: #fff4e5 on a dark
+     interface is a lightbulb. */
+  .data-staleness-notice {
+    background: rgba(90, 62, 20, 0.95);
+    border-color: #b07a2e;
+    color: #f5d9a8;
+  }
+
+  .site-sheet-restrictions {
+    background: rgba(90, 70, 20, 0.5);
+    border-left-color: #c9a227;
+  }
+
+  .publish-progress {
+    background: rgba(28, 58, 36, 0.6);
+    border-color: rgba(111, 207, 127, 0.35);
+  }
+
+  .publish-progress-failed {
+    background: rgba(70, 28, 34, 0.6);
+    border-color: rgba(255, 107, 122, 0.35);
+  }
+
+  .site-editor-actions button:disabled {
+    background: var(--surface-sunken);
+    border-color: var(--divider);
+    color: var(--text-muted);
+  }
+
+  /* The slider thumbs ring themselves against the track; that ring has to
+     follow the surface or the thumb loses its edge. */
+  .time-slider-range::-webkit-slider-thumb,
+  .time-slider-range::-moz-range-thumb {
+    border-color: var(--panel-bg);
+  }
+
+  .press-toggle-knob {
+    background: #e8edf2;
+  }
+
+  /* The logo carries its own dark outline for legibility over the map.
+     On a dark panel that outline disappears into the background, so the
+     mark gets a faint lift of its own. */
+  .app-header-logo {
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.45));
+  }
 }
