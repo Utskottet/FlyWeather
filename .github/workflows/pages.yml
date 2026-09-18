@@ -48,6 +48,15 @@ jobs:
         run: npm run build
         env:
           VITE_SOARING_BASE_URL: https://utskottet.github.io/FlyWeather-Soaring
+          # Visitor counting stays off until these two repository
+          # variables are set (Settings -> Secrets and variables ->
+          # Actions -> Variables). Variables, not secrets: both
+          # supported providers publish this token in the page source,
+          # so it is not confidential - and a variable can be set from
+          # the GitHub UI without a code change. Unset is supported and
+          # means no analytics script is injected at all.
+          VITE_ANALYTICS_PROVIDER: ${{ vars.VITE_ANALYTICS_PROVIDER }}
+          VITE_ANALYTICS_TOKEN: ${{ vars.VITE_ANALYTICS_TOKEN }}
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
