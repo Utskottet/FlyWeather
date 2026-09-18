@@ -20,6 +20,11 @@ export interface RaspControlProps {
  * reveals the parameter selector together - there is no separate expand/
  * collapse state to manage; turning RASP off hides the submenu
  * automatically.
+ *
+ * Which is exactly why there is no disclosure chevron. The pill used to
+ * carry a "chevron" that promised something to expand; nothing expands -
+ * the selector simply follows the overlay. A control advertising a
+ * behaviour it does not have is worse than a plain one.
  */
 export function RaspControl({
   show,
@@ -37,13 +42,6 @@ export function RaspControl({
         onChange={onChange}
         testId="rasp-toggle"
         variant={variant}
-        trailing={
-          variant === "switch" ? undefined : (
-            <span className="tool-stack-chevron" aria-hidden="true">
-              ▸
-            </span>
-          )
-        }
       />
       {show && (
         <div className="tool-stack-submenu" data-testid="rasp-param-popover">

@@ -52,6 +52,26 @@ test.describe("phone layout", () => {
     await expect(page.locator(".maplibregl-ctrl-zoom-in")).toHaveCount(0);
   });
 
+  test("altitude is a permanent slider, not a button hiding its own value", async ({ page }) => {
+    await expect(page.locator('[data-testid="height-control-button"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="altitude-control"]')).toBeVisible();
+  });
+
+  test("altitude runs parallel to time but stays the shorter of the two", async ({ page }) => {
+    // It is a modifier, not the primary control, and should read as one.
+    const altitude = (await page.locator('[data-testid="altitude-control"] input').boundingBox())!;
+    const time = (await page.locator('[data-testid="time-slider-range"]').boundingBox())!;
+    expect(altitude.width).toBeLessThan(time.width);
+    expect(altitude.y).toBeLessThan(time.y);
+  });
+
+  test("no control advertises a disclosure it does not have", async ({ page }) => {
+    // RASP's parameter selector follows the overlay being on; it never
+    // expanded on tap, so the chevron it used to carry was a promise the
+    // control could not keep.
+    await expect(page.locator('[data-testid="rasp-toggle"]')).not.toContainText("▸");
+  });
+
   test("the controls sit in one row, not a column down the corner", async ({ page }) => {
     const mode = (await page.locator(".site-mode-toggle").first().boundingBox())!;
     const layers = (await page.locator('[data-testid="map-layers-panel"]').boundingBox())!;

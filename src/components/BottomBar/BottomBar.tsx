@@ -2,7 +2,6 @@ import type { RefObject } from "react";
 import { StartButton } from "../StartButton/StartButton.tsx";
 import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
 import { AltitudeControl } from "../AltitudeControl/AltitudeControl.tsx";
-import { HeightControl } from "../HeightControl/HeightControl.tsx";
 
 export interface BottomBarProps {
   isLiveMode: boolean;
@@ -43,7 +42,16 @@ export function BottomBar({
     <div className={`bottom-bar${compact ? " bottom-bar-compact" : ""}`} data-testid="bottom-bar" ref={barRef}>
       <div className="bottom-bar-live">
         <StartButton isLiveMode={isLiveMode} onStart={onStart} />
-        {compact && <HeightControl altitudeM={altitudeM} onChange={onAltitudeChange} />}
+        {/* Altitude runs alongside time on a phone rather than hiding
+            behind a HEIGHT button. A linear slider like the timeline,
+            deliberately shorter: a secondary control that is always
+            readable beats a primary-looking button you have to open to
+            find out what it is set to. */}
+        {compact && (
+          <div className="bottom-bar-altitude-inline">
+            <AltitudeControl altitudeM={altitudeM} onChange={onAltitudeChange} />
+          </div>
+        )}
       </div>
       <div className="bottom-bar-time">
         <div className="bottom-bar-section-title">Forecast time (local time)</div>

@@ -1434,6 +1434,33 @@
 
   .bottom-bar-compact .bottom-bar-live {
     justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Altitude alongside time, not behind a button - but deliberately the
+     shorter of the two. Time is the primary control here; altitude is a
+     modifier, and its slider should read as one. */
+  .bottom-bar-altitude-inline {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .bottom-bar-altitude-inline .altitude-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bottom-bar-altitude-inline .altitude-slider {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* The 0/2000 end labels are desktop furniture; the value box beside the
+     track already says where it is. */
+  .bottom-bar-altitude-inline .altitude-control-ends {
+    display: none;
   }
 
   .bottom-bar-compact .start-button {
