@@ -1315,11 +1315,12 @@
 
   .app-header {
     gap: 8px;
-    padding: 4px 10px;
+    padding: 2px 10px;
+    min-height: 44px;
   }
 
   .app-header-logo {
-    width: 104px;
+    width: 92px;
   }
 
   .app-header-add {
@@ -1330,11 +1331,25 @@
   /* Controls keep the map's full width available: the layer panel is
      collapsed by default (MapLayersPanel's defaultOpen) and both controls
      are narrower than on desktop. */
+  /* Side by side rather than stacked. Two panels in a column covered 78px
+     of the top-left corner - the part of a map you are most likely to be
+     looking at, because that is where you drag from. In a row they cost
+     about half that and leave the corner usable. */
   .map-controls {
     top: 8px;
     left: 8px;
-    width: 168px;
+    right: 8px;
+    width: auto;
+    max-width: none;
+    flex-direction: row;
+    align-items: flex-start;
     gap: 8px;
+  }
+
+  .map-controls > * {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .map-controls .site-mode-toggle button {
@@ -1359,8 +1374,26 @@
     right: 6px;
     bottom: 6px;
     flex-direction: column;
-    gap: 6px;
-    padding: 8px 10px;
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  /* The timeline is the one control worth its height on a phone, so this
+     trims around it rather than shrinking it: a smaller gutter above the
+     chip, and smaller tick labels. The tick row's own 20px is left alone -
+     an earlier pass "reduced" it to 30px and made the bar taller. */
+  .bottom-bar-compact .time-slider-track {
+    padding-top: 22px;
+  }
+
+  .bottom-bar-compact .time-slider-tick-label,
+  .bottom-bar-compact .time-slider-tick-hour-label {
+    font-size: 9px;
+  }
+
+  .bottom-bar-compact .time-slider-label {
+    font-size: 12px;
+    padding: 3px 8px;
   }
 
   .bottom-bar-compact .bottom-bar-live {
@@ -1368,8 +1401,8 @@
   }
 
   .bottom-bar-compact .start-button {
-    min-height: 40px;
-    font-size: 14px;
+    min-height: 36px;
+    font-size: 13px;
   }
 
   .bottom-bar-compact .bottom-bar-section-title {
@@ -1378,12 +1411,18 @@
 
   /* Centred notices have the control column to their left; keeping them
      off it matters most at 360px. */
+  /* Below the controls, not beside them: the controls now span the full
+     width on a phone, so there is no room to its left, and the two were
+     overlapping. */
   .data-staleness-notice,
   .rasp-unavailable-notice {
-    left: auto;
+    top: 60px;
+    left: 8px;
     right: 8px;
     transform: none;
-    max-width: calc(100% - 200px);
+    max-width: none;
+    font-size: 12px;
+    padding: 6px 10px;
   }
 }
 
