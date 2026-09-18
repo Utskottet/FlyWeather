@@ -48,11 +48,13 @@ contourDemSource.setupMaplibre({ addProtocol });
 
 /**
  * The land base colour, and the halo colour for anything drawn over it.
+ * Deliberately near-neutral: an earlier #d9d4c6 was darker but still
+ * warm, and warmth at this lightness reads as yellow rather than as sand.
  * One constant because the two must agree: a text halo is there to punch a
  * hole in the background behind the glyph, so if it is lighter than the
  * land it stops reading as a hole and starts reading as a glow.
  */
-const LAND_COLOR = "#d9d4c6";
+const LAND_COLOR = "#d3d3d0";
 
 const CONTOUR_SOURCE_ID = "contour-source";
 const CONTOUR_LAYER = "contours";
@@ -97,9 +99,15 @@ export function buildReliefStyle(): StyleSpecification {
         paint: {
           "hillshade-exaggeration": 1,
           "hillshade-illumination-direction": 315,
-          "hillshade-shadow-color": "#39352c",
+          // Neutral greys, not the browns these were (#39352c / #6b6250).
+          // The warm cast people read as "yellow land" came mostly from
+          // here rather than from the base colour: the hillshade covers
+          // every slope, so a brown shadow tints the whole landmass. The
+          // highlight stays pure white, so darkening the base costs no
+          // topographic contrast.
+          "hillshade-shadow-color": "#3a3b3d",
           "hillshade-highlight-color": "#ffffff",
-          "hillshade-accent-color": "#6b6250",
+          "hillshade-accent-color": "#6a6b6e",
         },
       },
     ],

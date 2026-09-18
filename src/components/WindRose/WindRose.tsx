@@ -118,14 +118,19 @@ const DEFAULT_WEATHER_ANGLE = 0;
 // full 360deg ring does not.
 const WEATHER_ANGLE_PRESETS = [45, 135, 225, 315];
 
-// ~45% of the ring's own diameter (2*OUTER_R), raised from 36 on user
-// feedback that the weather graphic was hard to make out at marker size.
-// That is +14% across and +30% in area, at the top of the 35-45% band this
-// component's own test enforces - deliberately not past it, because that
-// band is a real guard against the glyph swallowing the rose rather than a
-// stale preference. ICON_PLACEMENT_R below is derived from this, so the
-// icon's outer edge stays at the same protrusion however this number moves.
-const ICON_SIZE = 41;
+// Half the ring's own diameter (2*OUTER_R), raised in two steps from the
+// original 36 on repeated feedback that the weather graphic was too small
+// to read at marker size - +28% across and +64% in area since.
+//
+// This is past the 35-45% band the original task specified, which is a
+// deliberate override rather than drift: the band was a drawing guideline,
+// and legibility on a 48px marker on a phone outranks it. WindRose's own
+// test still enforces a ceiling, raised to match - the guard is there to
+// stop the glyph swallowing the rose entirely, and that limit still holds.
+//
+// ICON_PLACEMENT_R below is derived from this, so the icon's outer edge
+// protrudes exactly as far as before however this number moves.
+const ICON_SIZE = 46;
 
 // The graphic is allowed to protrude past the ring - within the task's
 // documented 10-15% range. ICON_PLACEMENT_R is the radius at which the

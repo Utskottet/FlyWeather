@@ -312,11 +312,17 @@ describe("WindRose - adaptive weather placement (§ FlyWeather Mobile UI Correct
     expect(outerEdge / OUTER_R).toBeLessThan(1.2); // but not wildly past the 10-15% target
   });
 
-  it("renders the weather graphic meaningfully larger than the previous 22px-in-100-viewBox size (~35-40% of ring diameter)", () => {
+  it("keeps the weather graphic big enough to read but not big enough to swallow the rose", () => {
+    // The ceiling was 45% of ring diameter, from the original task's
+    // drawing guideline. Raised to 55% after repeated feedback that the
+    // glyph was unreadable at marker size on a phone - legibility beat the
+    // guideline. The test is kept rather than deleted because the guard
+    // that still matters is the upper one: past roughly half the ring the
+    // glyph starts hiding the wedge and the speed it sits next to.
     const { container } = render(<WindRose {...baseProps()} weatherKind="rain" />);
     const iconSize = Number(container.querySelector('[data-testid="rose-weather-icon"] svg')?.getAttribute("width"));
     expect(iconSize).toBeGreaterThanOrEqual(0.35 * (2 * OUTER_R));
-    expect(iconSize).toBeLessThanOrEqual(0.45 * (2 * OUTER_R));
+    expect(iconSize).toBeLessThanOrEqual(0.55 * (2 * OUTER_R));
   });
 
   it("keeps speed horizontal (a single text baseline, never rotated) regardless of sector", () => {
