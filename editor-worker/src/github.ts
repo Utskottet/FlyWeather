@@ -134,17 +134,23 @@ export function createGitHubGateway(config: GitHubConfig): RepoGateway {
     async commit(input: CommitInput): Promise<{ commitSha: string }> {
       const parent = await call<{ tree: { sha: string } }>(`${base}/git/commits/${input.expectedHeadSha}`);
 
-      const blob = await call<{ sha: string }>(`${base}/git/blobs`, {
-        method: "POST",
-        body: JSON.stringify({ content: input.text, encoding: "utf-8" }),
-      });
+      // One blob per file. Written in sequence rather than in parallel:
+      // this runs a handful of times a week, and a serial pair is easier
+      // to reason about against GitHub's secondary rate limits than a
+      // burst that gains nothing at this volume.
+      const entries: Record<string, unknown>[] = [];
+      for (const write of input.writes) {
+        const blob = await call<{ sha: string }>(`${base}/git/blobs`, {
+          method: "POST",
+          body: JSON.stringify({ content: write.text, encoding: "utf-8" }),
+        });
+        entries.push({ path: write.path, mode: "100644", type: "blob", sha: blob.sha });
+      }
 
       // A tree entry with sha: null removes that path. Pairing it with the
-      // write in one tree is what makes a move a single commit.
-      const entries: Record<string, unknown>[] = [
-        { path: input.writePath, mode: "100644", type: "blob", sha: blob.sha },
-      ];
-      if (input.deletePath && input.deletePath !== input.writePath) {
+      // writes in one tree is what makes a move a single commit - and what
+      // keeps an edit and its log line indivisible.
+      if (input.deletePath && !input.writes.some((w) => w.path === input.deletePath)) {
         entries.push({ path: input.deletePath, mode: "100644", type: "blob", sha: null });
       }
 

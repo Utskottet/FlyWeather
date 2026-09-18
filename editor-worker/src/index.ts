@@ -1,6 +1,6 @@
 import { bearerFrom, issueToken, passwordMatches, verifyToken } from "./auth.ts";
 import { createGitHubGateway, deploymentStatus, type GitHubConfig } from "./github.ts";
-import { publishSite, type PublishRequest } from "./publish.ts";
+import { publishSite, verifySite, type PublishRequest, type VerifyRequest } from "./publish.ts";
 
 /**
  * Startvind's publishing Worker.
@@ -8,9 +8,17 @@ import { publishSite, type PublishRequest } from "./publish.ts";
  * The public website stays exactly what it was - static files on GitHub
  * Pages, with the repository as the single source of truth. This Worker
  * exists only so the editor on that website can write to the repository
- * without the browser ever holding a GitHub credential: the browser
- * authenticates to the Worker, and the Worker alone holds the token that
- * can commit.
+ * without the browser ever holding a GitHub credential: the browser asks
+ * the Worker, and the Worker alone holds the token that can commit.
+ *
+ * Publishing is open - no password, no account. What every write must
+ * carry instead is a name, a club and two affirmations, recorded in a
+ * public log in the same commit (src/domain/contributor.ts explains the
+ * trade). The password did not go away, it moved: it now guards the admin
+ * layer, which is where it was always doing the real work. The Worker
+ * remains the only thing holding a credential, and it can still only ever
+ * write a site YAML file and the log - not workflows, not source, not
+ * secrets.
  *
  * Deliberately NOT in the path of anything else. Weather collection,
  * forecasts and the Soaring site are untouched and keep running through
@@ -22,7 +30,7 @@ import { publishSite, type PublishRequest } from "./publish.ts";
 export interface Env {
   /** Fine-grained PAT with contents:write on the site repo. Secret. */
   GITHUB_TOKEN: string;
-  /** Shared password for the single operator. Secret. */
+  /** Admin password - revert, hide, block. Not needed for an ordinary edit. Secret. */
   ADMIN_PASSWORD: string;
   /** HMAC key for session tokens; rotating it logs everyone out. Secret. */
   SESSION_SECRET: string;
@@ -62,6 +70,23 @@ function corsHeaders(request: Request, env: Env): Record<string, string> {
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
+}
+
+/**
+ * Whether this request came from a page we serve.
+ *
+ * Not a security boundary and not treated as one - Origin is set by the
+ * browser and anything that is not a browser can send whatever it likes.
+ * It is a speed bump: it stops another website from quietly driving a
+ * visitor's browser into publishing, and it costs nothing. The real
+ * protections against a bad edit are that every write is attributed,
+ * logged in public, limited to one site YAML file, and revertable with
+ * one git command.
+ */
+function fromAllowedOrigin(request: Request, env: Env): boolean {
+  const origin = request.headers.get("Origin");
+  if (!origin) return false;
+  return env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean).includes(origin);
 }
 
 function json(body: unknown, status: number, cors: Record<string, string>): Response {
@@ -107,8 +132,26 @@ async function route(request: Request, env: Env): Promise<Response> {
     // without prompting for a password first. Deliberately reveals nothing
     // beyond which repository this Worker publishes to.
     if (url.pathname === "/api/health") {
+      // Also hands out the head commit. Publishing no longer requires a
+      // session, so the editor needs somewhere unauthenticated to learn
+      // what it is basing an edit on - without it every save would be
+      // blind and "someone else changed this while you typed" could only
+      // be caught at commit time. It reveals nothing: the repository is
+      // public, and this is the same sha every clone already has.
+      let headSha: string | undefined;
+      try {
+        headSha = await createGitHubGateway(githubConfig(env)).head();
+      } catch {
+        // Health must answer even when GitHub does not - the website uses
+        // it to decide whether to offer editing at all.
+      }
       return json(
-        { ok: true, repo: `${env.GITHUB_OWNER}/${env.GITHUB_REPO}`, branch: env.GITHUB_BRANCH || "main" },
+        {
+          ok: true,
+          repo: `${env.GITHUB_OWNER}/${env.GITHUB_REPO}`,
+          branch: env.GITHUB_BRANCH || "main",
+          ...(headSha ? { headSha } : {}),
+        },
         200,
         cors,
       );
@@ -143,25 +186,75 @@ async function route(request: Request, env: Env): Promise<Response> {
     }
 
     if (url.pathname === "/api/publish" && request.method === "POST") {
-      const sub = await requireSession(request, env);
-      if (!sub) return json({ ok: false, error: "Sign in to publish." }, 401, cors);
+      // No session required. Editing is open, and what stands in for a
+      // password is attribution: publishSite refuses anything without a
+      // full name and both affirmations, and records every accepted edit
+      // in the public log in the same commit. See
+      // src/domain/contributor.ts for why that trade is the right one for
+      // a catalogue that pilots are supposed to keep correct.
+      //
+      // An admin session is still read when one is present, so an admin's
+      // own changes are marked as such in the log.
+      if (!fromAllowedOrigin(request, env)) {
+        return json({ ok: false, error: "Ändringar tas bara emot från startvind.se." }, 403, cors);
+      }
 
       const body = (await request.json().catch(() => null)) as PublishRequest | null;
       if (!body || typeof body.path !== "string" || typeof body.fields !== "object" || body.fields === null) {
         return json({ ok: false, error: "Malformed publish request." }, 400, cors);
       }
 
-      const result = await publishSite(createGitHubGateway(githubConfig(env)), body);
+      const admin = (await requireSession(request, env)) !== null;
+      const result = await publishSite(createGitHubGateway(githubConfig(env)), body, { admin });
       if (!result.ok) {
-        const status = result.code === "conflict" ? 409 : result.code === "upstream_error" ? 502 : 400;
+        const status =
+          result.code === "conflict"
+            ? 409
+            : result.code === "upstream_error"
+              ? 502
+              : result.code === "unsigned"
+                ? 422
+                : 400;
+        return json({ ok: false, code: result.code, error: result.message }, status, cors);
+      }
+      return json(result, 200, cors);
+    }
+
+    if (url.pathname === "/api/verify" && request.method === "POST") {
+      // "I was there and this is still right" - a log entry and nothing
+      // else. Same open access and the same attribution requirement as a
+      // publish, because it makes the same kind of claim about a site.
+      if (!fromAllowedOrigin(request, env)) {
+        return json({ ok: false, error: "Ändringar tas bara emot från startvind.se." }, 403, cors);
+      }
+
+      const body = (await request.json().catch(() => null)) as VerifyRequest | null;
+      if (!body || typeof body.path !== "string") {
+        return json({ ok: false, error: "Malformed verify request." }, 400, cors);
+      }
+
+      const admin = (await requireSession(request, env)) !== null;
+      const result = await verifySite(createGitHubGateway(githubConfig(env)), body, { admin });
+      if (!result.ok) {
+        const status =
+          result.code === "conflict"
+            ? 409
+            : result.code === "upstream_error"
+              ? 502
+              : result.code === "unsigned"
+                ? 422
+                : 400;
         return json({ ok: false, code: result.code, error: result.message }, status, cors);
       }
       return json(result, 200, cors);
     }
 
     if (url.pathname === "/api/deployment") {
-      const sub = await requireSession(request, env);
-      if (!sub) return json({ ok: false, error: "Sign in first." }, 401, cors);
+      // Unauthenticated, because the publish that produced the sha was.
+      // A contributor who just saved must be able to watch their change
+      // reach the live site; refusing to say would leave them staring at
+      // a map that has not updated yet with no idea whether it worked.
+      // It reports on public commits in a public repository.
       const sha = url.searchParams.get("sha");
       if (!sha) return json({ ok: false, error: "sha is required." }, 400, cors);
       const status = await deploymentStatus(githubConfig(env), sha);

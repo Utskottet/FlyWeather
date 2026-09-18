@@ -45,7 +45,7 @@ describe("contributor validation", () => {
   });
 
   it("treats a missing honeypot as empty, not as suspicious", () => {
-    const { trap: _trap, ...withoutTrap } = ok();
+    const withoutTrap: Contributor = { name: "Edvin Buregren", club: "", isHuman: true, goodFaith: true };
     expect(validateContributor(withoutTrap)).toEqual([]);
   });
 

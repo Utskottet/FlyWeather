@@ -4,9 +4,13 @@ import {
   idFromPath,
   publishSite,
   validateSitePath,
+  verifySite,
   type CommitInput,
+  type PublishRequest,
   type RepoGateway,
 } from "../../editor-worker/src/publish.ts";
+import { parseEditLog } from "../../src/domain/editLog.ts";
+import type { Contributor } from "../../src/domain/contributor.ts";
 import { bearerFrom, issueToken, passwordMatches, verifyToken } from "../../editor-worker/src/auth.ts";
 
 /**
@@ -71,7 +75,7 @@ function fakeRepo(options: { files?: Record<string, string>; onCommit?: () => vo
         throw new Error("Update is not a fast forward");
       }
       commits.push(input);
-      files.set(input.writePath, input.text);
+      for (const write of input.writes) files.set(write.path, write.text);
       if (input.deletePath) files.delete(input.deletePath);
       repo.headSha = `head-${commits.length + 1}`;
       return { commitSha: `commit-${commits.length}` };
@@ -91,6 +95,42 @@ function hammarFields(overrides: Record<string, unknown> = {}): Record<string, u
     last_edited_by: "Edvin Buregren",
     ...overrides,
   };
+}
+
+/** A contributor who would pass the form, so each test states only what it is actually about. */
+const CONTRIBUTOR: Contributor = {
+  name: "Edvin Buregren",
+  club: "Skåne FK",
+  isHuman: true,
+  goodFaith: true,
+  trap: "",
+};
+
+const LOG_PATH = "data/edit-log.jsonl";
+
+function publishAs(
+  repo: RepoGateway,
+  request: Omit<PublishRequest, "contributor"> & { contributor?: Contributor },
+  options?: { now?: Date; admin?: boolean },
+) {
+  return publishSite(repo, { contributor: CONTRIBUTOR, ...request }, options);
+}
+
+/** The site YAML a commit wrote - every commit also carries the log line. */
+function siteText(commit: CommitInput): string {
+  const write = commit.writes.find((w) => w.path.startsWith("sites/"));
+  if (!write) throw new Error(`commit wrote no site file: ${commit.writes.map((w) => w.path).join(", ")}`);
+  return write.text;
+}
+
+function sitePath(commit: CommitInput): string {
+  const write = commit.writes.find((w) => w.path.startsWith("sites/"));
+  return write?.path ?? "";
+}
+
+function logEntries(commit: CommitInput) {
+  const write = commit.writes.find((w) => w.path === LOG_PATH);
+  return parseEditLog(write?.text ?? "");
 }
 
 describe("validateSitePath", () => {
@@ -123,14 +163,14 @@ describe("validateSitePath", () => {
 describe("publishSite: moving a site", () => {
   it("merges against the ORIGINAL file, so a move keeps fields the editor never sees", async () => {
     const repo = fakeRepo();
-    const result = await publishSite(repo, {
+    const result = await publishAs(repo, {
       path: "se/skane/winch/hammar.yaml",
       previousPath: "se/skane/ridge/hammar.yaml",
       fields: hammarFields(),
     });
 
     expect(result.ok).toBe(true);
-    const written = parseYaml(repo.commits[0].text);
+    const written = parseYaml(siteText(repo.commits[0]));
     // The regression this whole fix exists for. Neither of these is
     // modelled by the editor, neither is in the payload above, and before
     // the fix a move silently destroyed both by merging into a
@@ -147,8 +187,8 @@ describe("publishSite: moving a site", () => {
     // instruction ("I removed them"), not an omission to be repaired -
     // otherwise a deleted station could never be deleted.
     const repo = fakeRepo();
-    await publishSite(repo, { path: "se/skane/ridge/hammar.yaml", fields: hammarFields() });
-    const written = parseYaml(repo.commits[0].text);
+    await publishAs(repo, { path: "se/skane/ridge/hammar.yaml", fields: hammarFields() });
+    const written = parseYaml(siteText(repo.commits[0]));
     expect(written.station).toBeUndefined();
     expect(written.links).toBeUndefined();
     // But an unmodelled sibling of an owned key is still not collateral.
@@ -157,13 +197,13 @@ describe("publishSite: moving a site", () => {
 
   it("keeps a station the payload does carry, note and all", async () => {
     const repo = fakeRepo();
-    await publishSite(repo, {
+    await publishAs(repo, {
       path: "se/skane/ridge/hammar.yaml",
       fields: hammarFields({
         station: { provider: "holfuy", station_id: "214", verified: true, note: "Cliff-top mast" },
       }),
     });
-    const written = parseYaml(repo.commits[0].text);
+    const written = parseYaml(siteText(repo.commits[0]));
     expect(written.station.station_id).toBe("214");
     expect(written.station.note).toBe("Cliff-top mast");
   });
@@ -174,29 +214,33 @@ describe("publishSite: moving a site", () => {
         "sites/se/skane/ridge/hammar.yaml": HAMMAR.replace("  max_ms: 8", "  max_ms: 8\n  margin_over_ms: 2"),
       },
     });
-    await publishSite(repo, { path: "se/skane/ridge/hammar.yaml", fields: hammarFields() });
-    const written = parseYaml(repo.commits[0].text);
+    await publishAs(repo, { path: "se/skane/ridge/hammar.yaml", fields: hammarFields() });
+    const written = parseYaml(siteText(repo.commits[0]));
     expect(written.wind.margin_over_ms).toBeUndefined();
     expect(written.wind.notes).toContain("no field for");
   });
 
   it("writes and deletes in a single commit, so a move cannot half-apply", async () => {
     const repo = fakeRepo();
-    await publishSite(repo, {
+    await publishAs(repo, {
       path: "se/skane/winch/hammar.yaml",
       previousPath: "se/skane/ridge/hammar.yaml",
       fields: hammarFields(),
     });
 
     expect(repo.commits).toHaveLength(1);
-    expect(repo.commits[0].writePath).toBe("sites/se/skane/winch/hammar.yaml");
+    expect(sitePath(repo.commits[0])).toBe("sites/se/skane/winch/hammar.yaml");
     expect(repo.commits[0].deletePath).toBe("sites/se/skane/ridge/hammar.yaml");
-    expect([...repo.files.keys()]).toEqual(["sites/se/skane/winch/hammar.yaml"]);
+    // The old path is gone and the new one is there - one site, not two,
+    // and not none. (The log file the same commit appends to is expected.)
+    expect([...repo.files.keys()].filter((p) => p.startsWith("sites/"))).toEqual([
+      "sites/se/skane/winch/hammar.yaml",
+    ]);
   });
 
   it("never deletes anything when the destination is the same path", async () => {
     const repo = fakeRepo();
-    await publishSite(repo, {
+    await publishAs(repo, {
       path: "se/skane/ridge/hammar.yaml",
       previousPath: "se/skane/ridge/hammar.yaml",
       fields: hammarFields(),
@@ -207,7 +251,7 @@ describe("publishSite: moving a site", () => {
 
   it("refuses a move whose original has already gone", async () => {
     const repo = fakeRepo({ files: {} });
-    const result = await publishSite(repo, {
+    const result = await publishAs(repo, {
       path: "se/skane/winch/hammar.yaml",
       previousPath: "se/skane/ridge/hammar.yaml",
       fields: hammarFields(),
@@ -218,13 +262,13 @@ describe("publishSite: moving a site", () => {
 
   it("renames the id together with the file, keeping the two in step", async () => {
     const repo = fakeRepo();
-    const result = await publishSite(repo, {
+    const result = await publishAs(repo, {
       path: "se/skane/ridge/hammars-backar.yaml",
       previousPath: "se/skane/ridge/hammar.yaml",
       fields: hammarFields({ id: "hammars-backar" }),
     });
     expect(result.ok).toBe(true);
-    expect(parseYaml(repo.commits[0].text).coordinates.source).toBe("CPS");
+    expect(parseYaml(siteText(repo.commits[0])).coordinates.source).toBe("CPS");
     expect(repo.commits[0].deletePath).toBe("sites/se/skane/ridge/hammar.yaml");
   });
 });
@@ -233,7 +277,7 @@ describe("publishSite: conflicting edits", () => {
   it("refuses when the branch moved since the editor loaded", async () => {
     const repo = fakeRepo();
     repo.headSha = "head-9";
-    const result = await publishSite(repo, {
+    const result = await publishAs(repo, {
       path: "se/skane/ridge/hammar.yaml",
       fields: hammarFields(),
       baseSha: "head-1",
@@ -244,7 +288,7 @@ describe("publishSite: conflicting edits", () => {
 
   it("proceeds when the editor's base is still current", async () => {
     const repo = fakeRepo();
-    const result = await publishSite(repo, {
+    const result = await publishAs(repo, {
       path: "se/skane/ridge/hammar.yaml",
       fields: hammarFields(),
       baseSha: "head-1",
@@ -270,27 +314,53 @@ describe("publishSite: conflicting edits", () => {
         return repo.commit(input);
       },
     };
-    const result = await publishSite(racy, { path: "se/skane/ridge/hammar.yaml", fields: hammarFields() });
+    const result = await publishAs(racy, { path: "se/skane/ridge/hammar.yaml", fields: hammarFields() });
     expect(result).toMatchObject({ ok: false, code: "conflict" });
   });
 });
 
 describe("publishSite: rejections that protect the catalogue", () => {
-  it("refuses an unsigned publish", async () => {
+  it("refuses a publish that is not properly signed", async () => {
+    // The same rules the form applies, enforced again here: a rule that
+    // holds only when the client cooperates is not a rule.
     const repo = fakeRepo();
-    for (const name of [undefined, "", "Edvin", 42]) {
+    const bad: (Contributor | undefined)[] = [
+      undefined,
+      { ...CONTRIBUTOR, name: "" },
+      { ...CONTRIBUTOR, name: "Edvin" },
+      { ...CONTRIBUTOR, isHuman: false },
+      { ...CONTRIBUTOR, goodFaith: false },
+      { ...CONTRIBUTOR, trap: "http://spam.example" },
+    ];
+    for (const contributor of bad) {
       const result = await publishSite(repo, {
         path: "se/skane/ridge/hammar.yaml",
-        fields: hammarFields({ last_edited_by: name }),
+        fields: hammarFields(),
+        contributor: contributor as Contributor,
       });
-      expect(result, `name ${JSON.stringify(name)} should be refused`).toMatchObject({ ok: false, code: "unsigned" });
+      expect(result, `${JSON.stringify(contributor)} should be refused`).toMatchObject({
+        ok: false,
+        code: "unsigned",
+      });
     }
     expect(repo.commits).toHaveLength(0);
   });
 
+  it("takes the recorded name from the contributor, not from the submitted fields", async () => {
+    // Otherwise the name in the file and the name in the log could be
+    // made to disagree, and the log would be worth nothing.
+    const repo = fakeRepo();
+    await publishAs(repo, {
+      path: "se/skane/ridge/hammar.yaml",
+      fields: hammarFields({ last_edited_by: "Someone Else", description: "A changed description." }),
+    });
+    expect(parseYaml(siteText(repo.commits[0])).last_edited_by).toBe("Edvin Buregren");
+    expect(logEntries(repo.commits[0])[0].by).toBe("Edvin Buregren");
+  });
+
   it("refuses an id that disagrees with its filename", async () => {
     const repo = fakeRepo();
-    const result = await publishSite(repo, {
+    const result = await publishAs(repo, {
       path: "se/skane/ridge/hammar.yaml",
       fields: hammarFields({ id: "something-else" }),
     });
@@ -301,7 +371,7 @@ describe("publishSite: rejections that protect the catalogue", () => {
     const repo = fakeRepo({
       files: { "sites/se/skane/ridge/hammar.yaml": HAMMAR, "sites/se/skane/archive/molle.yaml": HAMMAR },
     });
-    const result = await publishSite(repo, {
+    const result = await publishAs(repo, {
       path: "se/skane/ridge/molle.yaml",
       fields: hammarFields({ id: "molle" }),
     });
@@ -311,13 +381,13 @@ describe("publishSite: rejections that protect the catalogue", () => {
 
   it("allows re-saving a site over itself, which is not a duplicate", async () => {
     const repo = fakeRepo();
-    const result = await publishSite(repo, { path: "se/skane/ridge/hammar.yaml", fields: hammarFields() });
+    const result = await publishAs(repo, { path: "se/skane/ridge/hammar.yaml", fields: hammarFields() });
     expect(result.ok).toBe(true);
   });
 
   it("refuses a path outside sites/, without calling the repository", async () => {
     const repo = fakeRepo();
-    const result = await publishSite(repo, {
+    const result = await publishAs(repo, {
       path: "../../.github/workflows/pages.yaml",
       fields: hammarFields(),
     });
@@ -327,7 +397,7 @@ describe("publishSite: rejections that protect the catalogue", () => {
 
   it("refuses a document the catalogue build would reject", async () => {
     const repo = fakeRepo();
-    const result = await publishSite(repo, {
+    const result = await publishAs(repo, {
       path: "se/skane/ridge/hammar.yaml",
       // verified with no numbers violates windSchema's own refinement
       fields: hammarFields({ wind: { verified: true } }),
@@ -339,17 +409,17 @@ describe("publishSite: rejections that protect the catalogue", () => {
   it("stamps the publish time server-side, ignoring anything the client sent", async () => {
     const repo = fakeRepo();
     const when = new Date("2026-09-18T12:00:00.000Z");
-    await publishSite(
+    await publishAs(
       repo,
       { path: "se/skane/ridge/hammar.yaml", fields: hammarFields({ last_edited_at: "1999-01-01T00:00:00.000Z" }) },
-      when,
+      { now: when },
     );
-    expect(parseYaml(repo.commits[0].text).last_edited_at).toBe(when.toISOString());
+    expect(parseYaml(siteText(repo.commits[0])).last_edited_at).toBe(when.toISOString());
   });
 
   it("creates a brand new site and says so in the commit message", async () => {
     const repo = fakeRepo();
-    const result = await publishSite(repo, {
+    const result = await publishAs(repo, {
       path: "se/skane/ridge/new-place.yaml",
       fields: hammarFields({ id: "new-place", name: "New Place" }),
     });
@@ -357,6 +427,175 @@ describe("publishSite: rejections that protect the catalogue", () => {
     expect(repo.commits[0].message).toContain("Add New Place");
     expect(repo.commits[0].message).toContain("Edvin Buregren");
     expect(repo.commits[0].deletePath).toBeUndefined();
+  });
+});
+
+describe("the edit log", () => {
+  it("writes the log line in the SAME commit as the site file", async () => {
+    // The whole reason the log is a file in the repo. There is no window
+    // in which a site changed and nobody knows who did it, and one
+    // `git revert` undoes both halves.
+    const repo = fakeRepo();
+    await publishAs(repo, {
+      path: "se/skane/ridge/hammar.yaml",
+      fields: hammarFields({ wind: { verified: true, min_ms: 3, max_ms: 9 } }),
+    });
+
+    expect(repo.commits).toHaveLength(1);
+    expect(repo.commits[0].writes.map((w) => w.path).sort()).toEqual([
+      "data/edit-log.jsonl",
+      "sites/se/skane/ridge/hammar.yaml",
+    ]);
+  });
+
+  it("records who, which site, and what actually changed", async () => {
+    const repo = fakeRepo();
+    await publishAs(
+      repo,
+      {
+        path: "se/skane/ridge/hammar.yaml",
+        fields: hammarFields({ wind: { verified: true, min_ms: 3, max_ms: 9 } }),
+      },
+      { now: new Date("2026-09-19T10:00:00.000Z") },
+    );
+
+    const [entry] = logEntries(repo.commits[0]);
+    expect(entry).toMatchObject({
+      at: "2026-09-19T10:00:00.000Z",
+      site: "hammar",
+      path: "se/skane/ridge/hammar.yaml",
+      by: "Edvin Buregren",
+      club: "Skåne FK",
+      action: "edit",
+    });
+    expect(entry.changes).toContain("Vind 3–9 m/s (var 4–8 m/s)");
+  });
+
+  it("appends rather than replacing, keeping every earlier entry", async () => {
+    const repo = fakeRepo({
+      files: {
+        "sites/se/skane/ridge/hammar.yaml": HAMMAR,
+        "data/edit-log.jsonl": `${JSON.stringify({
+          at: "2026-01-01T00:00:00.000Z",
+          site: "molle",
+          path: "se/skane/ridge/molle.yaml",
+          by: "Anna Andersson",
+          action: "edit",
+        })}\n`,
+      },
+    });
+    await publishAs(repo, {
+      path: "se/skane/ridge/hammar.yaml",
+      fields: hammarFields({ description: "A changed description." }),
+    });
+
+    const entries = logEntries(repo.commits[0]);
+    expect(entries).toHaveLength(2);
+    expect(entries[0].site).toBe("molle");
+    expect(entries[1].site).toBe("hammar");
+  });
+
+  it("calls a new site an add and a move a move", async () => {
+    const added = fakeRepo();
+    await publishAs(added, {
+      path: "se/skane/ridge/new-place.yaml",
+      fields: hammarFields({ id: "new-place", name: "New Place" }),
+    });
+    expect(logEntries(added.commits[0])[0].action).toBe("add");
+
+    const moved = fakeRepo();
+    await publishAs(moved, {
+      path: "se/skane/winch/hammar.yaml",
+      previousPath: "se/skane/ridge/hammar.yaml",
+      fields: hammarFields(),
+    });
+    const entry = logEntries(moved.commits[0])[0];
+    expect(entry.action).toBe("move");
+    expect(entry.changes?.[0]).toContain("Flyttad från");
+  });
+
+  it("marks an admin's own change, and leaves an ordinary one unmarked", async () => {
+    const asAdmin = fakeRepo();
+    await publishAs(
+      asAdmin,
+      { path: "se/skane/ridge/hammar.yaml", fields: hammarFields({ description: "Admin edit." }) },
+      { admin: true },
+    );
+    expect(logEntries(asAdmin.commits[0])[0].admin).toBe(true);
+
+    const asPilot = fakeRepo();
+    await publishAs(asPilot, {
+      path: "se/skane/ridge/hammar.yaml",
+      fields: hammarFields({ description: "Pilot edit." }),
+    });
+    expect(logEntries(asPilot.commits[0])[0].admin).toBeUndefined();
+  });
+
+  it("names the contributor and their club in the commit message", async () => {
+    const repo = fakeRepo();
+    await publishAs(repo, {
+      path: "se/skane/ridge/hammar.yaml",
+      fields: hammarFields({ description: "A changed description." }),
+    });
+    expect(repo.commits[0].message).toContain("Edvin Buregren (Skåne FK)");
+  });
+
+  it("refuses a save that changes nothing, rather than logging an edit that did not happen", async () => {
+    // Pressing save on an untouched form is a normal accident. Committing
+    // it would claim an edit in the log, trigger a deploy, and make the
+    // history harder to read for no gain.
+    const repo = fakeRepo();
+    await publishAs(repo, {
+      path: "se/skane/ridge/hammar.yaml",
+      fields: hammarFields({ description: "A changed description." }),
+    });
+    const after = parseYaml(siteText(repo.commits[0]));
+
+    const again = await publishAs(repo, {
+      path: "se/skane/ridge/hammar.yaml",
+      fields: { ...after, last_edited_by: undefined, last_edited_at: undefined },
+    });
+    expect(again).toMatchObject({ ok: false, code: "no_change" });
+    expect(repo.commits).toHaveLength(1);
+  });
+});
+
+describe("verifySite", () => {
+  it("writes only a log entry - the site file is not touched", async () => {
+    // "Still right" is a different claim from "changed", and only one of
+    // them should move last_edited_at.
+    const repo = fakeRepo();
+    const before = repo.files.get("sites/se/skane/ridge/hammar.yaml");
+
+    const result = await verifySite(repo, { path: "se/skane/ridge/hammar.yaml", contributor: CONTRIBUTOR });
+
+    expect(result.ok).toBe(true);
+    expect(repo.commits[0].writes.map((w) => w.path)).toEqual(["data/edit-log.jsonl"]);
+    expect(repo.files.get("sites/se/skane/ridge/hammar.yaml")).toBe(before);
+    expect(logEntries(repo.commits[0])[0]).toMatchObject({ site: "hammar", action: "verify", by: "Edvin Buregren" });
+  });
+
+  it("needs the same signature a publish does", async () => {
+    const repo = fakeRepo();
+    const result = await verifySite(repo, {
+      path: "se/skane/ridge/hammar.yaml",
+      contributor: { ...CONTRIBUTOR, isHuman: false },
+    });
+    expect(result).toMatchObject({ ok: false, code: "unsigned" });
+    expect(repo.commits).toHaveLength(0);
+  });
+
+  it("refuses to confirm a site that is not there", async () => {
+    const repo = fakeRepo({ files: {} });
+    const result = await verifySite(repo, { path: "se/skane/ridge/hammar.yaml", contributor: CONTRIBUTOR });
+    expect(result).toMatchObject({ ok: false, code: "not_found" });
+  });
+
+  it("refuses a path outside sites/", async () => {
+    const repo = fakeRepo();
+    const result = await verifySite(repo, { path: "../../.github/workflows/pages.yaml", contributor: CONTRIBUTOR });
+    expect(result).toMatchObject({ ok: false, code: "invalid_path" });
+    expect(repo.commits).toHaveLength(0);
   });
 });
 

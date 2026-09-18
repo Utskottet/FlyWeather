@@ -1,3 +1,4 @@
+import { isFullName } from "./contributor.ts";
 import type { Site } from "./sites.ts";
 import type { SiteFile } from "./siteFile.ts";
 
@@ -57,14 +58,11 @@ export interface SiteDraft {
 }
 
 /**
- * A full name means at least two parts. Deliberately lenient beyond that:
- * plenty of people have three names, hyphens, or apostrophes, and a
- * stricter rule would reject real names to catch a careless one. The point
- * is to stop "e" or "admin" being an audit trail, not to validate names.
+ * Re-exported rather than defined here: the same rule now guards the
+ * contributor form, the publishing Worker and this module, and a rule
+ * written down three times eventually becomes three rules.
  */
-export function isFullName(value: string): boolean {
-  return value.trim().split(/\s+/).filter((part) => part.length >= 2).length >= 2;
-}
+export { isFullName };
 
 /**
  * Swedish/Danish letters are folded to their ASCII base rather than

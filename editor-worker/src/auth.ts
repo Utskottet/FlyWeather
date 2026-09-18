@@ -1,5 +1,10 @@
 /**
- * Stateless, signed session tokens for the publishing endpoints.
+ * Stateless, signed session tokens for the ADMIN endpoints.
+ *
+ * Ordinary editing needs none of this. A pilot correcting a wind band
+ * never signs in - see src/domain/contributor.ts. What a session buys is
+ * the admin layer (revert, hide, block) and a marker in the edit log
+ * saying a change was made by an admin rather than by a contributor.
  *
  * Adapted from the admin-experiment prototype's worker/auth.ts (same
  * HMAC-SHA256 approach, same no-session-store design) with one deliberate

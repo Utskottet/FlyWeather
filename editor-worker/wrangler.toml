@@ -4,7 +4,7 @@
 # Secrets are set once with `wrangler secret put <NAME>` and never live in
 # this file, in the repository, or in the browser:
 #   GITHUB_TOKEN     fine-grained PAT, contents:write on this repo only
-#   ADMIN_PASSWORD   the operator's password
+#   ADMIN_PASSWORD   the admin password (revert/hide only - editing is open)
 #   SESSION_SECRET   random string; rotating it signs everyone out
 name = "startvind-editor"
 main = "src/index.ts"
