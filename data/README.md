@@ -46,3 +46,38 @@ The form appends this option itself rather than storing it here - it is a
 UI affordance, not a club. Choosing it reveals a free-text field, so a
 pilot from a new club, a visiting pilot, or someone who simply is not a
 member is never turned away by a list that has not caught up with them.
+
+## edit-log.jsonl
+
+Every change made through the site editor, one JSON object per line,
+newest at the bottom. Appended by the publishing Worker **in the same
+commit as the site file it describes**, so an edit and its record land
+together or not at all.
+
+```json
+{"at":"2026-09-19T10:00:00.000Z","site":"hammar","path":"se/skane/ridge/hammar.yaml","by":"Anna Andersson","club":"Skåne FK","action":"edit","changes":["Vind 4–8 m/s (var 5–9 m/s)"]}
+```
+
+`at` is stamped server-side, never taken from the browser's clock.
+`action` is one of add, edit, move, verify, revert, archive. `admin: true`
+marks a change made through the admin layer, and those are excluded when
+working out who maintains a site.
+
+### Why a file and not a database
+
+A log in a database is a second source of truth: it can disagree with the
+repository, it needs its own backups and access control, and reverting an
+edit means reverting it in two places. A log in the repo is backed up by
+every clone, readable by anyone, atomic with the data it describes, and
+`git revert` already undoes both halves at once.
+
+**Do not rewrite history here.** Correcting the record means appending an
+entry that says so, not editing an old line - the same rule the site's own
+history follows. The one exception is removing personal data somebody
+should not have typed into it, which is a deliberate, reviewed commit.
+
+### Reading it
+
+The frontend imports this file at build time, so the log a visitor sees is
+the log as of the last deploy. That is the same freshness the site data
+itself has, and for the same reason: both come out of the repository.
