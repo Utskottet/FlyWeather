@@ -32,14 +32,11 @@ test.describe("Animated wind particle field", () => {
       .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
       .toBe(true);
 
-    // ROADS off -> Relief, ROADS on -> Topo (§ FlyWeather Interaction Model) -
-    // two toggles exercise both basemap swaps the old 3-way selector did.
-    for (let i = 0; i < 2; i++) {
-      await page.getByTestId("roads-toggle").click();
-      await expect
-        .poll(() => page.evaluate((id) => window.__flyweatherMap!.getLayer(id) !== undefined, WIND_LAYER_ID))
-        .toBe(true);
-    }
+    // Removed: two ROADS toggles, which exercised both basemap swaps. The
+    // Roads toggle was the only way to change the basemap style from the
+    // UI and it is gone, so there is no swap left for the layer to survive.
+    // buildTopoStyle still exists in mapStyles.ts; if a style switch is
+    // ever offered again, this belongs back with it.
   });
 
   test("site markers stay clickable with the wind layer active (WebGL layer never intercepts pointer events)", async ({

@@ -220,7 +220,6 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
   }
   const isCompact = useIsCompact();
   const [showAirspace, setShowAirspace] = useState(false);
-  const [showRoads, setShowRoads] = useState(false);
   const [showRasp, setShowRasp] = useState(false);
   const [selectedRaspParam, setSelectedRaspParam] = useState<RaspParamKey>("wstar");
   // The bottom bar's real height varies (phone's two-row arrangement,
@@ -267,7 +266,11 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
     () => sites.filter((s) => (siteMode === "winch" ? s.group === "winch" : s.group !== "winch")),
     [sites, siteMode],
   );
-  const mapStyle = useMemo(() => buildStyleForRoads(showRoads), [showRoads]);
+  // Roads/contours/place-names are no longer offered as a toggle; the map
+  // is the relief style it has always shown by default. buildTopoStyle
+  // stays in mapStyles.ts so bringing any of it back is a style decision
+  // rather than a rewrite.
+  const mapStyle = useMemo(() => buildStyleForRoads(false), []);
   // Scoped to visibleSites, not the full sites list, so a selection from
   // the other siteMode's marker set doesn't leave a stale sheet open
   // for a site no longer shown on the map.
@@ -401,10 +404,6 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
             selectedRaspParam={selectedRaspParam}
             onRaspParamChange={setSelectedRaspParam}
             availableRaspParams={availableRaspParams}
-            showRoads={showRoads}
-            onRoadsChange={setShowRoads}
-            defaultOpen={!isCompact}
-            compact={isCompact}
           />
         </div>
       {visibleSites.length === 0 && (

@@ -45,26 +45,12 @@ test.describe("RASP (W* thermal strength) overlay", () => {
     // permanently missing if it was showing before.
   });
 
-  test("survives ROADS on/off basemap switches without duplicating the layer", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
-    await page.getByTestId("rasp-toggle").click();
-    await page.waitForTimeout(500);
-
-    // ROADS off -> Relief, ROADS on -> Topo (§ FlyWeather Interaction Model) -
-    // two toggles exercise both basemap swaps the old 3-way selector did.
-    // getLayer() would return undefined for a missing layer and a single
-    // object for a present one - MapLibre itself throws on a genuine
-    // duplicate addLayer() call with a reused id, so reaching this point at
-    // all across both style swaps already rules out the "no layer
-    // duplication" failure mode the task calls out.
-    for (let i = 0; i < 2; i++) {
-      await page.getByTestId("roads-toggle").click();
-      await page.waitForTimeout(800);
-      const raspToggleStillOn = await page.getByTestId("rasp-toggle").getAttribute("aria-pressed");
-      expect(raspToggleStillOn).toBe("true");
-    }
-  });
+  // Removed: "survives ROADS on/off basemap switches without duplicating
+  // the layer". The Roads toggle was the only way to swap the basemap
+  // style from the UI, and it is gone - so the duplicate-layer failure it
+  // guarded is now unreachable rather than merely untested. buildTopoStyle
+  // still exists in mapStyles.ts; if a style switch is ever offered again,
+  // bring this test back with it.
 
   test("site markers, airspace, and wind particles all still work with RASP on", async ({ page }) => {
     await page.goto("/");

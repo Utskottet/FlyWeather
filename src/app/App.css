@@ -142,13 +142,17 @@
 
 /* Status cluster sits between brand and Add site, separated by a rule
    rather than by empty space so the header reads as grouped fields. */
+/* Centred on the bar rather than packed against the logo. Absolutely
+   positioned because "centre it in the space left over" is not the same
+   as centred - the brand and the menu are different widths, so a flex
+   child would sit off-centre by half that difference. */
 .app-header-status {
-  flex: 1;
-  min-width: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  border-left: var(--panel-border);
-  padding-left: 16px;
+  pointer-events: none;
 }
 
 .app-header .source-status {
@@ -238,35 +242,27 @@
   width: 100%;
 }
 
+/* Not a panel any more - the switches carry their own chrome and this is
+   just what lines them up. The titled, collapsible box is gone: the
+   heading said nothing the switches do not, and the disclosure put a tap
+   between the map and a toggle. */
 .map-layers-panel {
-  background: var(--panel-bg-translucent);
-  border: var(--panel-border);
-  border-radius: var(--panel-radius);
-  box-shadow: var(--panel-shadow);
-  overflow: hidden;
-}
-
-.map-layers-panel-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  border: none;
-  background: transparent;
-  padding: 12px var(--panel-pad);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-strong);
-  cursor: pointer;
-}
-
-.map-layers-panel-chevron {
-  font-size: 11px;
-  color: var(--text-muted);
+  min-width: 0;
 }
 
 .map-layers-panel-body {
-  padding: 0 var(--panel-pad) 6px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.map-layers-panel .press-toggle {
+  background: var(--panel-bg);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--panel-shadow);
 }
 
 /* Every layer row is the same object; the divider comes from the row
@@ -1404,44 +1400,21 @@
     width: 150px;
   }
 
-  /* No panel, no title, no disclosure - the switches themselves, inline.
-     See MapLayersPanel.tsx for why the box goes away on a phone. */
-  .map-layers-panel-compact {
+  /* The layer switches take whatever width is left beside Ridge/Winch. */
+  .map-layers-panel {
     flex: 1 1 auto;
-    background: none;
-    border: none;
-    box-shadow: none;
-    padding: 0;
     min-width: 0;
   }
 
-  .map-layers-panel-compact .map-layers-panel-body {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 6px;
-    padding: 0;
-    border: none;
-    background: none;
-  }
-
-  .map-layers-panel-compact .press-toggle {
+  .map-layers-panel .press-toggle {
     min-height: 44px;
     padding: 0 10px;
     font-size: 12px;
-    background: var(--panel-bg);
-    border-radius: var(--panel-radius);
-    box-shadow: var(--panel-shadow);
   }
 
   .map-controls .site-mode-toggle button {
     min-height: 32px;
     font-size: 13px;
-  }
-
-  .map-layers-panel-header {
-    padding: 9px 10px;
-    font-size: 14px;
   }
 
   .press-toggle-switch {
@@ -1559,6 +1532,10 @@
   position: relative;
   margin-left: auto;
   flex-shrink: 0;
+  /* Above the centred status, which spans the bar and would otherwise
+     swallow the tap - it is pointer-events:none for that reason, but the
+     stacking order matters for the open panel too. */
+  z-index: 1;
 }
 
 .app-header-menu-button {

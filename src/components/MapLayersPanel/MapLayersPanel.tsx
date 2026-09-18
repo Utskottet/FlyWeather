@@ -1,6 +1,4 @@
-import { useState } from "react";
 import { AirspaceToggle } from "../AirspaceToggle/AirspaceToggle.tsx";
-import { RoadsToggle } from "../RoadsToggle/RoadsToggle.tsx";
 import { RaspControl } from "../RaspControl/RaspControl.tsx";
 import type { RaspParamKey } from "../../domain/soaring.ts";
 
@@ -12,24 +10,26 @@ export interface MapLayersPanelProps {
   selectedRaspParam: RaspParamKey;
   onRaspParamChange: (key: RaspParamKey) => void;
   availableRaspParams: RaspParamKey[];
-  showRoads: boolean;
-  onRoadsChange: (show: boolean) => void;
-  /** Open by default on desktop (the reference image shows the panel standing open). Ignored when compact. */
-  defaultOpen: boolean;
-  /** Phone layout: no panel, no title, no disclosure - see below. */
-  compact?: boolean;
 }
 
 /**
- * The single organised map-layer panel of § Startvind UX Direction -
- * replaces the loose vertical stack of individual pills that used to sit
- * top-left. Every overlay lives here, one switch row each, in the
- * reference image's order.
+ * The map's overlay switches: Airspace and RASP, inline, on every screen.
  *
- * RASP keeps its own associated submenu (the parameter selector appears
- * under its row the moment RASP is on and vanishes when it is off) rather
- * than spreading four more permanent rows through the panel - the same
- * rule as before, now inside the panel instead of beside it.
+ * This was a titled, collapsible panel. All of that is gone - the heading
+ * "Map layers" told you nothing the two switches do not, and a disclosure
+ * put a tap between the map and a toggle on the screen with least room for
+ * one. Two switches do not need a container to explain them.
+ *
+ * Roads is gone too, on every screen rather than only on a phone. Note
+ * that its toggle never only controlled roads: it swapped the whole map
+ * style, which also carried contour lines, contour labels and place names
+ * (see mapStyles.ts's buildTopoStyle). Those go with it. The map is
+ * unchanged from how it looked with the toggle off, which is how it
+ * shipped by default - but if place names are wanted back, that is a style
+ * change rather than a toggle.
+ *
+ * RASP keeps its own parameter selector, which appears when the overlay is
+ * on and hides when it is off - no separate disclosure to manage.
  */
 export function MapLayersPanel({
   showAirspace,
@@ -39,74 +39,20 @@ export function MapLayersPanel({
   selectedRaspParam,
   onRaspParamChange,
   availableRaspParams,
-  showRoads,
-  onRoadsChange,
-  defaultOpen,
-  compact = false,
 }: MapLayersPanelProps) {
-  const [open, setOpen] = useState(defaultOpen);
-
-  /**
-   * On a phone the panel stops being a panel.
-   *
-   * A titled, collapsible box costs a header row, a disclosure tap and a
-   * dropdown that overlays the map - three things to get past before you
-   * can toggle a layer, on the screen with least room for any of them. The
-   * switches go inline instead: always visible, always one tap, no
-   * chrome around them. "Map layers" as a heading told you nothing the
-   * switches do not.
-   *
-   * Roads is dropped entirely here rather than shrunk. It is the least
-   * used of the three and the only one that is purely orientation rather
-   * than flying information, so it is what a small screen can afford to
-   * lose. Its state stays wired through, so a wider window still has it.
-   */
-  if (compact) {
-    return (
-      <section className="map-layers-panel map-layers-panel-compact" data-testid="map-layers-panel">
-        <div className="map-layers-panel-body" data-testid="map-layers-panel-body">
-          <AirspaceToggle show={showAirspace} onChange={onAirspaceChange} variant="pill" />
-          <RaspControl
-            show={showRasp}
-            onChange={onRaspChange}
-            selectedParam={selectedRaspParam}
-            onParamChange={onRaspParamChange}
-            availableParams={availableRaspParams}
-            variant="pill"
-          />
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="map-layers-panel" data-testid="map-layers-panel">
-      <button
-        type="button"
-        className="map-layers-panel-header"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-        data-testid="map-layers-toggle"
-      >
-        <span>Map layers</span>
-        <span className="map-layers-panel-chevron" aria-hidden="true">
-          {open ? "▾" : "▸"}
-        </span>
-      </button>
-      {open && (
-        <div className="map-layers-panel-body" data-testid="map-layers-panel-body">
-          <AirspaceToggle show={showAirspace} onChange={onAirspaceChange} variant="switch" />
-          <RaspControl
-            show={showRasp}
-            onChange={onRaspChange}
-            selectedParam={selectedRaspParam}
-            onParamChange={onRaspParamChange}
-            availableParams={availableRaspParams}
-            variant="switch"
-          />
-          <RoadsToggle show={showRoads} onChange={onRoadsChange} variant="switch" />
-        </div>
-      )}
+      <div className="map-layers-panel-body" data-testid="map-layers-panel-body">
+        <AirspaceToggle show={showAirspace} onChange={onAirspaceChange} variant="pill" />
+        <RaspControl
+          show={showRasp}
+          onChange={onRaspChange}
+          selectedParam={selectedRaspParam}
+          onParamChange={onRaspParamChange}
+          availableParams={availableRaspParams}
+          variant="pill"
+        />
+      </div>
     </section>
   );
 }

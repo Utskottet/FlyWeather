@@ -96,11 +96,13 @@ test.describe("desktop keeps the full arrangement", () => {
     await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 60_000 });
   });
 
-  test("keeps the titled panel, Roads, and the zoom buttons", async ({ page }) => {
-    // The phone layout is a different arrangement, not a smaller copy -
-    // so none of what it drops should go missing here.
-    await expect(page.locator('[data-testid="map-layers-toggle"]')).toHaveCount(1);
-    await expect(page.locator('[data-testid="roads-toggle"]')).toHaveCount(1);
+  test("keeps the zoom buttons, and has no panel or Roads either", async ({ page }) => {
+    // The layer switches are inline on every screen now, and Roads is gone
+    // everywhere rather than only on a phone - so the desktop difference is
+    // just the zoom buttons, which pinch replaces on touch.
+    await expect(page.locator('[data-testid="map-layers-toggle"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="roads-toggle"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="map-layers-panel-body"]')).toBeVisible();
     await expect(page.locator(".maplibregl-ctrl-zoom-in")).toHaveCount(1);
   });
 });

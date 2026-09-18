@@ -117,19 +117,18 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("START resets time/height/site-source but preserves Roads/Airspace/RASP map-tool preferences", async ({
+  test("START resets time/height/site-source but preserves Airspace/RASP map-tool preferences", async ({
     page,
   }) => {
     await page.goto("/");
     await page.locator(".rose-marker-icon").first().waitFor();
     await page.waitForTimeout(1500);
 
-    // Set up: tomorrow, 350m, RASP on, Roads on, Airspace on.
+    // Set up: tomorrow, 450m, RASP on, Airspace on.
     await page.getByTestId("time-slider-range").fill("24");
     await page.getByTestId("altitude-slider-range").fill("0.75"); // 450m segment boundary (tests/unit/altitudeAxis.test.ts)
     await expect(page.getByTestId("altitude-slider-label")).toHaveText("450 m AGL");
     await page.getByTestId("rasp-toggle").click();
-    await page.getByTestId("roads-toggle").click();
     await page.getByTestId("airspace-toggle").click();
     await page.waitForTimeout(300);
 
@@ -140,7 +139,6 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     // Map-tool preferences are untouched by START (§ item 14) - only
     // forecast navigation (time/height/site-source) resets.
     await expect(page.getByTestId("rasp-toggle")).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByTestId("roads-toggle")).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("airspace-toggle")).toHaveAttribute("aria-pressed", "true");
   });
 });
