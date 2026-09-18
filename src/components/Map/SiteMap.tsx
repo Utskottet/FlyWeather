@@ -311,6 +311,14 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
   // resolved (loaded or failed) - avoids a flash of "unavailable" while
   // the fetch is still in flight on first load.
   const isRaspUnavailable = showRasp && !soaringLoading && !raspOverlay;
+  // A generic "no RASP for this hour" is indistinguishable from a broken
+  // app, and RASP has in fact been missing most of the timeline because
+  // the soaring backend stopped publishing new runs - not because of
+  // anything the map is doing. So the notice states the real horizon and
+  // the real publish time, letting a pilot tell "outside the model's
+  // range" apart from "this data is two days old".
+  const raspLastValidTime = selectedParameter?.validTimes.at(-1) ?? null;
+  const raspCoverageEnd = raspLastValidTime !== null ? formatDownloadTime(raspLastValidTime, new Date()) : null;
 
   // Flag using whichever of the two publish timestamps is OLDER - if
   // either dataset's refresh cron has stalled, that's worth surfacing
@@ -406,9 +414,17 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
       )}
       {isRaspUnavailable && (
         <div className="rasp-unavailable-notice" data-testid="rasp-unavailable-notice">
-          {soaringError
-            ? "RASP thermal data unavailable."
-            : "No RASP thermal data for this forecast hour."}
+          {soaringError ? (
+            "RASP thermal data unavailable."
+          ) : raspCoverageEnd !== null && raspUpdated !== null ? (
+            <>
+              No RASP thermal data for this hour - the latest published run only reaches {raspCoverageEnd}.
+              <br />
+              Published {raspUpdated}; nothing newer has been published since.
+            </>
+          ) : (
+            "No RASP thermal data for this forecast hour."
+          )}
         </div>
       )}
       {raspOverlay && selectedParameter && soaringManifest && (
@@ -427,14 +443,14 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
         // never land unclickable behind it - found via an E2E diagnostic
         // during the MapLibre port, and revisited every time the chrome's
         // shape changed since (this is one of those times). Bottom clears
-        // the bottom bar; right clears the upper-right control panel on
+        // the bottom bar; left clears the upper-left control column on
         // desktop, where it is permanently open and ~260px wide. Read once,
         // at map creation - fitBounds only runs on mount, which is exactly
         // what gives "no map jump" later.
         boundsPadding={
           isCompact
             ? { top: 40, bottom: 210, left: 24, right: 24 }
-            : { top: 40, bottom: 180, left: 40, right: 300 }
+            : { top: 40, bottom: 180, left: 300, right: 60 }
         }
         maxZoom={12}
         showAirspace={showAirspace}

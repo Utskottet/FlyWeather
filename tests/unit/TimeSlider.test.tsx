@@ -18,7 +18,7 @@ describe("TimeSlider", () => {
     const { getByTestId } = render(
       <TimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
     );
-    expect(getByTestId("time-slider-label").textContent).toBe("NOW");
+    expect(getByTestId("time-slider-label").textContent).toContain("NOW");
   });
 
   it("calls onChange with the new index when the range input moves", () => {

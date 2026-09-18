@@ -106,6 +106,16 @@ export function MapLibreMap({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // MapLibre fires queued style events even after `remove()` has torn
+    // the style down, and every layer-adding call below then throws
+    // "Style is not done loading", which takes the whole React tree with
+    // it. That happens whenever this component is mounted, unmounted and
+    // mounted again faster than the style loads - React's StrictMode
+    // double-mount in development does exactly that, and any future
+    // remount would too. The flag makes the handlers no-ops once this
+    // particular instance is gone.
+    let disposed = false;
+
     const instance = new MapLibreGLMap({
       container: containerRef.current,
       style: styleRef.current,
@@ -113,12 +123,16 @@ export function MapLibreMap({
       fitBoundsOptions: { padding: boundsPadding, maxZoom },
       attributionControl: { compact: true },
     });
-    instance.addControl(new NavigationControl({ showCompass: false }), "top-left");
+    // Top right: the app's own control column (Ridge/Winch + Map layers)
+    // owns the top left corner (§ Startvind UX Direction), and two control
+    // stacks in one corner is exactly the pile this milestone removed.
+    instance.addControl(new NavigationControl({ showCompass: false }), "top-right");
     setMap(instance);
 
     window.__flyweatherMap = instance;
     window.__flyweatherMapLoaded = false;
     instance.once("load", () => {
+      if (disposed) return;
       window.__flyweatherMapLoaded = true;
     });
     // "style.load" fires on the initial load AND after every setStyle()
@@ -126,6 +140,7 @@ export function MapLibreMap({
     // the new spec, so this must re-run every time to stay always-on
     // across RELIEF/TOPO/MAP per Block 18's "no toggle" requirement.
     instance.on("style.load", () => {
+      if (disposed) return;
       // RASP added first so it paints as the bottom-most overlay, directly
       // above the basemap - roses > airspace > wind > RASP > basemap, per
       // the target visual stack (a transparency layer sitting under the
@@ -138,6 +153,7 @@ export function MapLibreMap({
     });
 
     return () => {
+      disposed = true;
       instance.remove();
       setMap(null);
       window.__flyweatherMap = undefined;
@@ -149,16 +165,38 @@ export function MapLibreMap({
 
   // Swapping the style (map mode change) preserves the existing map
   // instance's center/zoom/bearing - setStyle() doesn't reset the view.
+  //
+  // The style the map was CREATED with is skipped: re-applying it the
+  // moment the instance appears is not just wasted work, it restarts the
+  // style load while the first one is still in flight, and the pending
+  // "style.load" from that first load then runs against a style that is
+  // no longer loaded - every layer-adding call in the handler throws
+  // "Style is not done loading" and the whole React tree goes with it.
+  // (Seen for real once a layout effect elsewhere in the app shifted
+  // mount timing by a frame - the bug was always there, waiting.)
+  const appliedStyleRef = useRef(style);
   useEffect(() => {
-    map?.setStyle(style);
+    if (!map) return;
+    if (appliedStyleRef.current === style) return;
+    appliedStyleRef.current = style;
+    map.setStyle(style);
   }, [map, style]);
 
   // Toggling airspace while the current style is already loaded (the
   // common case - no mode switch involved) adds/removes it directly;
   // surviving an actual mode switch is handled by the "style.load"
   // listener above via showAirspaceRef.
+  //
+  // The isStyleLoaded() guard here and in the wind effect below is not
+  // belt-and-braces: `map` becomes non-null the moment the instance is
+  // constructed, which is well before its style has loaded, so whether
+  // this effect ran early enough to throw "Style is not done loading"
+  // was pure timing luck - and the throw takes the entire React tree
+  // down, not just the layer. Skipping is safe because the "style.load"
+  // listener adds both layers from the same refs as soon as the style is
+  // ready.
   useEffect(() => {
-    if (!map) return;
+    if (!map || !map.isStyleLoaded()) return;
     if (showAirspace) {
       addAirspaceLayer(map, AIRSPACE_DATA_URL);
     } else {
@@ -171,7 +209,7 @@ export function MapLibreMap({
   // an actual style/mode switch is handled by the "style.load" listener
   // above via windMotionEnabledRef.
   useEffect(() => {
-    if (!map) return;
+    if (!map || !map.isStyleLoaded()) return;
     if (windMotionEnabled) {
       addWindParticleLayer(map, windGridRef.current);
     } else {

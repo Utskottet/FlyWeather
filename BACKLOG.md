@@ -62,3 +62,12 @@ commitment log.
   configured (§ Startvind UX Direction chunk 1). Publishing is still gated
   by the Worker's sign-in, but the editor UI itself is now public - worth a
   deliberate yes/no at the chunk 1 visual review.
+
+- **RASP data is stale at source (FlyWeather-Soaring, not this repo)**:
+  as of 2026-09-18 the published manifest is still model run
+  2026-09-16T21:00Z, generated 2026-09-17T00:02Z, with coverage ending
+  2026-09-19T09:00Z - so the overlay only exists for the first ~14h of
+  this app's 72h timeline and is honestly "unavailable" for the rest.
+  The publishing cron in FlyWeather-Soaring needs investigating; this app
+  now states the real horizon and publish time in its unavailable notice
+  so the failure is legible rather than looking like a broken map.

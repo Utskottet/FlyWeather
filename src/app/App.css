@@ -173,12 +173,18 @@
 }
 
 /* ---------------------------------------------------------------------
-   Upper-right map controls - Ridge/Winch + the Map layers panel.
+   Upper-LEFT map controls - Ridge/Winch + the Map layers panel.
+
+   The reference image puts these on the right; they live on the left here
+   by explicit user direction. MapLibre's own zoom control therefore moved
+   to the top right (MapLibreMap.tsx), the map notices moved to the top
+   centre, and the desktop site sheet moved to the right column - nothing
+   may share this corner with the controls.
    --------------------------------------------------------------------- */
 .map-controls {
   position: absolute;
   top: 12px;
-  right: 12px;
+  left: 12px;
   z-index: 900;
   display: flex;
   flex-direction: column;
@@ -597,17 +603,19 @@
   pointer-events: none;
 }
 
+/* Top centre, not top left: the control column owns the left corner now. */
 .data-staleness-notice {
   position: absolute;
   top: 12px;
-  left: 12px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 500;
   background: rgba(255, 244, 229, 0.97);
   border: 1px solid #ffb74d;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   padding: 8px 12px;
-  max-width: 240px;
+  max-width: 360px;
   font-size: 13px;
   color: #7a4a00;
   pointer-events: none;
@@ -616,14 +624,15 @@
 .rasp-unavailable-notice {
   position: absolute;
   top: 12px;
-  left: 12px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 500;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid #ccc;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   padding: 8px 12px;
-  max-width: 240px;
+  max-width: 400px;
   font-size: 13px;
   color: #555;
   pointer-events: none;
@@ -638,7 +647,8 @@
      legend entirely. The +24px is the bar's own bottom offset plus a
      gap. */
   bottom: calc(var(--bottom-bar-height, 120px) + 24px);
-  left: 12px;
+  /* Right, clear of the control column on the left. */
+  right: 12px;
   z-index: 500;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 8px;
@@ -766,24 +776,101 @@
   box-sizing: border-box;
 }
 
-.time-slider-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 24px;
+/* Thumb geometry lives here because three things depend on it: the thumb
+   itself, the label that rides on it, and the half-thumb inset that keeps
+   the two aligned at both ends of the track. */
+.time-slider-track {
+  --thumb-size: 26px;
+  position: relative;
+  padding-top: 26px;
 }
 
-/* The selected time as the reference image's filled chip, rather than
-   plain text - it is a readout of where the thumb is, so it is styled
-   like a value, not like a heading. */
+/* The marker you actually drag: a labelled chip carrying the day and the
+   clock time, centred over the thumb. Pointer events pass through to the
+   range input underneath, so dragging the chip drags the slider. */
 .time-slider-label {
+  position: absolute;
+  top: 0;
+  /* `left` is set inline from the measured thumb position, clamped to the
+     track - see TimeSlider.tsx. */
+  transform: translateX(-50%);
   background: var(--accent);
   color: #fff;
-  border-radius: 6px;
-  padding: 3px 10px;
+  border-radius: 7px;
+  padding: 4px 10px;
   font-weight: 700;
   font-size: 13px;
-  flex-shrink: 0;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(26, 115, 232, 0.4);
+  pointer-events: none;
+}
+
+/* A downward tick joining the chip to the thumb, so the two read as one
+   marker rather than a chip floating above a dot. */
+.time-slider-label::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: var(--pointer-offset, 50%);
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--accent);
+}
+
+/* A real grab handle, not a default dot: the thumb is the marker's base
+   and has to be big enough to hit with a thumb on a phone. */
+.time-slider-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  display: block;
+  height: var(--thumb-size);
+  background: transparent;
+  cursor: pointer;
+}
+
+.time-slider-range:focus {
+  outline: none;
+}
+
+.time-slider-range:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.time-slider-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #d4dae1;
+}
+
+.time-slider-range::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #d4dae1;
+}
+
+.time-slider-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  margin-top: calc((6px - var(--thumb-size)) / 2);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 1px 4px rgba(16, 42, 67, 0.35);
+}
+
+.time-slider-range::-moz-range-thumb {
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 1px 4px rgba(16, 42, 67, 0.35);
 }
 
 .time-slider-range {
@@ -1227,8 +1314,8 @@
      are narrower than on desktop. */
   .map-controls {
     top: 8px;
-    right: 8px;
-    width: 176px;
+    left: 8px;
+    width: 168px;
     gap: 8px;
   }
 
@@ -1271,24 +1358,26 @@
     display: none;
   }
 
-  /* The map notices sit top-left and the controls top-right, so a notice
-     has to stop short of the control panel's width rather than of the old
-     top-right logo's - measured against the .map-controls width above. */
+  /* Centred notices have the control column to their left; keeping them
+     off it matters most at 360px. */
   .data-staleness-notice,
   .rasp-unavailable-notice {
+    left: auto;
+    right: 8px;
+    transform: none;
     max-width: calc(100% - 200px);
   }
 }
 
-/* Desktop: the site detail sheet becomes a card in the left column rather
+/* Desktop: the site detail sheet becomes a card in the right column rather
    than a full-width drawer across the bottom. The drawer shape is a phone
    idiom - on a wide screen it covered most of the map it is describing,
    and the reference image keeps the map dominant at all times. Same
    component, same content, same close/edit behaviour. */
 @media (min-width: 761px) {
   .site-sheet {
-    left: 12px;
-    right: auto;
+    right: 12px;
+    left: auto;
     width: 400px;
     max-height: calc(100% - var(--bottom-bar-height, 120px) - 48px);
     border-radius: var(--panel-radius);

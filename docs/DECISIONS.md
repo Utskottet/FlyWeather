@@ -1795,3 +1795,77 @@ this chunk's result are beside it (`chunk1-desktop-1336.png`,
   the page 2px wider than a 390px viewport. Fixed with `box-sizing` on
   `.map-controls > *`.
 
+---
+
+## 2026-09-18 — Startvind UX Direction, chunk 2 (first review pass)
+
+Three items from the user's review of chunk 1, plus one crash found on the
+way.
+
+### Controls moved to the LEFT (deviates from the reference image)
+
+User direction, explicit: Ridge/Winch and the Map layers panel go on the
+other side from the reference. Everything that shared that corner had to
+move with them - MapLibre's zoom control to the top right
+(`MapLibreMap.tsx`), the staleness/RASP notices to the top centre, the
+desktop site sheet and the RASP legend to the right column, and the map's
+fit padding now reserves 300px on the left instead of the right. The
+reference image remains the authority for everything else; this one
+deviation is recorded in MASTER_SPEC §15 so it is not "fixed" back later
+by someone comparing against the image.
+
+### The timeline marker now carries the day and the time
+
+Previously the draggable thing was a small default range thumb, with the
+selected time printed as a separate chip at the left of the row - and the
+text itself was a bare hour ("17") on the current day, or "NOW" with no
+time at all. Now:
+
+- `formatSliderLabel` always states day + clock time ("Sat 14:00"), and
+  "NOW · Fri 20:00" at the live position - NOW keeps its word because
+  live-vs-forecast matters, but it no longer costs you the timestamp. The
+  function no longer takes a reference date, since it no longer shortens
+  anything relative to today.
+- The chip is absolutely positioned over the thumb and rides with it.
+  `TimeSlider` measures both the track and the chip (ResizeObserver) so
+  the chip can be clamped inside the track at both ends - at index 0 an
+  unclamped chip hung half off the left edge of a 390px screen - while its
+  pointer keeps aiming at the real thumb position.
+- The thumb itself is now a 26px handle with a white ring, sized to be
+  dragged with a thumb on a phone, and the track has a real focus ring
+  for keyboard users only (`:focus-visible`), replacing the black box the
+  browser drew around the whole row after a click.
+- `tests/unit-setup.ts` (new) gives jsdom a no-op ResizeObserver so
+  components that measure themselves can mount in unit tests.
+
+### RASP: the app is fine, the data is not
+
+Investigated rather than assumed. The overlay renders for NOW through
+about +14h and then stops, because the **FlyWeather-Soaring backend has
+not published since 2026-09-17 00:02Z** (model run 2026-09-16 21:00Z,
+coverage ending 2026-09-19 09:00Z) - so most of a 72h timeline has no
+product to show. Nothing in this repo was broken.
+
+What changed here is honesty, not behaviour: the unavailable notice now
+names the run's real horizon and its publish time, so "past the model's
+range" is distinguishable from "the backend has stopped". The fix for the
+data itself belongs in FlyWeather-Soaring and is in `BACKLOG.md`.
+
+### A latent crash, exposed and fixed
+
+Adding a layout effect to `TimeSlider` shifted mount timing by a frame and
+turned a pre-existing race into a hard crash: `MapLibreMap` sets its `map`
+state the moment the instance is constructed - well before the style has
+loaded - and the airspace and wind-particle effects then called
+`addLayer` against an unloaded style. MapLibre throws "Style is not done
+loading", and an uncaught throw in an effect takes the whole React tree
+with it: a blank page, not a missing layer.
+
+Both effects now skip while `isStyleLoaded()` is false; the existing
+`style.load` listener adds those layers from the same refs as soon as the
+style is ready, so nothing is lost. Confirmed by bisecting against the
+committed chunk-1 build (which rendered fine) and then instrumenting the
+map's lifecycle, rather than by guessing. The same instance-disposal guard
+was added while diagnosing and kept - queued style events after
+`remove()` are the other way this throw can happen.
+

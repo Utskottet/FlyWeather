@@ -11,19 +11,18 @@ import {
 describe("formatSliderLabel", () => {
   const now = new Date("2026-08-18T13:00:00Z"); // 15:00 Europe/Stockholm (CEST, UTC+2) in August
 
-  it("returns NOW when isNow is true regardless of the date", () => {
-    expect(formatSliderLabel(now, now, true)).toBe("NOW");
+  it("keeps the word NOW but still states the day and clock time", () => {
+    expect(formatSliderLabel(now, true)).toBe("NOW · Tue 15:00");
   });
 
-  it("returns just the local hour for a time on the same Stockholm calendar day", () => {
+  it("states day and clock time for a time on the same Stockholm calendar day", () => {
     const sameDay = new Date("2026-08-18T15:00:00Z"); // 17:00 Stockholm
-    expect(formatSliderLabel(sameDay, now, false)).toBe("17");
+    expect(formatSliderLabel(sameDay, false)).toBe("Tue 17:00");
   });
 
-  it("returns weekday + hour once the Stockholm calendar day changes", () => {
+  it("states day and clock time once the Stockholm calendar day changes", () => {
     const nextDay = new Date("2026-08-19T07:00:00Z"); // 09:00 Stockholm, Wednesday
-    const label = formatSliderLabel(nextDay, now, false);
-    expect(label).toMatch(/^[A-Z]{3} 09$/);
+    expect(formatSliderLabel(nextDay, false)).toBe("Wed 09:00");
   });
 });
 
@@ -103,17 +102,17 @@ describe("nowPositionFraction", () => {
 
 describe("DST handling (Europe/Stockholm) - not near today's date, but must always hold", () => {
   it("spring-forward 2026-03-29: local clocks skip 02:00-03:00 CET/CEST (jump by 2, not 1)", () => {
-    const before = formatSliderLabel(new Date("2026-03-29T00:00:00Z"), new Date("2026-03-29T00:00:00Z"), false);
-    const after = formatSliderLabel(new Date("2026-03-29T01:00:00Z"), new Date("2026-03-29T01:00:00Z"), false);
-    expect(before).toBe("01"); // 00:00Z = 01:00 CET
-    expect(after).toBe("03"); // 01:00Z = 03:00 CEST - 02:00-03:00 never happens that day
+    const before = formatSliderLabel(new Date("2026-03-29T00:00:00Z"), false);
+    const after = formatSliderLabel(new Date("2026-03-29T01:00:00Z"), false);
+    expect(before).toBe("Sun 01:00"); // 00:00Z = 01:00 CET
+    expect(after).toBe("Sun 03:00"); // 01:00Z = 03:00 CEST - 02:00-03:00 never happens that day
   });
 
   it("fall-back 2026-10-25: local clocks repeat 02:00-03:00 CEST/CET (does not advance)", () => {
-    const before = formatSliderLabel(new Date("2026-10-25T00:00:00Z"), new Date("2026-10-25T00:00:00Z"), false);
-    const after = formatSliderLabel(new Date("2026-10-25T01:00:00Z"), new Date("2026-10-25T01:00:00Z"), false);
-    expect(before).toBe("02"); // 00:00Z = 02:00 CEST
-    expect(after).toBe("02"); // 01:00Z = 02:00 CET - the repeated hour, same label
+    const before = formatSliderLabel(new Date("2026-10-25T00:00:00Z"), false);
+    const after = formatSliderLabel(new Date("2026-10-25T01:00:00Z"), false);
+    expect(before).toBe("Sun 02:00"); // 00:00Z = 02:00 CEST
+    expect(after).toBe("Sun 02:00"); // 01:00Z = 02:00 CET - the repeated hour, same label
   });
 
   it("nowPositionFraction stays monotonic across the spring-forward transition", () => {

@@ -110,12 +110,12 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
 
     await range.fill("6");
-    await expect(page.getByTestId("time-slider-label")).not.toHaveText("NOW");
+    await expect(page.getByTestId("time-slider-label")).not.toContainText("NOW");
     await expect(page.getByTestId("source-status-sites")).toContainText("FORECAST");
     await expect(startButton).toHaveAttribute("aria-pressed", "false");
 
     await startButton.click();
-    await expect(page.getByTestId("time-slider-label")).toHaveText("NOW");
+    await expect(page.getByTestId("time-slider-label")).toContainText("NOW");
     await expect(page.getByTestId("source-status-sites")).toContainText("MEASURED");
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
   });
@@ -138,7 +138,7 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
 
     await page.getByTestId("start-button").click();
 
-    await expect(page.getByTestId("time-slider-label")).toHaveText("NOW");
+    await expect(page.getByTestId("time-slider-label")).toContainText("NOW");
     await expect(page.getByTestId("source-status-sites")).toContainText("MEASURED");
     // Map-tool preferences are untouched by START (§ item 14) - only
     // forecast navigation (time/height/site-source) resets.

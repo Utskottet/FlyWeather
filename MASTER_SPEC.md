@@ -798,7 +798,7 @@ No heavy backend framework in V1.
 >   `SiteEditorPanel`; publishing from it still requires signing in to the
 >   publishing Worker (`docs/PUBLISHING.md`), which is where authentication
 >   belongs - the button itself is shown wherever a publish target exists.
-> - **Upper-right controls** (`.map-controls`): the RIDGE/WINCH selector
+> - **Upper-LEFT controls** (`.map-controls`): the RIDGE/WINCH selector
 >   (`SiteModeToggle`, a segmented control - selecting which sites exist
 >   is a different kind of decision from switching an overlay on, and it
 >   is never styled like one), and below it **one organised map-layer
@@ -806,7 +806,12 @@ No heavy backend framework in V1.
 >   Airspace, RASP, Roads. RASP keeps its own associated submenu - the
 >   parameter selector (Thermals / Thermal top / Usable height /
 >   Cloudbase) appears under its row the moment RASP is on and disappears
->   when it is off, never as four permanent rows. There is no WIND toggle
+>   when it is off, never as four permanent rows. **The reference image
+>   places this column on the right; it lives on the left by explicit user
+>   direction (2026-09-18).** MapLibre's own zoom control therefore sits
+>   top right, the map notices are centred along the top edge, and the
+>   desktop site sheet is a right-column card - nothing else may occupy
+>   the top-left corner. There is no WIND toggle
 >   (§9): animated wind is unconditional, so the reference image's Wind
 >   row is deliberately not implemented - see the open question in
 >   `docs/DECISIONS.md`.
@@ -815,6 +820,14 @@ No heavy backend framework in V1.
 >   never disabled, still the only way back into live mode), the forecast
 >   timeline, and the altitude control. Forecast navigation only - no map
 >   layer and no site selection lives down here.
+> - **The timeline's marker is the label.** What you drag is a chip
+>   stating the day and the clock time ("Sat 14:00"; "NOW · Fri 20:00" at
+>   the live position), riding on a full-size thumb - not a bare dot with
+>   its meaning printed somewhere else. The chip is clamped inside the
+>   track at both ends while its pointer keeps aiming at the thumb
+>   (`TimeSlider.tsx` measures both widths). The separate orange NOW mark
+>   on the tick rail is unchanged: that is real clock time, which the
+>   selection never moves.
 >
 > **Altitude is labelled AGL, not AMSL.** The reference image says "m
 > AMSL"; the behaviour behind the control is height *above ground level*
@@ -836,8 +849,16 @@ No heavy backend framework in V1.
 >   (`AltitudeControl`) because it has the width for it.
 >
 > **The site detail sheet** (§15.2) keeps its content and behaviour; on
-> desktop it is a card in the left column rather than a full-width drawer,
-> so the map stays dominant while a site is open.
+> desktop it is a card in the right column rather than a full-width
+> drawer, so the map stays dominant while a site is open.
+>
+> **RASP honesty.** When the overlay is on but the selected hour has no
+> product, the notice states the real horizon of the published run and
+> when it was published ("the latest published run only reaches 11:00
+> SAT. Published 02:02 THU; nothing newer has been published since")
+> rather than a bare "unavailable" - the difference between "past the
+> model's range" and "the backend has stopped publishing" is a difference
+> a pilot needs to see.
 >
 > Older note, kept for history:
 

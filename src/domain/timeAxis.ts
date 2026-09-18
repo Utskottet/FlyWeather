@@ -11,15 +11,6 @@ export const SLIDER_STEPS = 72;
 
 const STOCKHOLM_TZ = "Europe/Stockholm";
 
-function stockholmDayKey(date: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: STOCKHOLM_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
-
 function stockholmHour(date: Date): string {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: STOCKHOLM_TZ,
@@ -32,17 +23,34 @@ function stockholmWeekday(date: Date): string {
   return new Intl.DateTimeFormat("en-US", { timeZone: STOCKHOLM_TZ, weekday: "short" }).format(date).toUpperCase();
 }
 
+/** Title-case weekday ("Sat") for the thumb marker - the rail's own tick labels stay upper-case. */
+function stockholmWeekdayTitle(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", { timeZone: STOCKHOLM_TZ, weekday: "short" }).format(date);
+}
+
+function stockholmClock(date: Date): string {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: STOCKHOLM_TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
 /**
- * Slider label per MASTER_SPEC.md §6: "NOW" at the current position,
- * plain local hour while still on today's Europe/Stockholm calendar day,
- * "MON 09"-style once the day changes.
+ * The label carried by the timeline's draggable marker.
+ *
+ * Always states **both the day and the clock time** ("Sat 14:00"), at
+ * every position including NOW - a bare hour ("17") made you work out
+ * which day you were looking at from the tick rail underneath, and a bare
+ * "NOW" hid the actual time you were about to fly at. NOW keeps its word
+ * because live-vs-forecast is the more important distinction, but it no
+ * longer costs you the timestamp.
  */
-export function formatSliderLabel(date: Date, referenceNow: Date, isNow: boolean): string {
-  if (isNow) return "NOW";
-  if (stockholmDayKey(date) === stockholmDayKey(referenceNow)) {
-    return stockholmHour(date);
-  }
-  return `${stockholmWeekday(date)} ${stockholmHour(date)}`;
+export function formatSliderLabel(date: Date, isNow: boolean): string {
+  const stamp = `${stockholmWeekdayTitle(date)} ${stockholmClock(date)}`;
+  if (isNow) return `NOW · ${stamp}`;
+  return stamp;
 }
 
 /** Index of the first hour >= now in an ascending ISO-UTC hours array. */

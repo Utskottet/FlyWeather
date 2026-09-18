@@ -30,7 +30,7 @@ the block's work.
 | 18    | Skyways layer                                 | done        | commit e7aeece; CI green; live; lower priority per user |
 | 19    | Live tracking                                 | skipped     | user decision 2026-08-19: not worth the persistent-backend architecture change right now |
 | UX1   | Startvind UX Direction: layout structure      | done        | header / upper-right panel / bottom bar + phone arrangement; awaiting visual review |
-| UX2   | Startvind UX Direction: controls + data status| not_started | next chunk |
+| UX2   | Startvind UX Direction: controls + data status| in_progress | first review pass done: controls moved left, timeline marker, RASP diagnosed; header wording still to do |
 | UX3   | Startvind UX Direction: visual matching       | not_started | |
 | UX4   | Startvind UX Direction: regression + deploy   | not_started | |
 
@@ -1633,4 +1633,37 @@ Split into four chunks in `BLOCKS.md` (Phase 3).
   update time should show while the overlay is off; the header's exact
   wording; the timeline chip following the thumb (chunk 3).
 - Next: chunk 2 — controls, interactions and truthful data-status display.
+
+### Chunk 2, first review pass (2026-09-18)
+
+Three items raised at the chunk 1 review, all done and verified locally:
+
+- **Ridge/Winch + Map layers moved to the left** (user direction, a
+  deliberate deviation from the reference image, recorded in MASTER_SPEC
+  §15). The zoom control, the map notices, the site sheet, the RASP legend
+  and the map's fit padding all moved out of that corner accordingly.
+- **The timeline marker is now the label**: a chip stating day + clock
+  time ("Sat 14:00", "NOW · Fri 20:00") riding on a real 26px thumb,
+  clamped inside the track at both ends with its pointer still aiming at
+  the thumb. The orange NOW mark on the tick rail is unchanged.
+- **RASP investigated**: the app is working - the overlay renders NOW to
+  about +14h and then genuinely has no data, because FlyWeather-Soaring
+  has not published a run since 2026-09-17 00:02Z (model run 16 Sep
+  21:00Z, coverage to 19 Sep 09:00Z). The notice now names that horizon
+  and publish time instead of a bare "unavailable"; the data fix belongs
+  in the other repo and is in `BACKLOG.md`.
+
+**A latent crash was found and fixed while doing this**: `MapLibreMap`
+published its `map` state before the style had loaded, so the airspace and
+wind effects could call `addLayer` against an unloaded style - MapLibre
+throws, and an uncaught throw in an effect blanks the entire app. A
+one-frame timing shift from the new timeline layout effect was enough to
+trigger it every load. Both effects now wait for `isStyleLoaded()`.
+
+Checks: typecheck, lint, 578 unit tests, 33 e2e passed (3 skipped - the
+live-publish acceptance test needs a password), production build.
+
+Still open for the rest of chunk 2: the header's wording ("Forecast
+updated 15:30" etc.), whether the RASP chip should show while the overlay
+is off, the Wind switch, and Add site's visibility.
 

@@ -40,10 +40,10 @@ test.describe("Time slider", () => {
     });
 
     const label = page.getByTestId("time-slider-label");
-    await expect(label).toHaveText("NOW");
+    await expect(label).toContainText("NOW");
 
     await range.fill("6");
-    await expect(label).not.toHaveText("NOW");
+    await expect(label).not.toContainText("NOW");
     const labelAt6h = await label.textContent();
 
     await range.fill("24");
@@ -60,7 +60,7 @@ test.describe("Time slider", () => {
     expect(forecastFileRequestCount).toBe(countAfterLoad);
 
     await page.getByTestId("start-button").click();
-    await expect(label).toHaveText("NOW");
+    await expect(label).toContainText("NOW");
   });
 
   test("NOW marker is visible on load and stays put while the selected time moves", async ({ page }) => {
