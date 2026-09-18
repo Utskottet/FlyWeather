@@ -3,11 +3,17 @@ import type { Sector } from "./siteFile.ts";
 import type { RoseState } from "../components/WindRose/index.ts";
 
 export type DirectionFit = "good" | "maybe" | "bad" | "unknown";
-export type SpeedFit = "good" | "bad" | "unknown";
+export type SpeedFit = "good" | "maybe" | "bad" | "unknown";
 
 /**
- * Marginal padding applied uniformly on each side of a site's single
- * authoritative sector to compute a "maybe" direction zone (§ FlyWeather
+ * Fallback marginal padding, used for one side of one range only when that
+ * side authors no `margin_under_deg`/`margin_over_deg` of its own. It was
+ * once applied uniformly to every site - the rule rather than the fallback -
+ * and it stays exported at the same value so an unauthored side behaves
+ * exactly as the whole catalogue behaved before margins existed.
+ *
+ * Originally: marginal padding applied uniformly on each side of a site's
+ * single authoritative sector to compute a "maybe" direction zone (§ FlyWeather
  * Site Catalogue Migration - replaces the old hand-authored
  * rose.orange[] ranges). Every site in the pre-migration catalogue that
  * had rose data used exactly this ±11.25deg padding around its green
@@ -23,11 +29,19 @@ export const MARGINAL_SECTOR_PADDING_DEG = 11.25;
 
 /**
  * Direction result per MASTER_SPEC.md §5.2: inside any of the site's
- * sector ranges is good, within MARGINAL_SECTOR_PADDING_DEG of any
- * range's edge is maybe, further outside every range is bad, and no
- * sector configured at all is unknown - never guess. Most sites have one
- * range; a site can have more (e.g. a winch strip launchable from either
- * end) - every range is checked independently, any match wins.
+ * sector ranges is good, within that range's own authored margin of its
+ * edge is maybe, further outside every range is bad, and no sector
+ * configured at all is unknown - never guess. Most sites have one range; a
+ * site can have more (e.g. a winch strip launchable from either end) -
+ * every range is checked independently, any match wins.
+ *
+ * Each side's margin is read from the range itself, falling back to
+ * MARGINAL_SECTOR_PADDING_DEG when unauthored, so a site that says nothing
+ * is judged exactly as the whole catalogue was judged before per-side
+ * margins existed. An authored 0 is meaningfully different from an absent
+ * margin: it says "this edge has no marginal zone, step outside and it is
+ * a hard no", which is why these fields are optional rather than defaulted
+ * at the schema.
  */
 export function computeDirectionFit(windDirectionDeg: number | null, sector: Sector | null): DirectionFit {
   if (windDirectionDeg === null) return "unknown";
@@ -36,8 +50,10 @@ export function computeDirectionFit(windDirectionDeg: number | null, sector: Sec
     if (isAngleInSector(windDirectionDeg, range.from_deg, range.to_deg)) return "good";
   }
   for (const range of sector.ranges) {
-    const paddedFrom = normalizeDeg(range.from_deg - MARGINAL_SECTOR_PADDING_DEG);
-    const paddedTo = normalizeDeg(range.to_deg + MARGINAL_SECTOR_PADDING_DEG);
+    const under = range.margin_under_deg ?? MARGINAL_SECTOR_PADDING_DEG;
+    const over = range.margin_over_deg ?? MARGINAL_SECTOR_PADDING_DEG;
+    const paddedFrom = normalizeDeg(range.from_deg - under);
+    const paddedTo = normalizeDeg(range.to_deg + over);
     if (isAngleInSector(windDirectionDeg, paddedFrom, paddedTo)) return "maybe";
   }
   return "bad";
@@ -47,30 +63,44 @@ export interface WindConfig {
   verified: boolean;
   min_ms?: number;
   max_ms?: number;
+  /** Absent means 0 - see siteFile.ts's windSchema for why that is the old behavior, not a default. */
+  margin_under_ms?: number;
+  margin_over_ms?: number;
   hard_max_gust_ms?: number;
 }
 
 /**
  * Speed result per MASTER_SPEC.md §5.3. Never treats an unverified config
  * as a real band - unverified always reads as "unknown", not silently
- * substituted with generic numbers. Simplified to a single usable band
- * (§ FlyWeather Site Catalogue Migration replaced the old good/maybe
- * four-number band with one min_ms/max_ms pair) - safe because zero sites
- * in the pre-migration catalogue had wind_speed.verified=true, so no real
- * site ever exercised the old "maybe" speed tier in production.
+ * substituted with generic numbers.
+ *
+ * Three tiers, mirroring the direction axis: inside min_ms/max_ms is good,
+ * inside an authored margin beyond either end is maybe, anything further
+ * is bad. The middle tier is authored data, never a guessed constant - a
+ * site that authors no margins has none, and one tenth of a m/s past
+ * max_ms is still a hard no exactly as it was before margins existed.
+ *
+ * (§ FlyWeather Site Catalogue Migration had collapsed this to two tiers
+ * because zero sites then had wind.verified=true, so no real site
+ * exercised a marginal speed. Nine do now, and Klamby's real 5-6 m/s
+ * orange had to live in prose for want of somewhere to put it.)
+ *
+ * A gust over hard_max_gust_ms stays bad even when the base speed lands in
+ * a margin: a hard gust limit is a hard limit, and the marginal tier must
+ * never be able to soften it.
  */
 export function computeSpeedFit(windSpeedMs: number | null, windGustMs: number | null, wind: WindConfig): SpeedFit {
   if (!wind.verified || windSpeedMs === null) return "unknown";
   if (wind.hard_max_gust_ms !== undefined && windGustMs !== null && windGustMs > wind.hard_max_gust_ms) {
     return "bad";
   }
-  if (
-    wind.min_ms !== undefined &&
-    wind.max_ms !== undefined &&
-    windSpeedMs >= wind.min_ms &&
-    windSpeedMs <= wind.max_ms
-  ) {
-    return "good";
+  if (wind.min_ms !== undefined && wind.max_ms !== undefined) {
+    if (windSpeedMs >= wind.min_ms && windSpeedMs <= wind.max_ms) return "good";
+    // Clamped at 0: a negative wind speed is meaningless, so an
+    // over-generous margin_under_ms must not create a band below calm.
+    const marginalMin = Math.max(0, wind.min_ms - (wind.margin_under_ms ?? 0));
+    const marginalMax = wind.max_ms + (wind.margin_over_ms ?? 0);
+    if (windSpeedMs >= marginalMin && windSpeedMs <= marginalMax) return "maybe";
   }
   return "bad";
 }
@@ -87,7 +117,7 @@ export function computeOverallState(directionFit: DirectionFit, speedFit: SpeedF
   if (directionFit === "unknown") return "gray";
   if (directionFit === "bad") return "red";
   if (speedFit === "bad") return "red";
-  if (directionFit === "maybe" || speedFit === "unknown") return "orange";
+  if (directionFit === "maybe" || speedFit === "maybe" || speedFit === "unknown") return "orange";
   return "green";
 }
 
@@ -111,6 +141,9 @@ export function explainFit(directionFit: DirectionFit, speedFit: SpeedFit): stri
   switch (speedFit) {
     case "good":
       reasons.push("wind speed is inside the verified usable band");
+      break;
+    case "maybe":
+      reasons.push("wind speed is just outside the usable band, inside the site's marginal allowance");
       break;
     case "bad":
       reasons.push("wind speed is outside verified safe limits");

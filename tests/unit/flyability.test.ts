@@ -143,3 +143,127 @@ describe("evaluateFlyability (composition)", () => {
     expect(result.state).toBe("red");
   });
 });
+
+describe("computeDirectionFit with authored per-side margins", () => {
+  it("uses each side's own margin, so an asymmetric ridge can finally say so", () => {
+    const asym: Sector = {
+      ranges: [{ from_deg: 200, to_deg: 250, margin_under_deg: 5, margin_over_deg: 20 }],
+      verified: true,
+    };
+    expect(computeDirectionFit(196, asym)).toBe("maybe"); // 4deg under, inside the 5deg margin
+    expect(computeDirectionFit(194, asym)).toBe("bad"); //   6deg under, past it
+    expect(computeDirectionFit(265, asym)).toBe("maybe"); // 15deg over, inside the 20deg margin
+    expect(computeDirectionFit(275, asym)).toBe("bad"); //   25deg over, past it
+  });
+
+  it("treats an authored 0 as a real answer - no marginal zone at all on that side", () => {
+    const hard: Sector = {
+      ranges: [{ from_deg: 200, to_deg: 250, margin_under_deg: 0, margin_over_deg: 0 }],
+      verified: true,
+    };
+    expect(computeDirectionFit(225, hard)).toBe("good");
+    expect(computeDirectionFit(199, hard)).toBe("bad"); // one degree out is already a hard no
+    expect(computeDirectionFit(251, hard)).toBe("bad");
+  });
+
+  it("falls back to MARGINAL_SECTOR_PADDING_DEG per side, independently", () => {
+    // Only the over side is authored; the under side must still behave
+    // exactly as the whole catalogue did before margins existed.
+    const halfAuthored: Sector = {
+      ranges: [{ from_deg: 200, to_deg: 250, margin_over_deg: 0 }],
+      verified: true,
+    };
+    expect(computeDirectionFit(200 - MARGINAL_SECTOR_PADDING_DEG + 0.01, halfAuthored)).toBe("maybe");
+    expect(computeDirectionFit(200 - MARGINAL_SECTOR_PADDING_DEG - 0.01, halfAuthored)).toBe("bad");
+    expect(computeDirectionFit(251, halfAuthored)).toBe("bad"); // authored 0 on this side
+  });
+
+  it("applies margins per range, not per site, across multiple ranges", () => {
+    const dual: Sector = {
+      ranges: [
+        { from_deg: 45, to_deg: 145, margin_under_deg: 0, margin_over_deg: 0 },
+        { from_deg: 225, to_deg: 315, margin_under_deg: 30, margin_over_deg: 30 },
+      ],
+      verified: true,
+    };
+    expect(computeDirectionFit(44, dual)).toBe("bad"); //  tight range, no margin
+    expect(computeDirectionFit(200, dual)).toBe("maybe"); // generous range, 25deg under 225
+  });
+});
+
+describe("computeSpeedFit marginal tier (the speed axis's orange)", () => {
+  const band = { verified: true, min_ms: 4, max_ms: 8 };
+
+  it("is maybe just past max_ms when an over-margin is authored", () => {
+    const wind = { ...band, margin_over_ms: 2 };
+    expect(computeSpeedFit(8, null, wind)).toBe("good");
+    expect(computeSpeedFit(8.5, null, wind)).toBe("maybe");
+    expect(computeSpeedFit(10, null, wind)).toBe("maybe");
+    expect(computeSpeedFit(10.1, null, wind)).toBe("bad");
+  });
+
+  it("is maybe just below min_ms when an under-margin is authored", () => {
+    const wind = { ...band, margin_under_ms: 1 };
+    expect(computeSpeedFit(3.5, null, wind)).toBe("maybe");
+    expect(computeSpeedFit(2.9, null, wind)).toBe("bad");
+  });
+
+  it("clamps the marginal floor at 0 - never invents a band below calm", () => {
+    const wind = { verified: true, min_ms: 1, max_ms: 5, margin_under_ms: 10 };
+    expect(computeSpeedFit(0, null, wind)).toBe("maybe");
+    expect(computeSpeedFit(5.1, null, wind)).toBe("bad"); // no over-margin authored
+  });
+
+  it("has no marginal tier at all when no margins are authored (the pre-margin rule)", () => {
+    expect(computeSpeedFit(8.1, null, band)).toBe("bad");
+    expect(computeSpeedFit(3.9, null, band)).toBe("bad");
+  });
+
+  it("keeps a hard gust limit hard - a margin must never soften it", () => {
+    const wind = { ...band, margin_over_ms: 5, hard_max_gust_ms: 10 };
+    expect(computeSpeedFit(9, 14, wind)).toBe("bad"); // base speed is inside the margin, gust is not
+  });
+
+  it("is still unknown when unverified, however generous the margins", () => {
+    expect(computeSpeedFit(9, null, { ...band, verified: false, margin_over_ms: 5 })).toBe("unknown");
+  });
+});
+
+describe("computeOverallState with a marginal speed", () => {
+  it("is orange when the speed is only marginal", () => {
+    expect(computeOverallState("good", "maybe")).toBe("orange");
+    expect(computeOverallState("maybe", "maybe")).toBe("orange");
+  });
+
+  it("is still red when the direction is bad, however good the speed", () => {
+    expect(computeOverallState("bad", "maybe")).toBe("red");
+  });
+});
+
+describe("evaluateFlyability with Klamby's real numbers", () => {
+  // The site's own description has carried these as prose because the
+  // schema had nowhere to put them: green 0-5 m/s, orange 5-6, red above 6.
+  const klamby: Sector = {
+    ranges: [
+      { from_deg: 45, to_deg: 145 },
+      { from_deg: 225, to_deg: 315 },
+    ],
+    verified: true,
+  };
+  const wind = { verified: true, min_ms: 0, max_ms: 5, margin_over_ms: 1 };
+
+  it("reads 5.5 m/s on a good direction as orange, not red", () => {
+    const result = evaluateFlyability(90, 5.5, null, klamby, wind);
+    expect(result.speedFit).toBe("maybe");
+    expect(result.state).toBe("orange");
+    expect(result.reasons.join(" ")).toContain("marginal allowance");
+  });
+
+  it("still reads 6.5 m/s as red", () => {
+    expect(evaluateFlyability(90, 6.5, null, klamby, wind).state).toBe("red");
+  });
+
+  it("reads 3 m/s on a good direction as green", () => {
+    expect(evaluateFlyability(90, 3, null, klamby, wind).state).toBe("green");
+  });
+});

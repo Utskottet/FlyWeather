@@ -11,13 +11,18 @@ sector:
   ranges:
     - from_deg: 45
       to_deg: 145
+      margin_under_deg: 11.25
+      margin_over_deg: 11.25
     - from_deg: 225
       to_deg: 315
+      margin_under_deg: 11.25
+      margin_over_deg: 11.25
   verified: true
 wind:
   verified: true
   min_ms: 0
   max_ms: 5
+  margin_over_ms: 1
 station:
   provider: sjoboflyg
   station_id: esmi
@@ -28,8 +33,6 @@ description: >-
   from either end of the strip depending on wind (45-145deg and
   225-315deg, both real, both represented in sector.ranges above). Real
   usable wind band is a single site-supplied range: green 0-5 m/s, orange
-  5-6 m/s, red above 6 m/s - this catalogue's schema only supports one
-  min/max "good" band today, so orange is folded into red here (0-5 m/s
-  kept as the verified good band) rather than fabricating a maybe-tier
-  that isn't really representable yet.
+  5-6 m/s, red above 6 m/s - represented exactly, as max_ms 5 plus a 1 m/s
+  marginal allowance.
 links: []

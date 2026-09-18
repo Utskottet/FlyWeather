@@ -10,6 +10,8 @@ coordinates:
 sector:
   from_deg: 157.5
   to_deg: 202.5
+  margin_under_deg: 11.25
+  margin_over_deg: 11.25
   verified: false
 wind:
   verified: false

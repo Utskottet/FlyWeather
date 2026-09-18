@@ -8,8 +8,11 @@ coordinates:
   verified: false
   source: OSM Nominatim place-name lookup ("Hovs Hallar" nature reserve) - shared with hovs-hallar-n since both are launch points at/near the same nature reserve; imprecise, does not distinguish the two
 sector:
-  from_deg: 290
-  to_deg: 350
+  ranges:
+    - from_deg: 285
+      to_deg: 350
+      margin_under_deg: 11.25
+      margin_over_deg: 11.25
   verified: true
 wind:
   verified: true

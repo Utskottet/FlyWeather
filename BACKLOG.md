@@ -12,17 +12,16 @@ commitment log.
   optimized for exotic multi-sector geometries (e.g. 3+ ranges clustered
   close together). Cosmetic only, not a correctness issue.
 - **Orange color meaning is ambiguous**: `computeOverallState` returns
-  "orange" both for genuinely borderline wind direction (near a sector
-  edge) and for unverified speed data on any site that hasn't had its
-  wind band confirmed yet. These are different situations shown as the
-  same color. Options discussed: leave as-is, or visually distinguish
-  "borderline" from "no data yet" (e.g. a different shade/pattern).
-- **3-tier wind bands (green/orange/red)**: current schema only supports
-  one min/max "good" band (`wind.min_ms`/`max_ms`); everything else is
-  red. Klamby's real data (green 0-5, orange 5-6, red 6+ m/s) had to be
-  approximated by folding the orange tier into red. Extending
-  `windSchema`/`computeSpeedFit` to a real 3-tier band would let sites
-  like this show a genuine "marginal" state instead.
+  "orange" for three different situations - borderline wind direction
+  (inside a range's authored `margin_*_deg`), borderline speed (inside
+  `wind.margin_*_ms`), and unverified speed data on a site whose band has
+  never been confirmed. The first two are real "marginal, your call"
+  warnings; the third is simply missing data, and showing it in the same
+  color overstates what the app knows. Now that both marginal tiers are
+  authored per site rather than derived from one constant, separating
+  "borderline" from "no data yet" (a different shade or pattern) is worth
+  more than it was - `FlyabilityResult` already carries the distinction
+  in `directionFit`/`speedFit`, so only the rendering is missing.
 - **Multiple sector ranges support was just added** (see WindRose.tsx/
   siteFile.ts/flyability.ts) - most sites still only need one range, but
   worth revisiting `weatherAngleFor` and rose layout if more multi-sector
@@ -43,4 +42,7 @@ commitment log.
   iterated 2026-08-25. Isolated from this app's build/deploy (own
   package.json, own schema) - not connected to real site data yet, by
   design. See `admin-experiment/PROGRESS.md` for what was built and where
-  to pick it up, `admin-experiment/README.md` to run it locally.
+  to pick it up, `admin-experiment/README.md` to run it locally, and
+  `docs/EDITOR_INTEGRATION.md` for what connecting it to the live site
+  would actually take - the schema gaps and the three decisions that gate
+  any of it.
