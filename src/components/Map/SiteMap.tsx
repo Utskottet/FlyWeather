@@ -19,7 +19,6 @@ import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { SiteEditorPanel } from "../SiteEditor/SiteEditorPanel.tsx";
 import { emptyDraft, siteToDraft, sitePathFor, type SiteDraft } from "../../domain/siteEditor.ts";
 import { ADMIN_MODE } from "../../app/adminMode.ts";
-import { PUBLISH_TARGET } from "../../app/editorApi.ts";
 import { useIsCompact } from "../../app/useIsCompact.ts";
 import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
@@ -376,7 +375,14 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
         // a save could only ever fail, so the button is not offered at all
         // - see app/editorApi.ts. Where one exists, the editor opens for
         // anyone and the Worker's sign-in gates publishing, not this button.
-        onAddSite={PUBLISH_TARGET !== null ? openCreateEditor : undefined}
+        // ADMIN_MODE, not PUBLISH_TARGET: the two are not the same test, and
+        // using the wrong one put an "Add site" button in front of every
+        // visitor to the public site. ADMIN_MODE already implies a publish
+        // target exists (see app/adminMode.ts) AND that the ?admin=1 flag
+        // was set, which is what keeps the editor out of pilots' way. Edit
+        // site below has always used it; this is the pair being made
+        // consistent again.
+        onAddSite={ADMIN_MODE ? openCreateEditor : undefined}
         compact={isCompact}
       />
       <div
