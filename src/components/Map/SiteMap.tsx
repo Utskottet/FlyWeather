@@ -526,7 +526,6 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
           sample={{ ...selectedResult.sample, weatherKind: selectedResult.weatherKind }}
           effectiveHeightM={selectedResult.effectiveHeightM}
           heightSupported={selectedResult.heightSupported}
-          selectedTimestamp={hours[sliderIndex] ?? null}
           isNight={isNightAt(selectedHourIso, selectedSite.coordinates)}
           daylight={daylightFactor(
             selectedHourIso ? new Date(selectedHourIso) : new Date(),

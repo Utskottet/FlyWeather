@@ -22,8 +22,6 @@ export interface SiteSheetProps {
   /** Height (m AGL) the shown sample actually reflects - null when unsupported. May differ from the altitude bar's requested value when it exceeds real data (§ FlyWeather Interaction Model - see AltitudeSlider's own honest-ceiling disclosure). */
   effectiveHeightM: number | null;
   heightSupported: boolean;
-  /** ISO-8601 UTC timestamp of the currently-selected slider time. */
-  selectedTimestamp: string | null;
   /** Whether the selected instant is after dark at this site - see domain/skyBand.ts's isNightAt. */
   isNight: boolean;
   /** How lit this site is at the selected instant - see domain/skyBand.ts's daylightFactor. */
@@ -33,20 +31,31 @@ export interface SiteSheetProps {
   onEdit?: () => void;
 }
 
-const STATE_LABEL: Record<"green" | "orange" | "red" | "gray", string> = {
-  green: "GOOD",
-  orange: "MAYBE",
-  red: "BAD",
-  gray: "UNKNOWN",
-};
+/** The height Open-Meteo's own surface series is quoted at. */
+const SURFACE_HEIGHT_M = 10;
 
-function sourceLabel(sample: SiteSheetSample): string {
+/**
+ * Where this reading came from, and at what height.
+ *
+ * The height used to be hardcoded as "10 m surface wind" whatever the
+ * altitude slider said, so a forecast interpolated to 1200 m still claimed
+ * to be surface wind. The sheet already receives the height the sample
+ * actually reflects - effectiveHeightM, which interpolateWindAtHeight
+ * clamps to real data rather than extrapolating - so it says that instead.
+ *
+ * Worth keeping rather than deleting because the first half is the part
+ * that matters: whether you are looking at a measurement or at a model.
+ * That distinction is the whole reason a site has a station.
+ */
+function sourceLabel(sample: SiteSheetSample, effectiveHeightM: number | null): string {
   if (sample.sourceKind === "observation") {
     const age = sample.ageMinutes !== null ? `${Math.round(sample.ageMinutes)} min ago` : "";
     const source = sample.sourceId === "holfuy" ? "Holfuy live" : (sample.sourceId ?? "live");
     return `${source} (${sample.freshness}, ${age})`;
   }
-  return "Open-Meteo forecast (10 m surface wind)";
+  if (effectiveHeightM === null) return "Open-Meteo forecast";
+  const height = effectiveHeightM === SURFACE_HEIGHT_M ? "10 m surface wind" : `${effectiveHeightM} m AGL`;
+  return `Open-Meteo forecast (${height})`;
 }
 
 export function SiteSheet({
@@ -54,7 +63,6 @@ export function SiteSheet({
   sample,
   effectiveHeightM,
   heightSupported,
-  selectedTimestamp,
   isNight,
   daylight = 1,
   onClose,
@@ -68,15 +76,6 @@ export function SiteSheet({
     site.sector ?? null,
     site.wind,
   );
-
-  const timeLabel = selectedTimestamp
-    ? new Intl.DateTimeFormat("sv-SE", {
-        timeZone: "Europe/Stockholm",
-        weekday: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(new Date(selectedTimestamp))
-    : "—";
 
   return (
     <div className="site-sheet" role="dialog" aria-label={`${site.name} details`} data-testid="site-sheet">
@@ -96,11 +95,8 @@ export function SiteSheet({
         />
       </div>
       <h2>{site.name}</h2>
-      <p className="site-sheet-status" data-testid="site-sheet-status">
-        {STATE_LABEL[state]} at {timeLabel}
-      </p>
       <p className="site-sheet-source-badge" data-testid="site-sheet-source">
-        {sample.sourceKind === "observation" ? "LIVE" : "FORECAST"} — {sourceLabel(sample)}
+        {sample.sourceKind === "observation" ? "LIVE" : "FORECAST"} — {sourceLabel(sample, effectiveHeightM)}
       </p>
       {!heightSupported && (
         <p className="site-sheet-height-warning" data-testid="site-sheet-height-warning">

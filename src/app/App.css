@@ -1612,11 +1612,19 @@
 }
 
 /* The phone's data-status cluster lives under the same menu, so the header
-   stays one short row. */
+   stays one short row. Stacked and centred: three short lines of differing
+   length read as a block when centred and as a ragged edge when not. */
 .app-header-menu-status {
   border-top: var(--panel-border);
   margin-top: 6px;
-  padding: 10px 12px 4px;
+  padding: 10px 12px 6px;
+}
+
+.app-header-menu-status .source-status {
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
 }
 
 /* ---------------------------------------------------------------------

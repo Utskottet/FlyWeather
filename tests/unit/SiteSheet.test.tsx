@@ -40,7 +40,6 @@ describe("SiteSheet - height display (§ FlyWeather Interaction Model altitude s
         sample={baseSample}
         effectiveHeightM={10}
         heightSupported={true}
-        selectedTimestamp={null}
         isNight={false}
         onClose={() => {}}
       />,
@@ -55,7 +54,6 @@ describe("SiteSheet - height display (§ FlyWeather Interaction Model altitude s
         sample={baseSample}
         effectiveHeightM={150}
         heightSupported={true}
-        selectedTimestamp={null}
         isNight={false}
         onClose={() => {}}
       />,
@@ -70,7 +68,6 @@ describe("SiteSheet - height display (§ FlyWeather Interaction Model altitude s
         sample={baseSample}
         effectiveHeightM={180}
         heightSupported={true}
-        selectedTimestamp={null}
         isNight={false}
         onClose={() => {}}
       />,
@@ -85,7 +82,6 @@ describe("SiteSheet - height display (§ FlyWeather Interaction Model altitude s
         sample={{ ...baseSample, windDirectionDeg: null, windSpeedMs: null }}
         effectiveHeightM={null}
         heightSupported={false}
-        selectedTimestamp={null}
         isNight={false}
         onClose={() => {}}
       />,
@@ -101,7 +97,6 @@ describe("SiteSheet - height display (§ FlyWeather Interaction Model altitude s
         sample={baseSample}
         effectiveHeightM={150}
         heightSupported={true}
-        selectedTimestamp={null}
         isNight={false}
         onClose={() => {}}
       />,
