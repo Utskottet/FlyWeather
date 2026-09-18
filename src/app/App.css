@@ -50,6 +50,12 @@
 
   /* Lightened to stay legible on a dark surface while keeping their
      meaning - a dark red on near-black reads as brown. */
+  /* Live means measurement rather than a model, and reads green at a
+     glance. Deliberately its own token, not --success: one is a status
+     colour, the other is a mode, and they should be free to diverge. */
+  --live: #34c759;
+  --live-strong: #6fe08a;
+
   --danger: #ff6b7a;
   --success: #6fcf7f;
   --now-marker: #ff8a5c;
@@ -510,24 +516,30 @@
 .start-button {
   position: relative;
   border: none;
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--live);
+  color: #08240f;
   border-radius: var(--panel-radius-sm);
   min-height: 52px;
   padding: 0 20px;
   font-weight: 700;
   font-size: 15px;
   flex-shrink: 0;
-  box-shadow: 0 1px 4px rgba(26, 115, 232, 0.35);
+  box-shadow: 0 0 0 1px rgba(52, 199, 89, 0.5), 0 2px 10px rgba(52, 199, 89, 0.25);
   cursor: pointer;
 }
 
 /* Unpressed is the quieter state here: at START the button is the filled
    accent block of the reference image, away from START it is an offer. */
+/* Dimmed, not disabled: pressing it is exactly how you get back to now,
+   so it must still read as a button you can press. */
 .start-button:not(.active) {
-  background: var(--panel-bg);
-  color: var(--accent-strong);
-  box-shadow: inset 0 0 0 1px rgba(26, 115, 232, 0.5);
+  background: var(--control-bg);
+  color: var(--text-muted);
+  box-shadow: inset 0 0 0 1px var(--divider);
+}
+
+.start-button:not(.active):hover {
+  color: var(--text);
 }
 
 /* Altitude section: title, slider, and the value box on the right (the
@@ -599,20 +611,25 @@
   white-space: nowrap;
 }
 
+/* Bigger and given a halo. At 7px flat these were nearly invisible on a
+   dark header - the words carry the meaning, but the LED is what makes
+   the mode readable at a glance, which is the whole reason it is there. */
 .source-status-led {
-  width: 7px;
-  height: 7px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 /* Green = measured/live observation, blue = forecast/model. */
 .source-status-item.led-measured .source-status-led {
-  background: var(--success);
+  background: var(--live);
+  box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.22);
 }
 
 .source-status-item.led-forecast .source-status-led {
-  background: var(--accent-strong);
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(77, 155, 245, 0.22);
 }
 
 .site-mode-empty-notice {

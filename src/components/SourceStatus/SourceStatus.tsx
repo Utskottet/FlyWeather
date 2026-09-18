@@ -17,7 +17,14 @@ export interface SourceStatusProps {
  * badge never toggles - only SITES does. RASP's badge is omitted entirely
  * (not merely dimmed) while the overlay is off, so it never wastes space
  * on an irrelevant status (item 17). Never color-only (item 16): the words
- * MEASURED/FORECAST are always in the DOM text, the LED is a redundant cue.
+ * CURRENT WIND/FORECAST are always in the DOM text, the LED is a redundant
+ * cue.
+ *
+ * "SITES CURRENT WIND" rather than the earlier "SITES MEASURED": measured
+ * is what the data IS, current wind is what it TELLS you, and the second
+ * is what someone opening a wind app is actually asking. Same for dropping
+ * "FIELD" from the wind badge - it named the internal product rather than
+ * the thing on screen.
  */
 export function SourceStatus({ sitesMeasured, raspOn, windUpdated, raspUpdated }: SourceStatusProps) {
   return (
@@ -27,11 +34,11 @@ export function SourceStatus({ sitesMeasured, raspOn, windUpdated, raspUpdated }
         data-testid="source-status-sites"
       >
         <span className="source-status-led" aria-hidden="true" />
-        SITES {sitesMeasured ? "MEASURED" : "FORECAST"}
+        SITES {sitesMeasured ? "CURRENT WIND" : "FORECAST"}
       </span>
       <span className="source-status-item led-forecast" data-testid="source-status-wind">
         <span className="source-status-led" aria-hidden="true" />
-        WIND FIELD FORECAST
+        WIND FORECAST
         {windUpdated != null && <span data-testid="source-status-wind-time"> {windUpdated}</span>}
       </span>
       {raspOn && (

@@ -5,14 +5,14 @@ import { SourceStatus } from "../../src/components/SourceStatus/SourceStatus.tsx
 afterEach(cleanup);
 
 describe("SourceStatus (§ FlyWeather GUI Reorganization + Coherent Height Wind items 15-18)", () => {
-  it("shows SITES as MEASURED at START, and WIND FIELD as FORECAST even then - the field is always model data", () => {
+  it("shows SITES as CURRENT WIND at START, and the wind field as FORECAST even then - the field is always model data", () => {
     const { getByTestId, queryByTestId } = render(<SourceStatus sitesMeasured={true} raspOn={false} />);
-    expect(getByTestId("source-status-sites").textContent).toContain("MEASURED");
+    expect(getByTestId("source-status-sites").textContent).toContain("CURRENT WIND");
     expect(getByTestId("source-status-wind").textContent).toContain("FORECAST");
     expect(queryByTestId("source-status-rasp")).toBeNull();
   });
 
-  it("switches SITES to FORECAST once time/height has moved, without touching WIND FIELD's constant FORECAST label", () => {
+  it("switches SITES to FORECAST once time/height has moved, without touching the wind field's constant FORECAST label", () => {
     const { getByTestId } = render(<SourceStatus sitesMeasured={false} raspOn={false} />);
     expect(getByTestId("source-status-sites").textContent).toContain("FORECAST");
     expect(getByTestId("source-status-wind").textContent).toContain("FORECAST");
@@ -23,10 +23,10 @@ describe("SourceStatus (§ FlyWeather GUI Reorganization + Coherent Height Wind 
     expect(getByTestId("source-status-rasp").textContent).toContain("FORECAST");
   });
 
-  it("never relies on color alone - MEASURED/FORECAST words are always present in the DOM text", () => {
+  it("never relies on color alone - the words are always present in the DOM text", () => {
     const { getByTestId } = render(<SourceStatus sitesMeasured={true} raspOn={true} />);
     for (const testId of ["source-status-sites", "source-status-wind", "source-status-rasp"]) {
-      expect(getByTestId(testId).textContent).toMatch(/MEASURED|FORECAST/);
+      expect(getByTestId(testId).textContent).toMatch(/CURRENT WIND|FORECAST/);
     }
   });
 

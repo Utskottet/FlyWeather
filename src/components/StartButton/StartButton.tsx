@@ -12,9 +12,16 @@ export interface StartButtonProps {
  *
  * Never disabled (§ FlyWeather Mobile UI Correction) - a prior version
  * grayed this out at START, which read as "unavailable" rather than "this
- * is where you are". It now stays clickable at all times and shows an
+ * is where you are". It stays clickable at all times and shows an
  * active/pressed state instead; pressing it while already at START is a
  * harmless no-op (handleStart just re-applies the same values).
+ *
+ * Green while live, muted while on a forecast hour. Green because that is
+ * what "you are looking at what is happening right now" reads as at a
+ * glance, and because it is the one state where the app is showing
+ * measurement rather than a model. The muted state is still clearly a
+ * button - dimmed, not disabled - since pressing it is exactly how you
+ * come back.
  *
  * Labelled "Current Wind" (§ Startvind UX Direction) rather than the
  * earlier "LIVE SITE" - same control, same semantics, the reference

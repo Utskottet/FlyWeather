@@ -30,7 +30,7 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await expect(startButton).toBeEnabled();
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
     await expect(altitudeLabel).toHaveText("Surface");
-    await expect(page.getByTestId("source-status-sites")).toContainText("MEASURED");
+    await expect(page.getByTestId("source-status-sites")).toContainText("CURRENT WIND");
     await expect(page.getByTestId("source-status-wind")).toContainText("FORECAST");
 
     await markers.first().click({ force: true });
@@ -61,7 +61,7 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await startButton.click();
     await expect(altitudeLabel).toHaveText("Surface");
     await expect(heightFact).toContainText("10 m AGL");
-    await expect(page.getByTestId("source-status-sites")).toContainText("MEASURED");
+    await expect(page.getByTestId("source-status-sites")).toContainText("CURRENT WIND");
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -79,26 +79,23 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await expect(page.getByTestId("altitude-slider-label")).toHaveText("2000 m AGL");
   });
 
-  test("phone: the collapsible HEIGHT control keeps its altitude while collapsed", async ({ page }) => {
-    // The phone arrangement, not the desktop one scaled down - the bottom
-    // bar has no room for a permanent slider at this width, so HEIGHT is a
-    // disclosure button there (§ Startvind UX Direction).
+  test("phone: altitude is a permanent slider, always showing its own value", async ({ page }) => {
+    // It used to be a collapsible HEIGHT button here. That hid the current
+    // value behind a tap and gave a secondary control the visual weight of
+    // a primary one, so the phone now gets the same permanent slider the
+    // desktop has - just shorter, sitting alongside the timeline.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await page.locator(".rose-marker-icon").first().waitFor();
     await page.waitForTimeout(1500);
 
-    const heightButton = page.getByTestId("height-control-button");
-    await heightButton.click();
+    await expect(page.getByTestId("height-control-button")).toHaveCount(0);
+
     await page.getByTestId("altitude-slider-range").fill("0.25");
-    await expect(heightButton).toContainText("HEIGHT 75m");
-
-    await heightButton.click(); // collapse
-    await expect(page.getByTestId("height-control-slider")).toHaveCount(0);
-    await expect(heightButton).toContainText("HEIGHT 75m"); // altitude preserved while collapsed
-
-    await heightButton.click(); // re-expand
     await expect(page.getByTestId("altitude-slider-label")).toHaveText("75 m AGL");
+
+    // Still readable without opening anything, which was the whole point.
+    await expect(page.getByTestId("altitude-slider-label")).toBeVisible();
   });
 
   test("START also resets time, and moving time alone exits live mode", async ({ page }) => {
@@ -116,7 +113,7 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
 
     await startButton.click();
     await expect(page.getByTestId("time-slider-label")).toContainText("NOW");
-    await expect(page.getByTestId("source-status-sites")).toContainText("MEASURED");
+    await expect(page.getByTestId("source-status-sites")).toContainText("CURRENT WIND");
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -139,7 +136,7 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await page.getByTestId("start-button").click();
 
     await expect(page.getByTestId("time-slider-label")).toContainText("NOW");
-    await expect(page.getByTestId("source-status-sites")).toContainText("MEASURED");
+    await expect(page.getByTestId("source-status-sites")).toContainText("CURRENT WIND");
     // Map-tool preferences are untouched by START (§ item 14) - only
     // forecast navigation (time/height/site-source) resets.
     await expect(page.getByTestId("rasp-toggle")).toHaveAttribute("aria-pressed", "true");
