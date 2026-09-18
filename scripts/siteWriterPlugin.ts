@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
 import { dirname, resolve, relative, sep } from "node:path";
 import type { Plugin } from "vite";
-import { mergeSiteYaml } from "./siteWriter.ts";
+import { mergeSiteYaml } from "../src/domain/siteYaml.ts";
 import { buildCatalogue } from "./build-sites-catalogue.ts";
 
 /**
@@ -13,13 +13,14 @@ import { buildCatalogue } from "./build-sites-catalogue.ts";
  * static files with no server behind them, so this endpoint simply does
  * not exist in a production build - there is no code path that ships it,
  * no flag that could switch it on by accident, and nothing to authenticate
- * because Vite's dev server is bound to localhost. Saving to the live site
- * is a different mechanism entirely (a GitHub API commit from the browser)
- * and would live somewhere else.
+ * because Vite's dev server is bound to localhost.
  *
  * Saving here is not publishing: it writes a file into the working tree,
  * exactly as editing the YAML by hand would. Committing and pushing is
- * still what puts a change on the real site.
+ * still what puts a change on the real site. Publishing from the public
+ * website goes through editor-worker/ instead, which commits to GitHub
+ * over its API - the two share domain/siteYaml.ts's merge so a file saved
+ * either way comes out identical.
  */
 
 const SITES_ROOT_NAME = "sites";
@@ -76,7 +77,24 @@ export function siteWriterPlugin(repoRoot: string): Plugin {
         try {
           const body = JSON.parse(await readBody(req)) as SaveRequest;
           const target = resolveWithinSites(sitesRoot, body.path);
-          const existing = existsSync(target) ? readFileSync(target, "utf-8") : null;
+
+          // Merge against the file being EDITED, which on a move is the
+          // one at previousPath - not the (nonexistent) destination.
+          // Reading the destination made every move silently destroy
+          // everything the editor does not model: changing a site's group
+          // or region dropped its coordinates.source, wind.notes and
+          // comments, because the merge had no prior document to merge
+          // into and fell back to writing a fresh one.
+          const source = body.previousPath
+            ? resolveWithinSites(sitesRoot, body.previousPath)
+            : target;
+          const existing = existsSync(source) ? readFileSync(source, "utf-8") : null;
+
+          // Tracked separately from `existing`: on a move those are two
+          // different files, and rolling back has to restore what was at
+          // the DESTINATION (usually nothing), not re-write the source's
+          // content into it - which would leave the site duplicated.
+          const targetTextBefore = existsSync(target) ? readFileSync(target, "utf-8") : null;
 
           // Enforced here as well as in the form. The schema has to keep
           // last_edited_by optional (all 30 files pre-date it), so without
@@ -121,8 +139,8 @@ export function siteWriterPlugin(repoRoot: string): Plugin {
           try {
             catalogue = buildCatalogue();
           } catch (buildErr) {
-            if (existing === null) rmSync(target, { force: true });
-            else writeFileSync(target, existing, "utf-8");
+            if (targetTextBefore === null) rmSync(target, { force: true });
+            else writeFileSync(target, targetTextBefore, "utf-8");
             if (previous && removedText !== null) writeFileSync(previous, removedText, "utf-8");
             throw new Error(`save rejected, nothing written - ${(buildErr as Error).message}`);
           }

@@ -14,7 +14,7 @@ import {
   validateDraft,
   type SiteDraft,
 } from "../../src/domain/siteEditor.ts";
-import { mergeSiteYaml } from "../../scripts/siteWriter.ts";
+import { mergeSiteYaml } from "../../src/domain/siteYaml.ts";
 import { siteFileSchema, parseSitePath } from "../../src/domain/siteFile.ts";
 import { buildCatalogue } from "../../scripts/build-sites-catalogue.ts";
 

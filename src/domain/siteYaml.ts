@@ -1,8 +1,14 @@
 import { parseDocument, type Document } from "yaml";
 
 /**
- * Turns the editor's field set into YAML on disk, merging into an existing
+ * Turns the editor's field set into YAML text, merging into an existing
  * file rather than replacing it.
+ *
+ * Lives under src/domain/ rather than scripts/ because it has three
+ * callers in two runtimes: the local dev-server plugin (node), the
+ * publishing Worker (Cloudflare), and the test suite. Its only import is
+ * `yaml`, so it runs unchanged in all of them - deliberately no node:fs,
+ * no path handling, nothing that assumes a filesystem.
  *
  * Merging (not overwriting) is the whole point. The editor models a
  * deliberate subset of a site file; everything else it has never heard of
@@ -30,8 +36,27 @@ const EDITOR_OWNED_OPTIONAL_KEYS = [
   "links",
 ] as const;
 
-/** Keys merged subkey-by-subkey so unmodeled siblings (coordinates.source) stay put. */
-const SUBMERGED_KEYS = new Set(["coordinates"]);
+/**
+ * Keys merged subkey-by-subkey rather than replaced wholesale, so siblings
+ * the editor does not model survive - `coordinates.source` (25 of 31
+ * sites) and `wind.notes` / `wind.hard_max_gust_ms`.
+ *
+ * `ownedOptional` lists the subkeys the editor genuinely owns and may
+ * legitimately clear: if one is absent from the patch the operator removed
+ * it, so it is deleted rather than left behind. Without that, clearing a
+ * wind margin would be impossible - the old value would merge straight
+ * back in. Anything not listed is none of the editor's business and is
+ * left exactly as it was.
+ *
+ * Replacing `wind` wholesale instead would work only as long as the client
+ * echoes back every field it was given. The publishing Worker must not
+ * depend on that: a client that sends a minimal, valid payload would
+ * silently destroy a site's notes.
+ */
+const SUBMERGED_KEYS: Record<string, { ownedOptional: string[] }> = {
+  coordinates: { ownedOptional: [] },
+  wind: { ownedOptional: ["min_ms", "max_ms", "margin_under_ms", "margin_over_ms"] },
+};
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -94,9 +119,13 @@ export function mergeSiteYaml(existingText: string | null, fields: Record<string
   const doc = parseDocument(existingText);
 
   for (const [key, value] of Object.entries(clean)) {
-    if (SUBMERGED_KEYS.has(key) && isPlainObject(value) && doc.has(key)) {
+    const submerge = SUBMERGED_KEYS[key];
+    if (submerge && isPlainObject(value) && doc.has(key)) {
       for (const [subKey, subValue] of Object.entries(value)) {
         doc.setIn([key, subKey], subValue);
+      }
+      for (const subKey of submerge.ownedOptional) {
+        if (!(subKey in value) && doc.hasIn([key, subKey])) doc.deleteIn([key, subKey]);
       }
     } else {
       doc.set(key, doc.createNode(value));
