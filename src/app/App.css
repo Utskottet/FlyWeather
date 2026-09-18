@@ -8,37 +8,51 @@
    the single place to adjust in chunk 3's visual-matching pass.
    --------------------------------------------------------------------- */
 :root {
-  --panel-bg: #ffffff;
-  --panel-bg-translucent: rgba(255, 255, 255, 0.96);
+  /* Startvind is a dark interface. Not a preference, not a toggle, and
+     deliberately not `prefers-color-scheme` - there is one look and this
+     is it, so there is no second palette to keep in step or to drift.
+     `color-scheme` tells the browser too, so native controls (the range
+     inputs, the password field, scrollbars) come out dark instead of
+     being light boxes punched into a dark page. */
+  color-scheme: dark;
+
+  --panel-bg: #1b222b;
+  --panel-bg-translucent: rgba(27, 34, 43, 0.94);
   --panel-radius: 12px;
   --panel-radius-sm: 8px;
-  --panel-border: 1px solid rgba(16, 42, 67, 0.08);
-  --panel-shadow: 0 2px 10px rgba(16, 42, 67, 0.16);
+  --panel-border: 1px solid rgba(255, 255, 255, 0.10);
+  --panel-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   --panel-gap: 10px;
   --panel-pad: 12px;
 
-  --accent: #1a73e8;
-  --accent-strong: #1565c0;
-  --accent-soft: #e8f1fd;
+  /* Lightened rather than reused from the old light theme: #1a73e8 on a
+     dark ground falls below readable contrast, and a saturated blue on
+     near-black vibrates. An accent this light needs dark text on it. */
+  --accent: #4d9bf5;
+  --accent-strong: #7fb8fa;
+  --accent-soft: rgba(77, 155, 245, 0.16);
+  --on-accent: #10161d;
 
-  --text-strong: #14202b;
-  --text: #3c4b59;
-  --text-muted: #77838f;
+  /* Nothing is pure black or pure white: #000 beside #fff on a screen at
+     night is glare, and a higher contrast than print would ever use. */
+  --text-strong: #e8edf2;
+  --text: #c2cdd8;
+  --text-muted: #8b98a5;
 
-  /* Surfaces, in ascending elevation. In dark mode elevation is carried by
-     these getting LIGHTER rather than by heavier shadows, which is the one
-     rule that most separates a real dark theme from an inverted light one. */
-  --surface-raised: #ffffff;
-  --surface-sunken: #f5f7fa;
-  --control-bg: #f1f4f8;
-  --track-bg: #d4dae1;
-  --divider: #e0e0e0;
-  /* Text that sits ON an accent fill, not the accent itself. */
-  --on-accent: #ffffff;
+  /* Surfaces in ascending elevation. Elevation is carried by these getting
+     LIGHTER, not by heavier shadows - a shadow on a dark ground is
+     invisible, a paler panel reads instantly. */
+  --surface-raised: #1b222b;
+  --surface-sunken: #141a22;
+  --control-bg: #262f3a;
+  --track-bg: #37424f;
+  --divider: rgba(255, 255, 255, 0.10);
 
-  --danger: #b00020;
-  --success: #2e7d32;
-  --now-marker: #e64a19;
+  /* Lightened to stay legible on a dark surface while keeping their
+     meaning - a dark red on near-black reads as brown. */
+  --danger: #ff6b7a;
+  --success: #6fcf7f;
+  --now-marker: #ff8a5c;
 
   --control-height: 34px;
   --header-height: 56px;
@@ -1613,82 +1627,49 @@
    greys read as one family rather than as neutral boxes that happen to
    sit near a blue accent.
    --------------------------------------------------------------------- */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --panel-bg: #1b222b;
-    --panel-bg-translucent: rgba(27, 34, 43, 0.94);
-    --panel-border: 1px solid rgba(255, 255, 255, 0.10);
-    --panel-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+/* Notices are tinted surfaces rather than pale washes: #fff4e5 on a dark
+   interface is a lightbulb. */
+.data-staleness-notice {
+  background: rgba(90, 62, 20, 0.95);
+  border-color: #b07a2e;
+  color: #f5d9a8;
+}
 
-    --surface-raised: #1b222b;
-    --surface-sunken: #141a22;
-    --control-bg: #262f3a;
-    --track-bg: #37424f;
-    --divider: rgba(255, 255, 255, 0.10);
+.site-sheet-restrictions {
+  background: rgba(90, 70, 20, 0.5);
+  border-left-color: #c9a227;
+}
 
-    /* Lightened, not just reused: #1a73e8 on a dark ground falls below
-       readable contrast, and a saturated blue on near-black vibrates. */
-    --accent: #4d9bf5;
-    --accent-strong: #7fb8fa;
-    --accent-soft: rgba(77, 155, 245, 0.16);
-    /* An accent this light needs dark text on it, not white. */
-    --on-accent: #10161d;
+.publish-progress {
+  background: rgba(28, 58, 36, 0.6);
+  border-color: rgba(111, 207, 127, 0.35);
+}
 
-    --text-strong: #e8edf2;
-    --text: #c2cdd8;
-    --text-muted: #8b98a5;
+.publish-progress-failed {
+  background: rgba(70, 28, 34, 0.6);
+  border-color: rgba(255, 107, 122, 0.35);
+}
 
-    /* Status colours lightened to stay legible on a dark surface while
-       keeping their meaning - a dark red on near-black reads as brown. */
-    --danger: #ff6b7a;
-    --success: #6fcf7f;
-    --now-marker: #ff8a5c;
-  }
+.site-editor-actions button:disabled {
+  background: var(--surface-sunken);
+  border-color: var(--divider);
+  color: var(--text-muted);
+}
 
-  /* Notices are tinted surfaces rather than pale washes: #fff4e5 on a dark
-     interface is a lightbulb. */
-  .data-staleness-notice {
-    background: rgba(90, 62, 20, 0.95);
-    border-color: #b07a2e;
-    color: #f5d9a8;
-  }
+/* The slider thumbs ring themselves against the track; that ring has to
+   follow the surface or the thumb loses its edge. */
+.time-slider-range::-webkit-slider-thumb,
+.time-slider-range::-moz-range-thumb {
+  border-color: var(--panel-bg);
+}
 
-  .site-sheet-restrictions {
-    background: rgba(90, 70, 20, 0.5);
-    border-left-color: #c9a227;
-  }
+.press-toggle-knob {
+  background: #e8edf2;
+}
 
-  .publish-progress {
-    background: rgba(28, 58, 36, 0.6);
-    border-color: rgba(111, 207, 127, 0.35);
-  }
-
-  .publish-progress-failed {
-    background: rgba(70, 28, 34, 0.6);
-    border-color: rgba(255, 107, 122, 0.35);
-  }
-
-  .site-editor-actions button:disabled {
-    background: var(--surface-sunken);
-    border-color: var(--divider);
-    color: var(--text-muted);
-  }
-
-  /* The slider thumbs ring themselves against the track; that ring has to
-     follow the surface or the thumb loses its edge. */
-  .time-slider-range::-webkit-slider-thumb,
-  .time-slider-range::-moz-range-thumb {
-    border-color: var(--panel-bg);
-  }
-
-  .press-toggle-knob {
-    background: #e8edf2;
-  }
-
-  /* The logo carries its own dark outline for legibility over the map.
-     On a dark panel that outline disappears into the background, so the
-     mark gets a faint lift of its own. */
-  .app-header-logo {
-    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.45));
-  }
+/* The logo carries its own dark outline for legibility over the map.
+   On a dark panel that outline disappears into the background, so the
+   mark gets a faint lift of its own. */
+.app-header-logo {
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.45));
 }

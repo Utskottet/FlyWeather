@@ -1,6 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
+ * Startvind is a dark interface, always.
+ *
+ * Not a preference and not a toggle: the site looks the same whatever the
+ * operating system asks for. The test that matters most is therefore the
+ * one running with colorScheme "light" - if that ever comes back light,
+ * someone has reintroduced a second palette.
+ *
  * Dark mode covers the interface and stops there.
  *
  * The map, the wind field and the site roses keep their exact colours,
@@ -24,20 +31,34 @@ async function load(page: Page) {
   await page.waitForTimeout(3000);
 }
 
-test.describe("light", () => {
+test.describe("with the OS asking for light", () => {
   test.use({ colorScheme: "light" });
 
-  test("panels are light and text is dark", async ({ page }) => {
+  test("the site is still dark - there is no light theme to fall back to", async ({ page }) => {
     await load(page);
-    expect(await cssVar(page, "--panel-bg")).toBe("#ffffff");
-    expect(await cssVar(page, "--text")).toBe("#3c4b59");
+    expect(await cssVar(page, "--panel-bg")).toBe("#1b222b");
+    expect(await cssVar(page, "--text")).toBe("#c2cdd8");
+  });
+
+  test("the header renders dark even so", async ({ page }) => {
+    await load(page);
+    const bg = await page.locator(".app-header").evaluate((el) => getComputedStyle(el).backgroundColor);
+    const [r, g, b] = bg.match(/\d+/g)!.map(Number);
+    expect((r + g + b) / 3).toBeLessThan(80);
+  });
+
+  test("the browser is told, so native controls come out dark too", async ({ page }) => {
+    await load(page);
+    // Without color-scheme the range inputs and the password field render
+    // as light boxes punched into a dark page.
+    expect(await cssVar(page, "color-scheme")).toBe("dark");
   });
 });
 
 test.describe("dark", () => {
   test.use({ colorScheme: "dark" });
 
-  test("panels darken and text lightens", async ({ page }) => {
+  test("panels are dark and text is light", async ({ page }) => {
     await load(page);
     expect(await cssVar(page, "--panel-bg")).toBe("#1b222b");
     expect(await cssVar(page, "--text")).toBe("#c2cdd8");
