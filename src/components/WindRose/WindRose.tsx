@@ -118,11 +118,14 @@ const DEFAULT_WEATHER_ANGLE = 0;
 // full 360deg ring does not.
 const WEATHER_ANGLE_PRESETS = [45, 135, 225, 315];
 
-// ~39% of the ring's own diameter (2*OUTER_R) - within the task's
-// documented 35-40%-of-rose-diameter target for the weather graphic
-// (previously 22, well under target - this is a deliberate, real increase,
-// not a cosmetic tweak).
-const ICON_SIZE = 36;
+// ~45% of the ring's own diameter (2*OUTER_R), raised from 36 on user
+// feedback that the weather graphic was hard to make out at marker size.
+// That is +14% across and +30% in area, at the top of the 35-45% band this
+// component's own test enforces - deliberately not past it, because that
+// band is a real guard against the glyph swallowing the rose rather than a
+// stale preference. ICON_PLACEMENT_R below is derived from this, so the
+// icon's outer edge stays at the same protrusion however this number moves.
+const ICON_SIZE = 41;
 
 // The graphic is allowed to protrude past the ring - within the task's
 // documented 10-15% range. ICON_PLACEMENT_R is the radius at which the

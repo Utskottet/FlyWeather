@@ -46,6 +46,14 @@ const contourDemSource = new mlcontour.DemSource({
 });
 contourDemSource.setupMaplibre({ addProtocol });
 
+/**
+ * The land base colour, and the halo colour for anything drawn over it.
+ * One constant because the two must agree: a text halo is there to punch a
+ * hole in the background behind the glyph, so if it is lighter than the
+ * land it stops reading as a hole and starts reading as a glow.
+ */
+const LAND_COLOR = "#d9d4c6";
+
 const CONTOUR_SOURCE_ID = "contour-source";
 const CONTOUR_LAYER = "contours";
 
@@ -64,7 +72,14 @@ export function buildReliefStyle(): StyleSpecification {
       "mapterhorn-dem": mapterhornDemSource,
     },
     layers: [
-      { id: "background", type: "background", paint: { "background-color": "#f2efe6" } },
+      // Land base. Darkened from the original #f2efe6 per user feedback
+      // ("land needs to be a little darker") while the hillshade above is
+      // left alone - which INCREASES topographic contrast rather than
+      // costing it, since the highlight stays pure white and now has
+      // further to travel from the base. Any label halo that used to match
+      // the old value is updated with it below; a halo brighter than its
+      // own background reads as a glow.
+      { id: "background", type: "background", paint: { "background-color": LAND_COLOR } },
       {
         id: "water",
         type: "fill",
@@ -161,7 +176,7 @@ export function buildTopoStyle(): StyleSpecification {
           "text-size": 10,
           "text-font": ["Noto Sans Regular"],
         },
-        paint: { "text-color": "#6b5f45", "text-halo-color": "#f2efe6", "text-halo-width": 1 },
+        paint: { "text-color": "#6b5f45", "text-halo-color": LAND_COLOR, "text-halo-width": 1 },
       },
       {
         id: "roads-major",
@@ -182,7 +197,7 @@ export function buildTopoStyle(): StyleSpecification {
           "text-font": ["Noto Sans Regular"],
           "text-size": ["interpolate", ["linear"], ["zoom"], 8, 10, 14, 14],
         },
-        paint: { "text-color": "#3b352a", "text-halo-color": "#f2efe6", "text-halo-width": 1.2 },
+        paint: { "text-color": "#3b352a", "text-halo-color": LAND_COLOR, "text-halo-width": 1.2 },
       },
     ],
   };
