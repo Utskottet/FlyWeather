@@ -14,8 +14,10 @@ export interface MapLayersPanelProps {
   availableRaspParams: RaspParamKey[];
   showRoads: boolean;
   onRoadsChange: (show: boolean) => void;
-  /** Open by default on desktop (the reference image shows the panel standing open); closed on a phone, where the map needs the room. */
+  /** Open by default on desktop (the reference image shows the panel standing open). Ignored when compact. */
   defaultOpen: boolean;
+  /** Phone layout: no panel, no title, no disclosure - see below. */
+  compact?: boolean;
 }
 
 /**
@@ -40,8 +42,42 @@ export function MapLayersPanel({
   showRoads,
   onRoadsChange,
   defaultOpen,
+  compact = false,
 }: MapLayersPanelProps) {
   const [open, setOpen] = useState(defaultOpen);
+
+  /**
+   * On a phone the panel stops being a panel.
+   *
+   * A titled, collapsible box costs a header row, a disclosure tap and a
+   * dropdown that overlays the map - three things to get past before you
+   * can toggle a layer, on the screen with least room for any of them. The
+   * switches go inline instead: always visible, always one tap, no
+   * chrome around them. "Map layers" as a heading told you nothing the
+   * switches do not.
+   *
+   * Roads is dropped entirely here rather than shrunk. It is the least
+   * used of the three and the only one that is purely orientation rather
+   * than flying information, so it is what a small screen can afford to
+   * lose. Its state stays wired through, so a wider window still has it.
+   */
+  if (compact) {
+    return (
+      <section className="map-layers-panel map-layers-panel-compact" data-testid="map-layers-panel">
+        <div className="map-layers-panel-body" data-testid="map-layers-panel-body">
+          <AirspaceToggle show={showAirspace} onChange={onAirspaceChange} variant="pill" />
+          <RaspControl
+            show={showRasp}
+            onChange={onRaspChange}
+            selectedParam={selectedRaspParam}
+            onParamChange={onRaspParamChange}
+            availableParams={availableRaspParams}
+            variant="pill"
+          />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="map-layers-panel" data-testid="map-layers-panel">

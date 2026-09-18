@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { COMPACT_MAX_WIDTH_PX } from "../../app/useIsCompact.ts";
 import {
   Map as MapLibreGLMap,
   NavigationControl,
@@ -151,7 +152,14 @@ export function MapLibreMap({
     // Top right: the app's own control column (Ridge/Winch + Map layers)
     // owns the top left corner (§ Startvind UX Direction), and two control
     // stacks in one corner is exactly the pile this milestone removed.
-    instance.addControl(new NavigationControl({ showCompass: false }), "top-right");
+    // Zoom buttons on a pointer device only. On a touch screen pinch does
+    // the same job, so they are two permanent buttons occupying the corner
+    // the layer switches now need - redundancy the small screen cannot
+    // afford. Rotation is already disabled, so there is no compass either
+    // way.
+    if (!window.matchMedia(`(max-width: ${COMPACT_MAX_WIDTH_PX}px)`).matches) {
+      instance.addControl(new NavigationControl({ showCompass: false }), "top-right");
+    }
     setMap(instance);
 
     window.__flyweatherMap = instance;

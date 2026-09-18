@@ -1348,8 +1348,44 @@
 
   .map-controls > * {
     width: auto;
-    flex: 1 1 0;
     min-width: 0;
+  }
+
+  /* Ridge/Winch is a choice and needs its two labels readable; the layer
+     switches are independent toggles and shrink to fit whatever is left. */
+  .map-controls .site-mode-toggle {
+    flex: 0 0 auto;
+    width: 150px;
+  }
+
+  /* No panel, no title, no disclosure - the switches themselves, inline.
+     See MapLayersPanel.tsx for why the box goes away on a phone. */
+  .map-layers-panel-compact {
+    flex: 1 1 auto;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    min-width: 0;
+  }
+
+  .map-layers-panel-compact .map-layers-panel-body {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+
+  .map-layers-panel-compact .press-toggle {
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: 12px;
+    background: var(--panel-bg);
+    border-radius: var(--panel-radius);
+    box-shadow: var(--panel-shadow);
   }
 
   .map-controls .site-mode-toggle button {

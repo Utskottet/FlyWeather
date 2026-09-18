@@ -406,6 +406,7 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
             showRoads={showRoads}
             onRoadsChange={setShowRoads}
             defaultOpen={!isCompact}
+            compact={isCompact}
           />
         </div>
       {visibleSites.length === 0 && (
