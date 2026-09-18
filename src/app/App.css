@@ -802,7 +802,21 @@
   font-size: 13px;
   white-space: nowrap;
   box-shadow: 0 1px 4px rgba(26, 115, 232, 0.4);
-  pointer-events: none;
+  /* Grabbable, not just a readout: it is the biggest target on the
+     timeline and it names the value being changed, so it is what people
+     reach for - especially with a thumb on a phone, where the slider dot
+     is the smaller of the two. `pointer-events: none` used to make it
+     inert. touch-action:none stops a drag turning into a page scroll, and
+     user-select stops it selecting the text instead of moving. */
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.time-slider-label:active {
+  cursor: grabbing;
 }
 
 /* A downward tick joining the chip to the thumb, so the two read as one

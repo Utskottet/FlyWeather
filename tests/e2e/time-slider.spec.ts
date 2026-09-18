@@ -107,3 +107,62 @@ test.describe("Time slider", () => {
     });
   }
 });
+
+test.describe("Time chip as a drag handle", () => {
+  /**
+   * The chip showing the selected day and time is draggable in its own
+   * right, not only the slider dot. It is the biggest target on the
+   * timeline and it names the value being changed, so it is what people
+   * reach for - and on a phone the 26px dot is the smaller of the two.
+   */
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector('[data-testid="site-map"]', { timeout: 60_000 });
+    await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 60_000 });
+  });
+
+  test("dragging the chip scrubs the forecast time", async ({ page }) => {
+    const chip = page.locator('[data-testid="time-slider-label"]');
+    const range = page.locator('[data-testid="time-slider-range"]');
+    const startIndex = Number(await range.inputValue());
+
+    const box = (await chip.boundingBox())!;
+    const track = (await page.locator(".time-slider-track").boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(track.x + track.width * 0.55, box.y + box.height / 2, { steps: 15 });
+    await page.mouse.up();
+
+    await expect
+      .poll(async () => Number(await range.inputValue()))
+      .toBeGreaterThan(startIndex);
+  });
+
+  test("dragging the chip back to the start returns to NOW", async ({ page }) => {
+    const chip = page.locator('[data-testid="time-slider-label"]');
+    const range = page.locator('[data-testid="time-slider-range"]');
+    const track = (await page.locator(".time-slider-track").boundingBox())!;
+
+    const grab = async (toFraction: number) => {
+      const box = (await chip.boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(track.x + track.width * toFraction, box.y + box.height / 2, { steps: 12 });
+      await page.mouse.up();
+    };
+
+    await grab(0.6);
+    await expect.poll(async () => Number(await range.inputValue())).toBeGreaterThan(0);
+
+    await grab(0);
+    await expect.poll(async () => Number(await range.inputValue())).toBe(0);
+    await expect(chip).toContainText("NOW");
+  });
+
+  test("the slider dot still works - the chip is a second way in, not a replacement", async ({ page }) => {
+    const range = page.locator('[data-testid="time-slider-range"]');
+    await range.fill("5");
+    await expect(range).toHaveValue("5");
+    await expect(page.locator('[data-testid="time-slider-label"]')).not.toContainText("NOW");
+  });
+});

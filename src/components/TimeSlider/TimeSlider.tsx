@@ -69,6 +69,54 @@ export function TimeSlider({ hours, selectedIndex, onChange }: TimeSliderProps) 
   // the thumb even when the chip itself has been pushed inwards.
   const pointerOffset = thumbCentre - labelCentre + labelHalf;
 
+  /**
+   * The chip is a drag handle in its own right, not just a readout.
+   *
+   * It is the largest, most obviously grabbable thing on the timeline and
+   * it states the very value being changed, so reaching for it is the
+   * natural move - especially with a thumb on a phone, where the 26px
+   * slider dot is the smaller target of the two. The range input keeps
+   * working exactly as before; this adds a second way in rather than
+   * replacing the first.
+   *
+   * Geometry is the inverse of thumbCentre above: the thumb's centre can
+   * only travel between half a thumb in from each end, so the same inset
+   * has to come back out here or dragging the chip would land the thumb
+   * slightly off from the pointer.
+   */
+  function indexFromClientX(clientX: number): number {
+    const track = trackRef.current;
+    if (!track || maxIndex === 0) return 0;
+    const rect = track.getBoundingClientRect();
+    const travel = rect.width - THUMB_SIZE_PX;
+    if (travel <= 0) return 0;
+    const fraction = (clientX - rect.left - THUMB_SIZE_PX / 2) / travel;
+    return Math.round(Math.min(Math.max(fraction, 0), 1) * maxIndex);
+  }
+
+  function handleLabelPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    // Left button / touch / pen only - a right-click should open a context
+    // menu, not silently scrub the forecast.
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const target = event.currentTarget;
+    target.setPointerCapture(event.pointerId);
+    onChange(indexFromClientX(event.clientX));
+  }
+
+  function handleLabelPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    // Only while actually dragging: without the capture check this would
+    // scrub the timeline on a passing mouse.
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    onChange(indexFromClientX(event.clientX));
+  }
+
+  function handleLabelPointerUp(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
   return (
     <div className="time-slider" data-testid="time-slider">
       {/* The selected time rides on the thumb rather than sitting in a
@@ -80,6 +128,11 @@ export function TimeSlider({ hours, selectedIndex, onChange }: TimeSliderProps) 
           className="time-slider-label"
           data-testid="time-slider-label"
           ref={labelRef}
+          onPointerDown={handleLabelPointerDown}
+          onPointerMove={handleLabelPointerMove}
+          onPointerUp={handleLabelPointerUp}
+          onPointerCancel={handleLabelPointerUp}
+          role="presentation"
           style={
             {
               left: `${labelCentre}px`,
