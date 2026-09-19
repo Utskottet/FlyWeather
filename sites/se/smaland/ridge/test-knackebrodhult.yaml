@@ -8,8 +8,8 @@ coordinates:
   verified: true
 sector:
   ranges:
-    - from_deg: 11
-      to_deg: 38
+    - from_deg: 184
+      to_deg: 106
       margin_under_deg: 12
       margin_over_deg: 7
   verified: false
@@ -27,5 +27,5 @@ station:
 pilot_level: difficult
 ridge_height_m: 99
 description: ta bort mig 57.6269452696953, 15.032645838226077f
-last_edited_by: Edvin buregren
-last_edited_at: 2026-09-19T09:09:10.200Z
+last_edited_by: Per persson
+last_edited_at: 2026-09-19T16:21:56.715Z
