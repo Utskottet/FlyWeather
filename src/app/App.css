@@ -121,27 +121,17 @@
   flex-shrink: 0;
 }
 
-/* The mark keeps its own dark outline from when it floated over the map;
-   on the header's white ground it simply reads as artwork. */
+/* The wordmark, cropped to its own ink so the header's padding is the
+   only padding. The previous mark carried a block of transparent margin
+   with it, which read as a wider logo than it was and cost the row space
+   the status needed. */
 .app-header-logo {
-  width: 132px;
+  width: 124px;
   height: auto;
   display: block;
   user-select: none;
 }
 
-.app-header-beta {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  border-radius: 6px;
-  padding: 3px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-}
-
-/* Status cluster sits between brand and Add site, separated by a rule
-   rather than by empty space so the header reads as grouped fields. */
 /* Centred on the bar rather than packed against the logo. Absolutely
    positioned because "centre it in the space left over" is not the same
    as centred - the brand and the menu are different widths, so a flex
@@ -163,52 +153,6 @@
 
 .app-header .source-status-item {
   gap: 6px;
-}
-
-.app-header-add,
-.app-header-status-button {
-  position: relative;
-  border: none;
-  border-radius: var(--panel-radius-sm);
-  min-height: var(--control-height);
-  padding: 0 18px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.app-header-add {
-  margin-left: auto;
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: 0 1px 4px rgba(26, 115, 232, 0.35);
-}
-
-/* Phone only: the whole status cluster behind one chip, opening as a
-   panel under the header. The header itself stays one short row. */
-.app-header-status-button {
-  margin-left: auto;
-  background: var(--control-bg);
-  color: var(--text);
-  padding: 0 14px;
-}
-
-.app-header-status-button.active {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-}
-
-.app-header-status-panel {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 1200;
-  background: var(--panel-bg);
-  border-bottom: var(--panel-border);
-  box-shadow: var(--panel-shadow);
-  padding: 10px 16px;
 }
 
 /* ---------------------------------------------------------------------
@@ -1451,12 +1395,52 @@
   }
 
   .app-header-logo {
-    width: 92px;
+    width: 84px;
   }
 
-  .app-header-add {
-    padding: 0 12px;
-    font-size: 12px;
+  /* On a phone the status joins the row instead of being centred on it.
+     There is not enough width to centre anything between an 84px logo and
+     a menu button, so it takes the space that is left, right-aligned
+     against the menu, as two stacked lines rather than one long one.
+
+     pointer-events comes back on because it is no longer lying across the
+     whole bar - on desktop it is a centred overlay that must not swallow
+     a tap meant for the menu; here it occupies only its own box. */
+  .app-header-status {
+    position: static;
+    left: auto;
+    transform: none;
+    margin-left: auto;
+    min-width: 0;
+    pointer-events: auto;
+  }
+
+  .app-header .source-status {
+    flex-direction: column;
+    align-items: flex-end;
+    flex-wrap: nowrap;
+    gap: 3px;
+    font-size: 9px;
+    line-height: 1.2;
+  }
+
+  .app-header .source-status-item {
+    gap: 5px;
+  }
+
+  /* Smaller, and without the halo - at this size the glow is most of what
+     you see and the dots start to look like smudges rather than lights. */
+  .app-header .source-status-led {
+    width: 7px;
+    height: 7px;
+  }
+
+  .app-header .source-status-item.led-measured .source-status-led {
+    box-shadow: 0 0 0 2px rgba(52, 199, 89, 0.22);
+  }
+
+  .app-header .source-status-item.led-forecast .source-status-led {
+    box-shadow: 0 0 0 2px rgba(77, 155, 245, 0.22);
   }
 
   /* Controls keep the map's full width available: the layer panel is
@@ -1675,22 +1659,6 @@
 
 .app-header-menu-item:hover {
   background: var(--accent-soft);
-}
-
-/* The phone's data-status cluster lives under the same menu, so the header
-   stays one short row. Stacked and centred: three short lines of differing
-   length read as a block when centred and as a ragged edge when not. */
-.app-header-menu-status {
-  border-top: var(--panel-border);
-  margin-top: 6px;
-  padding: 10px 12px 6px;
-}
-
-.app-header-menu-status .source-status {
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  text-align: center;
 }
 
 /* ---------------------------------------------------------------------

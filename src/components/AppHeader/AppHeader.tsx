@@ -9,13 +9,12 @@ export interface AppHeaderProps {
   raspUpdated: string | null;
   /** Undefined when there is nowhere for a save to go (see app/editorApi.ts's PUBLISH_TARGET) - the menu item is then not rendered at all rather than shown and guaranteed to fail. */
   onAddSite?: () => void;
-  compact: boolean;
 }
 
 /**
- * Top header (§ Startvind UX Direction): brand, beta badge, data-update
- * status, and a menu. Identity and status only - no map tool lives up
- * here, and nothing in it moves the map.
+ * Top header (§ Startvind UX Direction): brand, data-update status, and a
+ * menu. Identity and status only - no map tool lives up here, and nothing
+ * in it moves the map.
  *
  * Add site lives inside the menu rather than as a button of its own. It is
  * meant to be findable by the pilots who fly these sites - an editor
@@ -23,19 +22,15 @@ export interface AppHeaderProps {
  * someone opened the app for. A menu is the honest weight for it: present,
  * discoverable, not competing with the map.
  *
- * On a phone the status cluster does not shrink into unreadable chips; it
- * shares that same menu, so the header stays a single short row and the
- * map keeps the screen (the reference image's desktop arrangement is not
- * simply scaled down - see MASTER_SPEC §15).
+ * The status is on the bar on every screen. It used to hide inside the
+ * menu on a phone, which put whether you are looking at a measurement or
+ * a model - the single most important thing on the page - behind a tap
+ * nobody makes. Dropping the BETA badge and taking the wordmark down to
+ * its own width paid for the room. The phone arrangement is a CSS
+ * difference now (two stacked lines instead of one row), not a different
+ * component tree, so there is no second layout to keep in step.
  */
-export function AppHeader({
-  sitesMeasured,
-  raspOn,
-  windUpdated,
-  raspUpdated,
-  onAddSite,
-  compact,
-}: AppHeaderProps) {
+export function AppHeader({ sitesMeasured, raspOn, windUpdated, raspUpdated, onAddSite }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -57,38 +52,26 @@ export function AppHeader({
     };
   }, [menuOpen]);
 
-  const status = (
-    <SourceStatus
-      sitesMeasured={sitesMeasured}
-      raspOn={raspOn}
-      windUpdated={windUpdated}
-      raspUpdated={raspUpdated}
-    />
-  );
-
   return (
     <header className="app-header" data-testid="app-header">
       <div className="app-header-brand">
         <img
           className="app-header-logo"
-          src={`${import.meta.env.BASE_URL}startvind-logo.png`}
+          src={`${import.meta.env.BASE_URL}startvind-wordmark.png`}
           alt="Startvind"
-          width={158}
-          height={74}
+          width={469}
+          height={192}
         />
-        <span className="app-header-beta" data-testid="app-header-beta">
-          BETA
-        </span>
       </div>
 
-      {/* Desktop keeps the status inline - there is room, and it is the
-          thing most worth reading at a glance. The phone gets it in the
-          menu instead. */}
-      {!compact && (
-        <div className="app-header-status" data-testid="app-header-status">
-          {status}
-        </div>
-      )}
+      <div className="app-header-status" data-testid="app-header-status">
+        <SourceStatus
+          sitesMeasured={sitesMeasured}
+          raspOn={raspOn}
+          windUpdated={windUpdated}
+          raspUpdated={raspUpdated}
+        />
+      </div>
 
       <div className="app-header-menu" ref={menuRef}>
         <button
@@ -118,11 +101,6 @@ export function AppHeader({
               >
                 Add site
               </button>
-            )}
-            {compact && (
-              <div className="app-header-menu-status" data-testid="app-header-status-panel">
-                {status}
-              </div>
             )}
           </div>
         )}

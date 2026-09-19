@@ -48,6 +48,43 @@ test.describe("phone layout", () => {
     await expect(page.locator('[data-testid="roads-toggle"]')).toHaveCount(0);
   });
 
+  test("the data status is on the bar, not hidden behind the menu", async ({ page }) => {
+    // Whether you are looking at a measurement or at a model is the most
+    // important thing on the page. It used to live inside the hamburger
+    // menu on a phone, which is to say behind a tap nobody makes.
+    const status = page.locator('[data-testid="app-header-status"]');
+    await expect(status).toBeVisible();
+    await expect(page.getByTestId("source-status-sites")).toBeVisible();
+    await expect(page.getByTestId("source-status-wind")).toBeVisible();
+
+    // And it is on the same row as the logo, not stacked under it.
+    const logo = (await page.locator(".app-header-logo").boundingBox())!;
+    const box = (await status.boundingBox())!;
+    expect(box.x).toBeGreaterThan(logo.x + logo.width);
+    expect(Math.abs(box.y + box.height / 2 - (logo.y + logo.height / 2))).toBeLessThan(16);
+  });
+
+  test("the status never collides with the menu button or overflows the bar", async ({ page }) => {
+    const status = (await page.locator('[data-testid="app-header-status"]').boundingBox())!;
+    const menu = (await page.locator(".app-header-menu-button").boundingBox())!;
+    expect(status.x + status.width).toBeLessThanOrEqual(menu.x + 1);
+
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBe(0);
+  });
+
+  test("the menu holds only what belongs in a menu", async ({ page }) => {
+    await page.locator('[data-testid="header-menu-toggle"]').click();
+    await expect(page.locator('[data-testid="header-menu-panel"]')).toBeVisible();
+    await expect(page.locator('[data-testid="app-header-status-panel"]')).toHaveCount(0);
+  });
+
+  test("no BETA badge taking up the room the status needs", async ({ page }) => {
+    await expect(page.locator('[data-testid="app-header-beta"]')).toHaveCount(0);
+  });
+
   test("no zoom buttons - pinch does that, and the corner is needed", async ({ page }) => {
     await expect(page.locator(".maplibregl-ctrl-zoom-in")).toHaveCount(0);
   });

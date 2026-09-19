@@ -377,14 +377,13 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
         // No publish target (a built copy with no Worker configured) means
         // a save could only ever fail, so the button is not offered at all
         // - see app/editorApi.ts. Where one exists, the editor opens for
-        // anyone and the Worker's sign-in gates publishing, not this button.
-        // Shown to every visitor, deliberately (decided 2026-09-18) - see
-        // app/adminMode.ts's CAN_EDIT. It appeared by accident once and
-        // was hidden again; this is the considered version of the same
-        // thing, with Add site inside the header menu rather than as a
-        // button competing with the map.
+        // anyone, and what gates a save is the contributor block, not this
+        // button. Shown to every visitor, deliberately (decided
+        // 2026-09-18) - see app/adminMode.ts's CAN_EDIT. It appeared by
+        // accident once and was hidden again; this is the considered
+        // version of the same thing, with Add site inside the header menu
+        // rather than as a button competing with the map.
         onAddSite={CAN_EDIT ? openCreateEditor : undefined}
-        compact={isCompact}
       />
       <div
         className="site-map-container"
