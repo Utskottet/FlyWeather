@@ -1,18 +1,20 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * The editing controls are visible to everyone - and grant nothing.
+ * The editing controls are visible to everyone, and now they work for
+ * everyone too.
  *
- * That visibility is deliberate (decided 2026-09-18): Startvind's site data
- * is meant to be improved by the pilots who fly these sites, and an editor
- * nobody can see is an editor nobody contributes to. Add site sits inside
- * the header menu rather than as a button of its own, which is the honest
- * weight for it.
+ * Startvind's site data is meant to be improved by the pilots who fly
+ * these sites, and an editor nobody can see is an editor nobody
+ * contributes to. Add site sits inside the header menu rather than as a
+ * button of its own, which is the honest weight for it.
  *
- * What these tests actually protect is the other half: that being visible
- * is not being open. No session, no publishing - the form must be
- * unreachable and the Worker must refuse the write. Those are separate
- * mechanisms, so both are checked here.
+ * What replaced the password is attribution: a save carries a name, a
+ * club and two affirmations, and lands in a public log. So what these
+ * tests protect is no longer "visible but locked" - it is that the
+ * contributor block is actually there, and that nothing can be published
+ * without it. The refusal itself lives where it is enforced:
+ * tests/unit/editorWorker.test.ts.
  */
 
 test.beforeEach(async ({ page }) => {
@@ -36,29 +38,69 @@ test("the menu closes on Escape rather than sitting over the map", async ({ page
 });
 
 test("Edit site is always on an open site", async ({ page }) => {
+  await expect(page.locator('[data-testid^="site-marker-"]').first()).toBeInViewport();
   await page.locator('[data-testid^="site-marker-"]').first().click({ force: true });
   await page.waitForSelector('[data-testid="site-sheet"]', { timeout: 20_000 });
   await expect(page.locator('[data-testid="site-sheet-edit"]')).toBeVisible();
 });
 
-test("the editor opens against whatever this build can actually publish to", async ({ page }) => {
+test("the editor opens straight into the form - no password stands in the way", async ({ page }) => {
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
-  await expect(page.locator('[data-testid="site-editor"]')).toBeVisible();
 
-  // Which of the two appears depends on where a save would go, and the
-  // suite runs against a dev server with no Worker configured - so here it
-  // is the form, writing straight to disk on localhost.
-  //
-  // With a Worker (the deployed site) it is the sign-in screen instead,
-  // and THAT is the guarantee which makes showing the control to everyone
-  // safe. It is not asserted here because this environment cannot produce
-  // it; it is covered by tests/unit/editorApi.test.ts ("requires a session
-  // before it will call the Worker") and by the Worker itself refusing
-  // every unauthenticated publish - see tests/unit/editorWorker.test.ts.
-  const signIn = await page.locator('[data-testid="editor-signin"]').count();
-  const form = await page.locator('[data-testid="editor-save"]').count();
-  expect(signIn + form).toBeGreaterThan(0);
+  await expect(page.locator('[data-testid="site-editor"]')).toBeVisible();
+  await expect(page.locator('[data-testid="editor-save"]')).toBeVisible();
+  await expect(page.locator('[data-testid="editor-signin"]')).toHaveCount(0);
+});
+
+test("the editor asks who is making the change, and says where that goes", async ({ page }) => {
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+
+  await expect(page.locator('[data-testid="contributor-name"]')).toBeVisible();
+  await expect(page.locator('[data-testid="contributor-club"]')).toBeVisible();
+  await expect(page.locator('[data-testid="contributor-human"]')).toBeVisible();
+  await expect(page.locator('[data-testid="contributor-goodfaith"]')).toBeVisible();
+  // Nobody should have to guess that their name is about to be published.
+  await expect(page.locator(".contributor-note")).toContainText("publikt");
+});
+
+test("neither tickbox arrives pre-ticked", async ({ page }) => {
+  // They are an affirmation about THIS edit. One that arrives already
+  // ticked is not an affirmation.
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+
+  await expect(page.locator('[data-testid="contributor-human"]')).not.toBeChecked();
+  await expect(page.locator('[data-testid="contributor-goodfaith"]')).not.toBeChecked();
+});
+
+test("the honeypot is hidden from people and never focusable", async ({ page }) => {
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+
+  const trap = page.locator('[data-testid="contributor-trap"]');
+  await expect(trap).toHaveCount(1);
+  await expect(trap).not.toBeInViewport();
+  await expect(trap).toHaveAttribute("tabindex", "-1");
+});
+
+test("saving is refused until the edit is signed, and says which part is missing", async ({ page }) => {
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+
+  // Nothing is marked wrong before a save is attempted - a form that turns
+  // red while you are still filling it in is scolding you for not having
+  // finished yet.
+  await expect(page.locator('[data-testid="contributor-name-problem"]')).toHaveCount(0);
+
+  await page.locator('[data-testid="editor-save"]').click();
+  await expect(page.locator('[data-testid="contributor-name-problem"]')).toBeVisible();
+
+  await page.locator('[data-testid="contributor-name"]').fill("Anna Andersson");
+  await page.locator('[data-testid="editor-save"]').click();
+  await expect(page.locator('[data-testid="contributor-name-problem"]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="contributor-check-problem"]')).toBeVisible();
 });
 
 test("the map itself is unaffected - a visitor still gets every site", async ({ page }) => {

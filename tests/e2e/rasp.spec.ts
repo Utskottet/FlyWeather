@@ -58,6 +58,7 @@ test.describe("RASP (W* thermal strength) overlay", () => {
     await page.getByTestId("rasp-toggle").click();
     await page.waitForTimeout(500);
 
+    await expect(page.locator(".rose-marker-icon").first()).toBeInViewport();
     await page.locator(".rose-marker-icon").first().click({ force: true });
     await expect(page.getByTestId("site-sheet")).toBeVisible();
     await page.getByRole("button", { name: "Close" }).click();

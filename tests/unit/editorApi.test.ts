@@ -7,6 +7,9 @@ import {
   resolvePublishTarget,
   signIn,
   signOut,
+  verify,
+  repoHead,
+  type PublishInput,
   type PublishTarget,
 } from "../../src/app/editorApi.ts";
 
@@ -103,7 +106,11 @@ describe("currentSession", () => {
 });
 
 describe("publish", () => {
-  const input = { path: "se/skane/ridge/x.yaml", fields: { id: "x", last_edited_by: "Edvin Buregren" } };
+  const input: PublishInput = {
+    path: "se/skane/ridge/x.yaml",
+    fields: { id: "x", last_edited_by: "Edvin Buregren" },
+    contributor: { name: "Edvin Buregren", club: "Skåne FK", isHuman: true, goodFaith: true, trap: "" },
+  };
 
   it("refuses when nothing is configured to accept a save", async () => {
     const result = await publish(input, null);
@@ -117,14 +124,27 @@ describe("publish", () => {
     expect(String(spy.mock.calls[0][0])).toBe("/api/site");
   });
 
-  it("requires a session before it will call the Worker", async () => {
-    const spy = mockFetch(() => jsonResponse({ ok: true }));
+  it("publishes with no session at all - editing is open", async () => {
+    // The point of the whole attribution change: a pilot who has never
+    // signed in to anything can still correct a site.
+    const spy = mockFetch(() => jsonResponse({ ok: true, commitSha: "deadbeef" }));
     const result = await publish(input, WORKER);
-    expect(result).toMatchObject({ ok: false, code: "unauthorised" });
-    expect(spy).not.toHaveBeenCalled();
+
+    expect(result).toMatchObject({ ok: true, kind: "worker", commitSha: "deadbeef" });
+    const init = spy.mock.calls[0][1] as RequestInit;
+    expect((init.headers as Record<string, string>).Authorization).toBeUndefined();
   });
 
-  it("sends the session as a bearer token, never a cookie", async () => {
+  it("sends the contributor with the save, since that is what stands in for a password", async () => {
+    const spy = mockFetch(() => jsonResponse({ ok: true, commitSha: "deadbeef" }));
+    await publish(input, WORKER);
+    const body = JSON.parse(String((spy.mock.calls[0][1] as RequestInit).body)) as PublishInput;
+    expect(body.contributor).toMatchObject({ name: "Edvin Buregren", isHuman: true, goodFaith: true });
+  });
+
+  it("sends an admin session as a bearer token when there is one, never a cookie", async () => {
+    // Not required to publish - it only marks the change as an admin's in
+    // the edit log.
     window.sessionStorage.setItem("startvind-editor-session", "tok.sig");
     const spy = mockFetch(() => jsonResponse({ ok: true, commitSha: "deadbeef" }));
     const result = await publish(input, WORKER);
@@ -142,7 +162,7 @@ describe("publish", () => {
     expect(result).toMatchObject({ ok: false, code: "conflict" });
   });
 
-  it("clears an expired session so the next attempt asks for a password", async () => {
+  it("clears an expired admin session rather than letting it keep failing", async () => {
     window.sessionStorage.setItem("startvind-editor-session", "expired");
     mockFetch(() => jsonResponse({ ok: false }, 401));
     const result = await publish(input, WORKER);
@@ -159,12 +179,63 @@ describe("publish", () => {
     expect(await publish(input, WORKER)).toMatchObject({ ok: false, code: "rejected" });
   });
 
+  it("distinguishes a save that changed nothing, which is not an error to apologise for", async () => {
+    mockFetch(() => jsonResponse({ ok: false, code: "no_change", error: "Ingenting har ändrats." }, 400));
+    expect(await publish(input, WORKER)).toMatchObject({ ok: false, code: "no_change" });
+  });
+
   it("never throws on a network failure - a lost draft is the worst outcome here", async () => {
     window.sessionStorage.setItem("startvind-editor-session", "tok.sig");
     mockFetch(() => {
       throw new Error("offline");
     });
     expect(await publish(input, WORKER)).toMatchObject({ ok: false, code: "network" });
+  });
+});
+
+describe("verify", () => {
+  const input = {
+    path: "se/skane/ridge/x.yaml",
+    contributor: { name: "Edvin Buregren", club: "Skåne FK", isHuman: true, goodFaith: true, trap: "" },
+  };
+
+  it("posts the confirmation with no session required", async () => {
+    const spy = mockFetch(() => jsonResponse({ ok: true, commitSha: "deadbeef" }));
+    expect(await verify(input, WORKER)).toMatchObject({ ok: true, commitSha: "deadbeef" });
+    expect(String(spy.mock.calls[0][0])).toBe("https://worker.example/api/verify");
+  });
+
+  it("says it cannot rather than pretending, when there is no Worker to log to", async () => {
+    // A button that silently does nothing is worse than one that admits
+    // it has nowhere to write.
+    const spy = mockFetch(() => jsonResponse({ ok: true }));
+    expect(await verify(input, LOCAL)).toMatchObject({ ok: false, code: "not_configured" });
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("reports a refused signature without throwing", async () => {
+    mockFetch(() => jsonResponse({ ok: false, error: "Kryssa i båda rutorna." }, 422));
+    expect(await verify(input, WORKER)).toMatchObject({ ok: false, code: "rejected" });
+  });
+});
+
+describe("repoHead", () => {
+  it("reads the head from the unauthenticated health endpoint", async () => {
+    const spy = mockFetch(() => jsonResponse({ ok: true, headSha: "abc123" }));
+    expect(await repoHead(WORKER)).toBe("abc123");
+    expect(String(spy.mock.calls[0][0])).toBe("https://worker.example/api/health");
+  });
+
+  it("is undefined rather than an error when the Worker cannot say", async () => {
+    // Not knowing the head is not a failure: the commit-time
+    // compare-and-swap still catches a genuine race.
+    mockFetch(() => jsonResponse({ ok: false }, 500));
+    expect(await repoHead(WORKER)).toBeUndefined();
+
+    mockFetch(() => {
+      throw new Error("offline");
+    });
+    expect(await repoHead(WORKER)).toBeUndefined();
   });
 });
 

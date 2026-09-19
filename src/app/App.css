@@ -1221,26 +1221,104 @@
   cursor: not-allowed;
 }
 
-/* Sits directly above Save because it describes the edit, not the site -
-   a site does not "have" an editor, a change does. */
-.site-editor-signature {
+/* Who is making the change. Sits directly above Save because it
+   describes the edit, not the site - a site does not "have" an editor, a
+   change does.
+
+   Given a visible box of its own rather than being three more fields in
+   the form: it is the part a contributor must read, and it is the part
+   that is published about them. Burying it would be both worse UX and
+   slightly dishonest. */
+.contributor-fields {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: var(--panel-border);
+  border-radius: var(--panel-radius-sm);
+  background: var(--surface-sunken);
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
-  margin-bottom: 10px;
+}
+
+.contributor-fields legend {
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.contributor-fields > label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   font-size: 13px;
   color: var(--text-strong);
 }
 
-.site-editor-signature input {
-  flex: 1;
-  padding: 6px;
+.contributor-fields input[type="text"],
+.contributor-fields input:not([type]),
+.contributor-fields select {
+  padding: 8px;
   box-sizing: border-box;
+  /* 16px stops iOS Safari zooming the page when the field takes focus,
+     which on a phone yanks the map out from under the editor. */
+  font-size: 16px;
 }
 
-/* Sign-in, shown in place of the form until a session exists. The password
-   authenticates to the publishing Worker only; the GitHub credential that
-   can write to the repository never reaches the browser. */
+/* A tick target big enough for a thumb on a hill in gloves - the whole
+   row, not the 13px box. The text wraps to two lines on a phone, so the
+   box aligns to the first line rather than to the middle of the block. */
+.contributor-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text-strong);
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.contributor-check input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.contributor-problem {
+  margin: 0;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.contributor-note {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+/* The honeypot. Taken out of the layout and out of the accessibility tree
+   rather than display:none, because some bots skip hidden fields but very
+   few compute layout. Nothing real ever focuses it: it is tabIndex -1 and
+   aria-hidden in the markup. */
+.contributor-trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Sign-in. No longer on the path of an ordinary edit - it belongs to the
+   admin layer (revert, hide, block), which is the only thing a password
+   guards now. The password authenticates to the publishing Worker only;
+   the GitHub credential that can write to the repository never reaches
+   the browser. */
 .site-editor-signin {
   display: flex;
   flex-direction: column;
@@ -1670,3 +1748,134 @@
 }
 
 
+
+/* ---------------------------------------------------------------------
+   A site's history, at the bottom of its panel.
+
+   Deliberately quiet: smaller text, muted colour, below everything about
+   flying the site. Somebody opening a panel wants to know whether they
+   can fly today; who edited the wind band in March is context, not the
+   headline. It is there, in full, for the moment they do want it.
+   --------------------------------------------------------------------- */
+.site-sheet-history {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--divider);
+}
+
+.site-sheet-history h3 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.site-sheet-maintainer {
+  margin: 0 0 2px;
+  font-size: 13px;
+  color: var(--text-strong);
+}
+
+.site-sheet-verified {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.site-sheet-log {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.site-sheet-log-when {
+  color: var(--text-muted);
+  /* Tabular figures keep the dates in a readable column rather than
+     jittering line to line. */
+  font-variant-numeric: tabular-nums;
+}
+
+.site-sheet-log-who {
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.site-sheet-log-what {
+  color: var(--text-muted);
+}
+
+.site-sheet-log-more {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--accent-strong);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* The cheapest useful contribution there is, so it gets a real button
+   rather than a link: a name and two taps, and the catalogue learns that
+   somebody stood on this hill and the numbers were right. */
+.site-sheet-verify {
+  width: 100%;
+  border: 1px solid var(--divider);
+  background: var(--control-bg);
+  color: var(--text-strong);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.site-sheet-verify-lead {
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.site-sheet-verify-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.site-sheet-verify-actions button {
+  border: 1px solid var(--divider);
+  background: var(--control-bg);
+  color: var(--text-strong);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.site-sheet-verify-actions button:last-child {
+  border-color: transparent;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.site-sheet-verify-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.site-sheet-verify-done {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--success);
+}

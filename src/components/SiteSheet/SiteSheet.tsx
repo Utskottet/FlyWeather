@@ -1,4 +1,6 @@
 import type { LocatedSite } from "../../domain/sites.ts";
+import { SiteHistorySection } from "./SiteHistorySection.tsx";
+import { siteToDraft, sitePathFor } from "../../domain/siteEditor.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { degreesToCompass16 } from "../../domain/direction.ts";
 import { WindRose } from "../WindRose/index.ts";
@@ -69,6 +71,11 @@ export function SiteSheet({
   onEdit,
 }: SiteSheetProps) {
   const sector = site.sector ? site.sector.ranges.map((r) => ({ fromDeg: r.from_deg, toDeg: r.to_deg })) : null;
+  // Where this site's file lives, which is what a confirmation is
+  // recorded against. Derived the same way the editor derives it rather
+  // than stored on the site, since the path is a function of the site's
+  // own country/region/group (§ the sites/ layout).
+  const sitePath = sitePathFor(siteToDraft(site));
   const { state, reasons } = evaluateFlyability(
     sample.windDirectionDeg,
     sample.windSpeedMs,
@@ -150,6 +157,7 @@ export function SiteSheet({
           Edit site
         </button>
       )}
+      <SiteHistorySection siteId={site.id} sitePath={sitePath} />
     </div>
   );
 }

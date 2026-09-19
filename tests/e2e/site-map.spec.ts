@@ -1,7 +1,33 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
-const WINCH_SITE_COUNT = 1; // Klamby - the only winch site with a verified coordinate so far
-const LOCATED_SITE_COUNT = 12; // 12 sites disabled to shrink the working set (see PROGRESS.md's site-catalogue-trim entry) - was 24 pre-trim
+/**
+ * Counted from the catalogue rather than written down.
+ *
+ * These were hardcoded, and went stale the first time somebody added a
+ * site through the editor on the live website - which is now a thing that
+ * happens without anyone touching this repository by hand. A test that
+ * has to be edited whenever a pilot adds a hill is a test that will be
+ * wrong more often than the code it guards.
+ *
+ * What the assertions are actually about is the mapping: one marker per
+ * located, enabled site, and the winch/soaring toggle showing the right
+ * subset. Both hold at any catalogue size.
+ */
+const catalogue = JSON.parse(readFileSync("public/generated/sites.json", "utf-8")) as {
+  sites: { enabled?: boolean; group?: string; coordinates?: { lat?: number | null; lon?: number | null } }[];
+};
+
+const located = catalogue.sites.filter(
+  (s) =>
+    s.enabled !== false &&
+    typeof s.coordinates?.lat === "number" &&
+    typeof s.coordinates?.lon === "number",
+);
+
+const WINCH_SITE_COUNT = located.filter((s) => s.group === "winch").length;
+/** The map opens in soaring mode, so the winch strips are not among the markers on load. */
+const LOCATED_SITE_COUNT = located.length - WINCH_SITE_COUNT;
 
 test.describe("Site map", () => {
   test("renders the map with one marker per located enabled site", async ({ page }) => {
@@ -20,6 +46,7 @@ test.describe("Site map", () => {
     // cluster closely enough at this zoom to visually overlap (a known,
     // deferred §16 marker-clustering gap, not something this test
     // exercises); force bypasses Playwright's overlap-interception check.
+    await expect(markers.first()).toBeInViewport();
     await markers.first().click({ force: true });
     const sheet = page.getByTestId("site-sheet");
     await expect(sheet).toBeVisible();

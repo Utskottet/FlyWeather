@@ -81,10 +81,15 @@ test.describe("phone layout", () => {
   });
 
   test("the stale-data notice does not sit on top of the controls", async ({ page }) => {
-    const notice = await page.locator('[data-testid="data-staleness-notice"]').boundingBox().catch(() => null);
-    test.skip(notice === null, "forecast is fresh, no notice to collide");
+    // Counted first rather than measured first. boundingBox() WAITS for an
+    // element, so on a fresh forecast - when there is no notice, which is
+    // the normal case - it sat there until the test timed out, and the
+    // .catch() that was meant to handle "no notice" never ran in time.
+    const notice = page.locator('[data-testid="data-staleness-notice"]');
+    test.skip((await notice.count()) === 0, "forecast is fresh, no notice to collide");
+    const box = (await notice.boundingBox())!;
     const controls = (await page.locator(".map-controls").boundingBox())!;
-    expect(notice!.y).toBeGreaterThanOrEqual(controls.y + controls.height - 1);
+    expect(box.y).toBeGreaterThanOrEqual(controls.y + controls.height - 1);
   });
 });
 
