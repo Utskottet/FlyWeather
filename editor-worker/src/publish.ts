@@ -1,7 +1,12 @@
 import { parse as parseYaml } from "yaml";
 import { mergeSiteYaml } from "../../src/domain/siteYaml.ts";
 import { siteFileSchema, parseSitePath } from "../../src/domain/siteFile.ts";
-import { validateContributor, contributorLabel, type Contributor } from "../../src/domain/contributor.ts";
+import {
+  canonicalContributor,
+  contributorLabel,
+  validateContributor,
+  type Contributor,
+} from "../../src/domain/contributor.ts";
 import { appendEntry, summariseChanges, type EditAction, type EditLogEntry } from "../../src/domain/editLog.ts";
 
 /**
@@ -131,10 +136,17 @@ function fail(code: PublishErrorCode, message: string): PublishResult {
  * the rules, so the two can never drift; a rule that holds only when the
  * client cooperates is not a rule, and one written down twice eventually
  * becomes two rules.
+ *
+ * The club check matters most here. It is the one question on the form a
+ * script cannot answer, so it is the one that has to be asked again on
+ * this side - a shibboleth enforced only in the browser is decoration.
  */
 function checkContributor(contributor: Contributor | undefined): string | null {
   if (!contributor || typeof contributor !== "object") {
-    return "Ändringen saknar avsändare. Fyll i namn och kryssa i båda rutorna.";
+    return "Ändringen saknar avsändare. Fyll i namn och klubb och kryssa i båda rutorna.";
+  }
+  if (typeof contributor.name !== "string" || typeof contributor.club !== "string") {
+    return "Ändringen saknar avsändare. Fyll i namn och klubb och kryssa i båda rutorna.";
   }
   const problems = validateContributor(contributor);
   if (problems.length === 0) return null;
@@ -202,6 +214,9 @@ async function attemptPublish(
 
   const contributorError = checkContributor(request.contributor);
   if (contributorError) return fail("unsigned", contributorError);
+  // Recorded as the club spells its own name, not as this pilot typed it,
+  // so "cps" and "Club Parapente Syd" credit one club rather than two.
+  const contributor = canonicalContributor(request.contributor);
 
   const expectedId = idFromPath(request.path);
   if (request.fields.id !== expectedId) {
@@ -245,7 +260,7 @@ async function attemptPublish(
   // are the same name by construction and cannot be made to disagree.
   const fields = {
     ...request.fields,
-    last_edited_by: request.contributor.name.trim().replace(/\s+/g, " "),
+    last_edited_by: contributor.name,
     last_edited_at: now.toISOString(),
   };
   const text = mergeSiteYaml(existing, fields);
@@ -285,7 +300,7 @@ async function attemptPublish(
     action,
     siteId: expectedId,
     path: request.path,
-    contributor: request.contributor,
+    contributor,
     changes,
     admin,
     now,
@@ -293,7 +308,7 @@ async function attemptPublish(
   const logText = appendEntry(await repo.readFile(headSha, EDIT_LOG_PATH), entry);
 
   const verb = action === "add" ? "Add" : action === "move" ? "Move" : "Update";
-  const who = contributorLabel(request.contributor.name, request.contributor.club);
+  const who = contributorLabel(contributor.name, contributor.club);
   const message =
     `${verb} ${String(request.fields.name ?? expectedId)} via the site editor\n\n` +
     `${changes.join("\n")}\n\nPublished by ${who}.`;
@@ -352,6 +367,7 @@ export async function verifySite(
 
     const contributorError = checkContributor(request.contributor);
     if (contributorError) return fail("unsigned", contributorError);
+    const contributor = canonicalContributor(request.contributor);
 
     const headSha = await repo.head();
     if (request.baseSha && request.baseSha !== headSha) {
@@ -368,13 +384,13 @@ export async function verifySite(
       action: "verify",
       siteId,
       path: request.path,
-      contributor: request.contributor,
+      contributor,
       changes: [],
       admin: options.admin ?? false,
       now,
     });
     const logText = appendEntry(await repo.readFile(headSha, EDIT_LOG_PATH), entry);
-    const who = contributorLabel(request.contributor.name, request.contributor.club);
+    const who = contributorLabel(contributor.name, contributor.club);
 
     const { commitSha } = await repo.commit({
       writes: [{ path: EDIT_LOG_PATH, text: logText }],

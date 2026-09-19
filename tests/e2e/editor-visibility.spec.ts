@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { mapSettled } from "./mapSettled.ts";
 
 /**
  * The editing controls are visible to everyone, and now they work for
@@ -38,7 +39,7 @@ test("the menu closes on Escape rather than sitting over the map", async ({ page
 });
 
 test("Edit site is always on an open site", async ({ page }) => {
-  await expect(page.locator('[data-testid^="site-marker-"]').first()).toBeInViewport();
+  await mapSettled(page);
   await page.locator('[data-testid^="site-marker-"]').first().click({ force: true });
   await page.waitForSelector('[data-testid="site-sheet"]', { timeout: 20_000 });
   await expect(page.locator('[data-testid="site-sheet-edit"]')).toBeVisible();
@@ -59,6 +60,10 @@ test("the editor asks who is making the change, and says where that goes", async
 
   await expect(page.locator('[data-testid="contributor-name"]')).toBeVisible();
   await expect(page.locator('[data-testid="contributor-club"]')).toBeVisible();
+  // Typed, not chosen. A dropdown asks nothing of anybody - a bot picks
+  // the first option - and naming your club is the only question on this
+  // form that a script cannot answer.
+  await expect(page.locator('[data-testid="contributor-club"]')).toHaveJSProperty("tagName", "INPUT");
   await expect(page.locator('[data-testid="contributor-human"]')).toBeVisible();
   await expect(page.locator('[data-testid="contributor-goodfaith"]')).toBeVisible();
   // Nobody should have to guess that their name is about to be published.
@@ -85,6 +90,28 @@ test("the honeypot is hidden from people and never focusable", async ({ page }) 
   await expect(trap).toHaveAttribute("tabindex", "-1");
 });
 
+test("the club is recognised as you type, and echoed back by its own name", async ({ page }) => {
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+
+  await page.locator('[data-testid="contributor-club"]').fill("cps");
+  await expect(page.locator('[data-testid="contributor-club-ok"]')).toContainText("Club Parapente Syd");
+});
+
+test("a club that does not exist is refused, but never as a dead end", async ({ page }) => {
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+
+  await page.locator('[data-testid="contributor-name"]').fill("Anna Andersson");
+  await page.locator('[data-testid="contributor-club"]').fill("Manchester United");
+  await page.locator('[data-testid="editor-save"]').click();
+
+  const problem = page.locator('[data-testid="contributor-club-problem"]');
+  await expect(problem).toBeVisible();
+  // A genuinely new club must not silently lose the first pilot from it.
+  await expect(problem).toContainText("Hör av dig");
+});
+
 test("saving is refused until the edit is signed, and says which part is missing", async ({ page }) => {
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
@@ -98,8 +125,10 @@ test("saving is refused until the edit is signed, and says which part is missing
   await expect(page.locator('[data-testid="contributor-name-problem"]')).toBeVisible();
 
   await page.locator('[data-testid="contributor-name"]').fill("Anna Andersson");
+  await page.locator('[data-testid="contributor-club"]').fill("CPS");
   await page.locator('[data-testid="editor-save"]').click();
   await expect(page.locator('[data-testid="contributor-name-problem"]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="contributor-club-problem"]')).toHaveCount(0);
   await expect(page.locator('[data-testid="contributor-check-problem"]')).toBeVisible();
 });
 

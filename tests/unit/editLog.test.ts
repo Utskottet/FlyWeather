@@ -22,7 +22,7 @@ function entry(over: Partial<EditLogEntry> = {}): EditLogEntry {
 
 describe("edit log storage", () => {
   it("round-trips an entry through one line of JSONL", () => {
-    const original = entry({ club: "Skåne FK", changes: ["Vind 4–8 m/s (var 5–9 m/s)"] });
+    const original = entry({ club: "Club Parapente Syd", changes: ["Vind 4–8 m/s (var 5–9 m/s)"] });
     const [back] = parseEditLog(serialiseEntry(original));
     expect(back).toEqual(original);
   });

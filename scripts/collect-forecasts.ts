@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { locatedEnabledSites } from "../src/domain/sites.ts";
@@ -60,6 +60,30 @@ async function fetchPublished<T>(path: string): Promise<T | null> {
 }
 
 /**
+ * The copy already on disk, as a last resort before writing nothing.
+ *
+ * Real bug (2026-09-19): an Open-Meteo 429 - which is ordinary, this
+ * script runs every five minutes - would fall back to the PUBLISHED file,
+ * and when that fetch also failed it wrote `{ sites: {} }` straight over
+ * a perfectly good local file. One rate-limited run took the whole site
+ * down to no forecast at all: no roses, no timeline, an empty map. The
+ * published copy is not reachable at all while the domain is mid-move,
+ * which is exactly when this is most likely to bite.
+ *
+ * Stale data clearly labelled as stale beats no data. The website already
+ * shows its own staleness notice, so "yesterday's forecast" degrades
+ * visibly and honestly; an empty file degrades into a broken page.
+ */
+function readLocal<T>(path: string): T | null {
+  try {
+    if (!existsSync(path)) return null;
+    return JSON.parse(readFileSync(path, "utf-8")) as T;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Guards against a shape drift between the currently-published grid
  * file and what this version of the collector expects. The wind grid
  * has changed shape twice now: first from single current-conditions
@@ -107,13 +131,15 @@ async function main() {
     console.log(`collect-forecasts: fetched fresh forecasts for ${forecasts.length} sites`);
   } catch (err) {
     console.warn(`collect-forecasts: site-forecast fetch failed - ${(err as Error).message}`);
-    const fallback = await fetchPublished<GeneratedForecastSitesFile>("/generated/forecast-sites.json");
-    if (fallback) {
+    const fallback =
+      (await fetchPublished<GeneratedForecastSitesFile>("/generated/forecast-sites.json")) ??
+      readLocal<GeneratedForecastSitesFile>(sitesOutPath);
+    if (fallback && Object.keys(fallback.sites ?? {}).length > 0) {
       sitesFile = fallback;
-      console.warn(`collect-forecasts: falling back to last published forecast-sites.json (generatedAt=${fallback.generatedAt})`);
+      console.warn(`collect-forecasts: falling back to the last good forecast-sites.json (generatedAt=${fallback.generatedAt})`);
     } else {
       sitesFile = { generatedAt: new Date().toISOString(), sites: {} };
-      console.warn("collect-forecasts: no previously published forecast-sites.json available either - writing empty");
+      console.warn("collect-forecasts: no previous forecast-sites.json anywhere - writing empty");
     }
   }
 
@@ -146,16 +172,17 @@ async function main() {
     console.log(`collect-forecasts: fetched fresh wind grid (${points.length} points x ${hours.length} hours)`);
   } catch (err) {
     console.warn(`collect-forecasts: wind-grid fetch failed - ${(err as Error).message}`);
-    const fallback = await fetchPublished<unknown>("/generated/forecast-wind-grid.json");
-    if (fallback && isCompatibleGridFile(fallback)) {
+    const fallback =
+      (await fetchPublished<unknown>("/generated/forecast-wind-grid.json")) ?? readLocal<unknown>(gridOutPath);
+    if (fallback && isCompatibleGridFile(fallback) && fallback.points.length > 0) {
       gridFile = fallback;
       console.warn(`collect-forecasts: falling back to last published forecast-wind-grid.json (generatedAt=${fallback.generatedAt})`);
     } else {
       gridFile = { generatedAt: new Date().toISOString(), hours: [], points: [] };
       console.warn(
         fallback
-          ? "collect-forecasts: previously published forecast-wind-grid.json has an incompatible (older) shape - writing empty rather than serving data the frontend can't read"
-          : "collect-forecasts: no previously published forecast-wind-grid.json available either - writing empty",
+          ? "collect-forecasts: the previous forecast-wind-grid.json has an incompatible (older) shape or is empty - writing empty rather than serving data the frontend can't read"
+          : "collect-forecasts: no previous forecast-wind-grid.json anywhere - writing empty",
       );
     }
   }

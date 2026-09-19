@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { mapSettled } from "./mapSettled.ts";
 
 const WIND_LAYER_ID = "wind-particles";
 
@@ -44,7 +45,7 @@ test.describe("Animated wind particle field", () => {
   }) => {
     await page.goto("/");
     await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
-    await expect(page.locator(".rose-marker-icon").first()).toBeInViewport();
+    await mapSettled(page);
     await page.locator(".rose-marker-icon").first().click({ force: true });
     await expect(page.getByTestId("site-sheet")).toBeVisible();
   });

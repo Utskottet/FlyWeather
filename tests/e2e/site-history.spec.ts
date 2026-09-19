@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { mapSettled } from "./mapSettled.ts";
 
 /**
  * A site's public history, at the bottom of its panel.
@@ -18,7 +19,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.waitForSelector('[data-testid="site-map"]', { timeout: 60_000 });
   await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 60_000 });
-  await expect(page.locator('[data-testid^="site-marker-"]').first()).toBeInViewport();
+  await mapSettled(page);
   await page.locator('[data-testid^="site-marker-"]').first().click({ force: true });
   await page.waitForSelector('[data-testid="site-sheet"]', { timeout: 20_000 });
 });

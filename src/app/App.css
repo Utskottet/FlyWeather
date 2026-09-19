@@ -1292,7 +1292,18 @@
 .contributor-problem {
   margin: 0;
   font-size: 12px;
+  line-height: 1.35;
   color: var(--danger);
+}
+
+/* The club, echoed back by its own name as you type. Answering "cps" with
+   "Club Parapente Syd" says two things at once: that it understood you,
+   and what it is about to record about you. A green tick would only say
+   the first. */
+.contributor-club-ok {
+  margin: 0;
+  font-size: 12px;
+  color: var(--success);
 }
 
 .contributor-note {

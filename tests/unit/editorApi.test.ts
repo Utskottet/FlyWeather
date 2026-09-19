@@ -109,7 +109,7 @@ describe("publish", () => {
   const input: PublishInput = {
     path: "se/skane/ridge/x.yaml",
     fields: { id: "x", last_edited_by: "Edvin Buregren" },
-    contributor: { name: "Edvin Buregren", club: "Skåne FK", isHuman: true, goodFaith: true, trap: "" },
+    contributor: { name: "Edvin Buregren", club: "Club Parapente Syd", isHuman: true, goodFaith: true, trap: "" },
   };
 
   it("refuses when nothing is configured to accept a save", async () => {
@@ -196,7 +196,7 @@ describe("publish", () => {
 describe("verify", () => {
   const input = {
     path: "se/skane/ridge/x.yaml",
-    contributor: { name: "Edvin Buregren", club: "Skåne FK", isHuman: true, goodFaith: true, trap: "" },
+    contributor: { name: "Edvin Buregren", club: "Club Parapente Syd", isHuman: true, goodFaith: true, trap: "" },
   };
 
   it("posts the confirmation with no session required", async () => {

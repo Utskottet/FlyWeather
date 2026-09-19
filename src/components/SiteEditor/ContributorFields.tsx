@@ -1,5 +1,5 @@
-import { useId, useMemo, useState } from "react";
-import { CLUBS, NO_CLUB, isKnownClub } from "../../domain/clubs.ts";
+import { useId, useMemo } from "react";
+import { matchClub } from "../../domain/clubs.ts";
 import { validateContributor, type Contributor } from "../../domain/contributor.ts";
 
 export interface ContributorFieldsProps {
@@ -27,17 +27,21 @@ export interface ContributorFieldsProps {
  * own words, what this place is for. Somebody who ticks both and then
  * vandalises a site has said so on the record, which is worth more here
  * than a puzzle that a script solves for a tenth of a cent.
+ *
+ * The club field is the part that actually stops anything. It is typed,
+ * not chosen: naming a real Swedish club is something any pilot does
+ * without thinking and a script cannot do at all. A dropdown would have
+ * asked nothing of anybody - a bot picks the first option - which is why
+ * the `<select>` this shipped with first was worth precisely nothing.
+ * See domain/clubs.ts: a shibboleth, not a password.
  */
 export function ContributorFields({ value, onChange, disabled, showProblems }: ContributorFieldsProps) {
   const nameId = useId();
   const clubId = useId();
-  const otherClubId = useId();
+  const clubEchoId = useId();
   const trapId = useId();
 
-  // A remembered club that is no longer in the list (renamed, dissolved)
-  // must not silently vanish from the form - it opens as free text with
-  // the old name still in it.
-  const [usingOther, setUsingOther] = useState(() => value.club !== "" && !isKnownClub(value.club));
+  const recognised = useMemo(() => (value.club.trim() === "" ? null : matchClub(value.club)), [value.club]);
 
   const problems = useMemo(() => validateContributor(value), [value]);
   const problemFor = (field: string) =>
@@ -72,44 +76,32 @@ export function ContributorFields({ value, onChange, disabled, showProblems }: C
 
       <label htmlFor={clubId}>
         Klubb
-        <select
+        <input
           id={clubId}
-          value={usingOther ? NO_CLUB : value.club}
-          onChange={(e) => {
-            const chosen = e.target.value;
-            if (chosen === NO_CLUB) {
-              setUsingOther(true);
-              set({ club: "" });
-              return;
-            }
-            setUsingOther(false);
-            set({ club: chosen });
-          }}
+          value={value.club}
+          onChange={(e) => set({ club: e.target.value })}
+          placeholder="T.ex. CPS eller Club Parapente Syd"
+          autoComplete="organization"
           disabled={disabled}
+          aria-invalid={problemFor("club") !== undefined}
+          aria-describedby={recognised ? clubEchoId : undefined}
           data-testid="contributor-club"
-        >
-          <option value="">Ingen vald</option>
-          {CLUBS.map((club) => (
-            <option key={club.name} value={club.name}>
-              {club.region ? `${club.name} — ${club.region}` : club.name}
-            </option>
-          ))}
-          <option value={NO_CLUB}>{NO_CLUB}</option>
-        </select>
+        />
       </label>
-
-      {usingOther && (
-        <label htmlFor={otherClubId}>
-          Klubbens namn
-          <input
-            id={otherClubId}
-            value={value.club}
-            onChange={(e) => set({ club: e.target.value })}
-            placeholder="Valfritt"
-            disabled={disabled}
-            data-testid="contributor-club-other"
-          />
-        </label>
+      {recognised ? (
+        // Confirmed as you type, and by the club's own name rather than by
+        // a tick - "cps" answered with "Club Parapente Syd" tells you it
+        // understood you AND what it is about to record about you.
+        <p className="contributor-club-ok" id={clubEchoId} data-testid="contributor-club-ok">
+          {recognised.name}
+          {recognised.region ? ` — ${recognised.region}` : ""}
+        </p>
+      ) : (
+        problemFor("club") && (
+          <p className="contributor-problem" data-testid="contributor-club-problem">
+            {problemFor("club")}
+          </p>
+        )
       )}
 
       <label className="contributor-check">

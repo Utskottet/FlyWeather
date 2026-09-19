@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { mapSettled } from "./mapSettled.ts";
 
 /**
  * Desktop (the default Playwright viewport) now shows the altitude slider
@@ -33,7 +34,7 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await expect(page.getByTestId("source-status-sites")).toContainText("CURRENT WIND");
     await expect(page.getByTestId("source-status-wind")).toContainText("FORECAST");
 
-    await expect(markers.first()).toBeInViewport();
+    await mapSettled(page);
     await markers.first().click({ force: true });
     const heightFact = page.getByTestId("site-sheet-height");
     await expect(heightFact).toContainText("10 m AGL");
@@ -49,7 +50,7 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await expect(startButton).toHaveAttribute("aria-pressed", "false");
 
     // Re-open the sheet to confirm the site's own reading followed HEIGHT.
-    await expect(markers.first()).toBeInViewport();
+    await mapSettled(page);
     await markers.first().click({ force: true });
     await expect(heightFact).not.toContainText("10 m AGL");
 

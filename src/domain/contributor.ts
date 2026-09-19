@@ -1,3 +1,5 @@
+import { canonicalClubName, isKnownClub } from "./clubs.ts";
+
 /**
  * Who is making an edit, and the two things they have to affirm first.
  *
@@ -21,10 +23,13 @@
  * between an ordinary pilot and a correction.
  */
 
-/** The club list offered by the form. "" means none chosen. */
 export interface Contributor {
   name: string;
-  /** Club name as typed or chosen. Optional - visiting and unaffiliated pilots are not turned away. */
+  /**
+   * The club this pilot flies with, typed by hand and checked against the
+   * list (domain/clubs.ts). Required: it is the one question on this form
+   * that a script cannot answer and a pilot answers without thinking.
+   */
   club: string;
   /** "Jag är en människa" */
   isHuman: boolean;
@@ -48,7 +53,7 @@ export const EMPTY_CONTRIBUTOR: Contributor = {
 };
 
 export interface ContributorProblem {
-  field: "name" | "isHuman" | "goodFaith" | "trap";
+  field: "name" | "club" | "isHuman" | "goodFaith" | "trap";
   message: string;
 }
 
@@ -78,6 +83,19 @@ export function validateContributor(c: Contributor): ContributorProblem[] {
   if (!isFullName(c.name)) {
     problems.push({ field: "name", message: "Skriv ditt för- och efternamn." });
   }
+  if (c.club.trim() === "") {
+    problems.push({ field: "club", message: "Skriv vilken klubb du flyger med." });
+  } else if (!isKnownClub(c.club)) {
+    // Never a dead end: a club that is genuinely new must not silently
+    // lose the first pilot who comes from it, so the message says what to
+    // do next rather than only refusing.
+    problems.push({
+      field: "club",
+      message:
+        "Den klubben finns inte. Hur är det egentligen? Skriv namnet eller förkortningen, " +
+        "t.ex. CPS eller Club Parapente Syd. Ny klubb som saknas i listan? Hör av dig så lägger vi till den.",
+    });
+  }
   if (!c.isHuman) {
     problems.push({
       field: "isHuman",
@@ -98,9 +116,26 @@ export function validateContributor(c: Contributor): ContributorProblem[] {
   return problems;
 }
 
-/** "Edvin Buregren (Skåne FK)" - one string for a log line or a byline. */
+/** "Edvin Buregren (Club Parapente Syd)" - one string for a log line or a byline. */
 export function contributorLabel(name: string, club?: string): string {
   const cleanName = name.trim().replace(/\s+/g, " ");
   const cleanClub = club?.trim();
   return cleanClub ? `${cleanName} (${cleanClub})` : cleanName;
+}
+
+/**
+ * The contributor as it should be recorded, rather than as it was typed.
+ *
+ * Spacing is tidied and the club is replaced by the club's own spelling
+ * of its name, so "cps", "CPS " and "club parapente syd" all end up
+ * crediting one club in the log and in the derived maintainer - otherwise
+ * the same person would count as three different contributors depending
+ * on how they typed it that day.
+ */
+export function canonicalContributor(c: Contributor): Contributor {
+  return {
+    ...c,
+    name: c.name.trim().replace(/\s+/g, " "),
+    club: canonicalClubName(c.club),
+  };
 }

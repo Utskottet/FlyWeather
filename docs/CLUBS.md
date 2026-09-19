@@ -10,9 +10,13 @@ club's *name* and nothing else.
 
 ## Why this list exists
 
-Planned as the gate for site editing (see `BACKLOG.md`): to reach the
-editor you type your name and the club you fly with. Naming a real club is
-something any Swedish pilot can do from memory and a bot cannot.
+The gate on site editing, live since 2026-09-19: to save an edit you type
+your name and the club you fly with. Naming a real club is something any
+Swedish pilot can do from memory and a bot cannot.
+
+Implemented in `src/domain/clubs.ts` (matching) and enforced again in
+`editor-worker/src/publish.ts`, because a shibboleth checked only in the
+browser is decoration.
 
 It is a **shibboleth, not a password**. It is not secret, it never needs
 distributing, it never needs rotating, and it cannot be leaked — which is
@@ -58,6 +62,12 @@ their spelling. Normalise both sides before comparing:
 1. lowercase
 2. fold `å`/`ä` to `a`, `ö` to `o`
 3. strip everything that is not a letter or digit
+
+This is what `normaliseClub()` does, and the matching order is: exact
+name, then exact abbreviation, then the typed text containing a club's
+name or abbreviation, then a club's name containing the typed text. A
+full name beats an abbreviation so that a club whose whole name is
+another club's abbreviation still wins on its own name.
 
 So `CPS`, `cps`, `C.P.S.` and `c p s` all collapse to `cps`; `Åre Skärm- &
 Drakflygklubb` collapses to `areskarmdrakflygklubb`.

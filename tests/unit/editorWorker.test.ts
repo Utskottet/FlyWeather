@@ -100,7 +100,7 @@ function hammarFields(overrides: Record<string, unknown> = {}): Record<string, u
 /** A contributor who would pass the form, so each test states only what it is actually about. */
 const CONTRIBUTOR: Contributor = {
   name: "Edvin Buregren",
-  club: "Skåne FK",
+  club: "Club Parapente Syd",
   isHuman: true,
   goodFaith: true,
   trap: "",
@@ -331,6 +331,11 @@ describe("publishSite: rejections that protect the catalogue", () => {
       { ...CONTRIBUTOR, isHuman: false },
       { ...CONTRIBUTOR, goodFaith: false },
       { ...CONTRIBUTOR, trap: "http://spam.example" },
+      // The club is the one question a script cannot answer, so it has to
+      // be asked again on this side - a shibboleth enforced only in the
+      // browser is decoration.
+      { ...CONTRIBUTOR, club: "" },
+      { ...CONTRIBUTOR, club: "Manchester United" },
     ];
     for (const contributor of bad) {
       const result = await publishSite(repo, {
@@ -344,6 +349,19 @@ describe("publishSite: rejections that protect the catalogue", () => {
       });
     }
     expect(repo.commits).toHaveLength(0);
+  });
+
+  it("accepts a club however the pilot spells it, and records the club's own spelling", async () => {
+    // "cps" and "Club Parapente Syd" must credit one club, or the same
+    // person counts as several contributors depending on the day.
+    const repo = fakeRepo();
+    await publishSite(repo, {
+      path: "se/skane/ridge/hammar.yaml",
+      fields: hammarFields({ description: "A changed description." }),
+      contributor: { ...CONTRIBUTOR, club: "c.p.s." },
+    });
+    expect(logEntries(repo.commits[0])[0].club).toBe("Club Parapente Syd");
+    expect(repo.commits[0].message).toContain("(Club Parapente Syd)");
   });
 
   it("takes the recorded name from the contributor, not from the submitted fields", async () => {
@@ -465,7 +483,7 @@ describe("the edit log", () => {
       site: "hammar",
       path: "se/skane/ridge/hammar.yaml",
       by: "Edvin Buregren",
-      club: "Skåne FK",
+      club: "Club Parapente Syd",
       action: "edit",
     });
     expect(entry.changes).toContain("Vind 3–9 m/s (var 4–8 m/s)");
@@ -537,7 +555,7 @@ describe("the edit log", () => {
       path: "se/skane/ridge/hammar.yaml",
       fields: hammarFields({ description: "A changed description." }),
     });
-    expect(repo.commits[0].message).toContain("Edvin Buregren (Skåne FK)");
+    expect(repo.commits[0].message).toContain("Edvin Buregren (Club Parapente Syd)");
   });
 
   it("refuses a save that changes nothing, rather than logging an edit that did not happen", async () => {

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { mapSettled } from "./mapSettled.ts";
 
 /**
  * Counted from the catalogue rather than written down.
@@ -46,7 +47,7 @@ test.describe("Site map", () => {
     // cluster closely enough at this zoom to visually overlap (a known,
     // deferred §16 marker-clustering gap, not something this test
     // exercises); force bypasses Playwright's overlap-interception check.
-    await expect(markers.first()).toBeInViewport();
+    await mapSettled(page);
     await markers.first().click({ force: true });
     const sheet = page.getByTestId("site-sheet");
     await expect(sheet).toBeVisible();

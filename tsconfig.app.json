@@ -7,6 +7,10 @@
     "skipLibCheck": true,
 
     "moduleResolution": "bundler",
+    /* data/clubs.json is imported directly by src/domain/clubs.ts. A plain
+       JSON import rather than Vite's ?raw, because the publishing Worker
+       imports the same module and esbuild has a JSON loader but no ?raw. */
+    "resolveJsonModule": true,
     "types": ["vite/client"],
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,

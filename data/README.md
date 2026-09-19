@@ -5,8 +5,20 @@ here is fetched at runtime.
 
 ## clubs.json
 
-The Swedish paragliding clubs a contributor can pick from when they edit a
-site. Used to populate the club `<select>` in the contributor form.
+The Swedish paragliding clubs. Naming yours is the gate on editing: the
+contributor form asks for it as **free text**, and refuses anything this
+file does not recognise.
+
+It is a shibboleth, not a password - not secret, never distributed, never
+rotated, impossible to leak. Any Swedish pilot names their club without
+thinking; a script cannot. A dropdown would have asked nothing of anybody
+(a bot picks the first option), which is why this is typed.
+
+Matching is deliberately forgiving - see `src/domain/clubs.ts`. `CPS`,
+`cps`, `C.P.S.`, `Club Parapente Syd` and `CPS (Malmö)` all land on the
+same club. A false positive costs nothing, since every edit is attributed
+and revertable; a pilot turned away over a hyphen costs a contribution
+that never comes back.
 
 ```json
 [
@@ -40,12 +52,13 @@ number and email address. None of that belongs here: it is personal data
 belonging to people who did not publish it for this purpose, and this
 repository is public. The form needs a club's name and nothing else.
 
-### "Annan / ingen klubb"
+### A club that is missing
 
-The form appends this option itself rather than storing it here - it is a
-UI affordance, not a club. Choosing it reveals a free-text field, so a
-pilot from a new club, a visiting pilot, or someone who simply is not a
-member is never turned away by a list that has not caught up with them.
+An unrecognised club must never be a dead end, so the form says what to
+do rather than only refusing: get in touch and it gets added here. That
+is the cost of using the list as a gate, and it is why the message says
+so. A pilot from a brand-new club is exactly the person most worth
+hearing from.
 
 ## edit-log.jsonl
 
