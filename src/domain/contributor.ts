@@ -31,10 +31,15 @@ export interface Contributor {
    * that a script cannot answer and a pilot answers without thinking.
    */
   club: string;
-  /** "Jag är en människa" */
-  isHuman: boolean;
-  /** "Jag är här för att jag vill förbättra världen för mina flygande medmänniskor" */
-  goodFaith: boolean;
+  /**
+   * "Jag är en mänsklig pilot som vill förbättra sidan."
+   *
+   * One box, not two. It was split into "I am a human" and "I am here to
+   * improve the world for my flying fellow humans", which said the same
+   * thing twice and took four lines of a form people fill in on a phone,
+   * on a hill. A single sentence carries both halves and costs one line.
+   */
+  affirmed: boolean;
   /**
    * Honeypot. A real form leaves this empty because it is hidden from
    * people; a bot that fills every input it finds gives itself away. Kept
@@ -47,13 +52,12 @@ export interface Contributor {
 export const EMPTY_CONTRIBUTOR: Contributor = {
   name: "",
   club: "",
-  isHuman: false,
-  goodFaith: false,
+  affirmed: false,
   trap: "",
 };
 
 export interface ContributorProblem {
-  field: "name" | "club" | "isHuman" | "goodFaith" | "trap";
+  field: "name" | "club" | "affirmed" | "trap";
   message: string;
 }
 
@@ -96,17 +100,8 @@ export function validateContributor(c: Contributor): ContributorProblem[] {
         "t.ex. CPS eller Club Parapente Syd. Ny klubb som saknas i listan? Hör av dig så lägger vi till den.",
     });
   }
-  if (!c.isHuman) {
-    problems.push({
-      field: "isHuman",
-      message: "Kryssa i rutan om att du är en människa.",
-    });
-  }
-  if (!c.goodFaith) {
-    problems.push({
-      field: "goodFaith",
-      message: "Kryssa i rutan om varför du är här.",
-    });
+  if (!c.affirmed) {
+    problems.push({ field: "affirmed", message: "Kryssa i rutan innan du sparar." });
   }
   if (c.trap !== undefined && c.trap.trim() !== "") {
     // Never explains itself. A bot that is told which field gave it away

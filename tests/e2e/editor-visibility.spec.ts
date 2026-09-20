@@ -64,20 +64,58 @@ test("the editor asks who is making the change, and says where that goes", async
   // the first option - and naming your club is the only question on this
   // form that a script cannot answer.
   await expect(page.locator('[data-testid="contributor-club"]')).toHaveJSProperty("tagName", "INPUT");
-  await expect(page.locator('[data-testid="contributor-human"]')).toBeVisible();
-  await expect(page.locator('[data-testid="contributor-goodfaith"]')).toBeVisible();
+  await expect(page.locator('[data-testid="contributor-affirm"]')).toBeVisible();
   // Nobody should have to guess that their name is about to be published.
   await expect(page.locator(".contributor-note")).toContainText("publikt");
 });
 
-test("neither tickbox arrives pre-ticked", async ({ page }) => {
-  // They are an affirmation about THIS edit. One that arrives already
-  // ticked is not an affirmation.
+test("the tickbox never arrives pre-ticked", async ({ page }) => {
+  // It is an affirmation about THIS edit. One that arrives already ticked
+  // is not an affirmation.
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
 
-  await expect(page.locator('[data-testid="contributor-human"]')).not.toBeChecked();
-  await expect(page.locator('[data-testid="contributor-goodfaith"]')).not.toBeChecked();
+  await expect(page.locator('[data-testid="contributor-affirm"]')).not.toBeChecked();
+});
+
+test("the signature block is one box and one row, not a page of its own", async ({ page }) => {
+  // It sits directly above Save, on a screen where anything below the
+  // fold is a scroll away. It was nine lines; two fields sharing a row
+  // and one affirmation instead of two is what pays for that.
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+
+  await expect(page.locator('[data-testid="contributor-fields"] input[type="checkbox"]')).toHaveCount(1);
+
+  const name = (await page.locator('[data-testid="contributor-name"]').boundingBox())!;
+  const club = (await page.locator('[data-testid="contributor-club"]').boundingBox())!;
+  // Same row: the club sits beside the name, not under it.
+  expect(Math.abs(name.y - club.y)).toBeLessThan(8);
+  expect(club.x).toBeGreaterThan(name.x);
+
+  // And the tick's caption sits beside its box rather than under it. This
+  // broke once on specificity alone - the field-label rule also matched
+  // the tickbox's label - and it is invisible in any test that only
+  // checks the elements exist.
+  const box = (await page.locator('[data-testid="contributor-affirm"]').boundingBox())!;
+  const caption = (await page.locator(".contributor-check span").boundingBox())!;
+  expect(Math.abs(box.y - caption.y)).toBeLessThan(12);
+  expect(caption.x).toBeGreaterThan(box.x);
+});
+
+test("Add site says not to crowd the map; editing an existing site does not", async ({ page }) => {
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+  await expect(page.locator('[data-testid="editor-proximity-note"]')).toContainText("too close");
+  await page.locator('[aria-label="Close editor"]').click();
+
+  // Whether this site should exist is already answered by the time
+  // somebody is editing one, and a standing warning is one people learn
+  // to stop reading.
+  await mapSettled(page);
+  await page.locator('[data-testid^="site-marker-"]').first().click({ force: true });
+  await page.locator('[data-testid="site-sheet-edit"]').click();
+  await expect(page.locator('[data-testid="editor-proximity-note"]')).toHaveCount(0);
 });
 
 test("the honeypot is hidden from people and never focusable", async ({ page }) => {

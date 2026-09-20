@@ -1193,12 +1193,46 @@
   color: var(--text-muted);
 }
 
-.contributor-fields > label {
+/* The field labels only. The :not() is load-bearing - the tickbox's
+   caption is also a direct-child label, and a plain `.contributor-fields >
+   label` outranks `.contributor-check` on specificity, which stood the
+   caption underneath the box instead of beside it. */
+.contributor-fields > label:not(.contributor-check),
+.contributor-row > label {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: 13px;
   color: var(--text-strong);
+}
+
+/* Advice at the top of the Add form, not a warning - it is about
+   judgement (is this really a separate site?), and styling it as an error
+   would cry wolf on every new site somebody adds correctly. */
+.site-editor-guidance {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+  background: var(--surface-sunken);
+  border-radius: 0 var(--panel-radius-sm) var(--panel-radius-sm) 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+/* Name and club share a row. Two short fields stacked cost two labels and
+   two inputs of height for no reason, and this block sits directly above
+   Save on a screen where everything below the fold is a scroll away.
+   Wraps on a very narrow phone rather than squeezing both to unusable. */
+.contributor-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.contributor-row > label {
+  flex: 1 1 140px;
+  min-width: 0;
 }
 
 .contributor-fields input[type="text"],

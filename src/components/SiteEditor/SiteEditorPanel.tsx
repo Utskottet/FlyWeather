@@ -207,6 +207,17 @@ export function SiteEditorPanel({
       </header>
 
       <div className="site-editor-body">
+        {/*
+          Only when adding. It is advice about whether this site should
+          exist at all, which is a question that has already been answered
+          by the time somebody is editing one - and a standing warning on
+          every edit is a warning people stop reading.
+        */}
+        {mode === "create" && (
+          <p className="site-editor-guidance" data-testid="editor-proximity-note">
+            To avoid a cluttered map, do not add a site if there is another site too close.
+          </p>
+        )}
         <SiteForm value={draftWithId} onChange={setDraft} />
       </div>
 
@@ -301,9 +312,9 @@ function restoreDraft(initial: SiteDraft): SiteDraft {
  * Brings back the contributor, from this tab's interrupted edit if there
  * is one and otherwise from whoever last published on this machine.
  *
- * The name and club are remembered; the two tickboxes deliberately are
- * not. They are an affirmation about THIS edit, and an affirmation that
- * arrives pre-ticked from six months ago is not one.
+ * The name and club are remembered; the tickbox deliberately is not. It
+ * is an affirmation about THIS edit, and one that arrives pre-ticked from
+ * six months ago is not an affirmation.
  */
 function restoreContributor(): Contributor {
   const remembered = readRememberedEditor();
@@ -316,10 +327,9 @@ function restoreContributor(): Contributor {
       ...base,
       name: typeof stored.name === "string" && stored.name !== "" ? stored.name : base.name,
       club: typeof stored.club === "string" ? stored.club : base.club,
-      // Within the same tab a lost draft is the same edit, so the ticks
-      // survive a reload - but never a new visit.
-      isHuman: stored.isHuman === true,
-      goodFaith: stored.goodFaith === true,
+      // Within the same tab a lost draft is the same edit, so the tick
+      // survives a reload - but never a new visit.
+      affirmed: stored.affirmed === true,
     };
   } catch {
     return base;

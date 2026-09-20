@@ -101,8 +101,7 @@ function hammarFields(overrides: Record<string, unknown> = {}): Record<string, u
 const CONTRIBUTOR: Contributor = {
   name: "Edvin Buregren",
   club: "Club Parapente Syd",
-  isHuman: true,
-  goodFaith: true,
+  affirmed: true,
   trap: "",
 };
 
@@ -328,8 +327,8 @@ describe("publishSite: rejections that protect the catalogue", () => {
       undefined,
       { ...CONTRIBUTOR, name: "" },
       { ...CONTRIBUTOR, name: "Edvin" },
-      { ...CONTRIBUTOR, isHuman: false },
-      { ...CONTRIBUTOR, goodFaith: false },
+      { ...CONTRIBUTOR, affirmed: false },
+      { ...CONTRIBUTOR, affirmed: false },
       { ...CONTRIBUTOR, trap: "http://spam.example" },
       // The club is the one question a script cannot answer, so it has to
       // be asked again on this side - a shibboleth enforced only in the
@@ -597,7 +596,7 @@ describe("verifySite", () => {
     const repo = fakeRepo();
     const result = await verifySite(repo, {
       path: "se/skane/ridge/hammar.yaml",
-      contributor: { ...CONTRIBUTOR, isHuman: false },
+      contributor: { ...CONTRIBUTOR, affirmed: false },
     });
     expect(result).toMatchObject({ ok: false, code: "unsigned" });
     expect(repo.commits).toHaveLength(0);

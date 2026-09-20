@@ -21,12 +21,17 @@ export interface ContributorFieldsProps {
  * fly it, and almost none of them will ever be given an account. This asks
  * "who is saying this", and publishes the answer next to the change.
  *
- * The two tickboxes are not a CAPTCHA and do not pretend to be. They are
- * a moment of deliberation - the same reason a form asks you to confirm
- * before deleting something - and they state plainly, in the contributor's
- * own words, what this place is for. Somebody who ticks both and then
- * vandalises a site has said so on the record, which is worth more here
- * than a puzzle that a script solves for a tenth of a cent.
+ * The tickbox is not a CAPTCHA and does not pretend to be. It is a moment
+ * of deliberation - the same reason a form asks you to confirm before
+ * deleting something - and it states plainly, in the contributor's own
+ * words, what this place is for. Somebody who ticks it and then vandalises
+ * a site has said so on the record, which is worth more here than a puzzle
+ * a script solves for a tenth of a cent.
+ *
+ * It was two boxes saying the same thing twice, and the whole block ran to
+ * nine lines above the Save button - on a phone, on a hill, that is most
+ * of the window. Name and club now share a row and the affirmation is one
+ * sentence.
  *
  * The club field is the part that actually stops anything. It is typed,
  * not chosen: naming a real Swedish club is something any pilot does
@@ -55,39 +60,44 @@ export function ContributorFields({ value, onChange, disabled, showProblems }: C
     <fieldset className="contributor-fields" data-testid="contributor-fields">
       <legend>Vem gör ändringen?</legend>
 
-      <label htmlFor={nameId}>
-        Namn
-        <input
-          id={nameId}
-          value={value.name}
-          onChange={(e) => set({ name: e.target.value })}
-          placeholder="För- och efternamn"
-          autoComplete="name"
-          disabled={disabled}
-          aria-invalid={problemFor("name") !== undefined}
-          data-testid="contributor-name"
-        />
-      </label>
+      {/* One row on anything but the narrowest phone - two short fields
+          stacked was two lines of label and two of input for no reason. */}
+      <div className="contributor-row">
+        <label htmlFor={nameId}>
+          Namn
+          <input
+            id={nameId}
+            value={value.name}
+            onChange={(e) => set({ name: e.target.value })}
+            placeholder="För- och efternamn"
+            autoComplete="name"
+            disabled={disabled}
+            aria-invalid={problemFor("name") !== undefined}
+            data-testid="contributor-name"
+          />
+        </label>
+
+        <label htmlFor={clubId}>
+          Klubb
+          <input
+            id={clubId}
+            value={value.club}
+            onChange={(e) => set({ club: e.target.value })}
+            placeholder="T.ex. CPS"
+            autoComplete="organization"
+            disabled={disabled}
+            aria-invalid={problemFor("club") !== undefined}
+            aria-describedby={recognised ? clubEchoId : undefined}
+            data-testid="contributor-club"
+          />
+        </label>
+      </div>
+
       {problemFor("name") && (
         <p className="contributor-problem" data-testid="contributor-name-problem">
           {problemFor("name")}
         </p>
       )}
-
-      <label htmlFor={clubId}>
-        Klubb
-        <input
-          id={clubId}
-          value={value.club}
-          onChange={(e) => set({ club: e.target.value })}
-          placeholder="T.ex. CPS eller Club Parapente Syd"
-          autoComplete="organization"
-          disabled={disabled}
-          aria-invalid={problemFor("club") !== undefined}
-          aria-describedby={recognised ? clubEchoId : undefined}
-          data-testid="contributor-club"
-        />
-      </label>
       {recognised ? (
         // Confirmed as you type, and by the club's own name rather than by
         // a tick - "cps" answered with "Club Parapente Syd" tells you it
@@ -107,28 +117,17 @@ export function ContributorFields({ value, onChange, disabled, showProblems }: C
       <label className="contributor-check">
         <input
           type="checkbox"
-          checked={value.isHuman}
-          onChange={(e) => set({ isHuman: e.target.checked })}
+          checked={value.affirmed}
+          onChange={(e) => set({ affirmed: e.target.checked })}
           disabled={disabled}
-          data-testid="contributor-human"
+          data-testid="contributor-affirm"
         />
-        <span>Jag är en människa</span>
+        <span>Jag är en mänsklig pilot som vill förbättra sidan.</span>
       </label>
 
-      <label className="contributor-check">
-        <input
-          type="checkbox"
-          checked={value.goodFaith}
-          onChange={(e) => set({ goodFaith: e.target.checked })}
-          disabled={disabled}
-          data-testid="contributor-goodfaith"
-        />
-        <span>Jag är här för att jag vill förbättra världen för mina flygande medmänniskor</span>
-      </label>
-
-      {showProblems && (problemFor("isHuman") || problemFor("goodFaith")) && (
+      {problemFor("affirmed") && (
         <p className="contributor-problem" data-testid="contributor-check-problem">
-          {problemFor("isHuman") ?? problemFor("goodFaith")}
+          {problemFor("affirmed")}
         </p>
       )}
 
@@ -152,9 +151,7 @@ export function ContributorFields({ value, onChange, disabled, showProblems }: C
         />
       </div>
 
-      <p className="contributor-note">
-        Ditt namn och din klubb sparas publikt i platsens ändringslogg, tillsammans med vad du ändrade.
-      </p>
+      <p className="contributor-note">Namn och klubb visas publikt i ändringsloggen.</p>
     </fieldset>
   );
 }

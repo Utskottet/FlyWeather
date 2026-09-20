@@ -8,7 +8,7 @@ import {
 } from "../../src/domain/contributor.ts";
 
 function ok(over: Partial<Contributor> = {}): Contributor {
-  return { name: "Edvin Buregren", club: "Club Parapente Syd", isHuman: true, goodFaith: true, trap: "", ...over };
+  return { name: "Edvin Buregren", club: "Club Parapente Syd", affirmed: true, trap: "", ...over };
 }
 
 function fields(c: Contributor) {
@@ -48,9 +48,8 @@ describe("contributor validation", () => {
     expect(fields(ok({ name: "   " }))).toContain("name");
   });
 
-  it("requires both tickboxes", () => {
-    expect(fields(ok({ isHuman: false }))).toEqual(["isHuman"]);
-    expect(fields(ok({ goodFaith: false }))).toEqual(["goodFaith"]);
+  it("requires the tickbox", () => {
+    expect(fields(ok({ affirmed: false }))).toEqual(["affirmed"]);
   });
 
   it("rejects a filled honeypot, and never says why", () => {
@@ -64,17 +63,15 @@ describe("contributor validation", () => {
     const withoutTrap: Contributor = {
       name: "Edvin Buregren",
       club: "Club Parapente Syd",
-      isHuman: true,
-      goodFaith: true,
+      affirmed: true,
     };
     expect(validateContributor(withoutTrap)).toEqual([]);
   });
 
   it("starts empty, so nothing is pre-ticked on the contributor's behalf", () => {
-    expect(EMPTY_CONTRIBUTOR.isHuman).toBe(false);
-    expect(EMPTY_CONTRIBUTOR.goodFaith).toBe(false);
-    // Name, club, and both boxes.
-    expect(validateContributor(EMPTY_CONTRIBUTOR)).toHaveLength(4);
+    expect(EMPTY_CONTRIBUTOR.affirmed).toBe(false);
+    // Name, club, and the box.
+    expect(validateContributor(EMPTY_CONTRIBUTOR)).toHaveLength(3);
   });
 
   it("speaks Swedish, like every other contributor-facing string", () => {

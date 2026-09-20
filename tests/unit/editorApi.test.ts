@@ -109,7 +109,7 @@ describe("publish", () => {
   const input: PublishInput = {
     path: "se/skane/ridge/x.yaml",
     fields: { id: "x", last_edited_by: "Edvin Buregren" },
-    contributor: { name: "Edvin Buregren", club: "Club Parapente Syd", isHuman: true, goodFaith: true, trap: "" },
+    contributor: { name: "Edvin Buregren", club: "Club Parapente Syd", affirmed: true, trap: "" },
   };
 
   it("refuses when nothing is configured to accept a save", async () => {
@@ -139,7 +139,7 @@ describe("publish", () => {
     const spy = mockFetch(() => jsonResponse({ ok: true, commitSha: "deadbeef" }));
     await publish(input, WORKER);
     const body = JSON.parse(String((spy.mock.calls[0][1] as RequestInit).body)) as PublishInput;
-    expect(body.contributor).toMatchObject({ name: "Edvin Buregren", isHuman: true, goodFaith: true });
+    expect(body.contributor).toMatchObject({ name: "Edvin Buregren", affirmed: true });
   });
 
   it("sends an admin session as a bearer token when there is one, never a cookie", async () => {
@@ -196,7 +196,7 @@ describe("publish", () => {
 describe("verify", () => {
   const input = {
     path: "se/skane/ridge/x.yaml",
-    contributor: { name: "Edvin Buregren", club: "Club Parapente Syd", isHuman: true, goodFaith: true, trap: "" },
+    contributor: { name: "Edvin Buregren", club: "Club Parapente Syd", affirmed: true, trap: "" },
   };
 
   it("posts the confirmation with no session required", async () => {
