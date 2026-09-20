@@ -2,6 +2,7 @@ import { bearerFrom, issueToken, passwordMatches, verifyToken } from "./auth.ts"
 import { createGitHubGateway, deploymentStatus, type GitHubConfig } from "./github.ts";
 import { publishSite, verifySite, type PublishRequest, type VerifyRequest } from "./publish.ts";
 import { resolveLiveSample } from "../../src/providers/live/resolver.ts";
+import { collectLiveSamples, type SiteWithStation } from "../../src/providers/live/collectLive.ts";
 
 /**
  * Startvind's publishing Worker.
@@ -28,6 +29,19 @@ import { resolveLiveSample } from "../../src/providers/live/resolver.ts";
  * website noticing.
  */
 
+/**
+ * Declared here rather than pulled in from @cloudflare/workers-types.
+ *
+ * This Worker's source is type-checked by the same tsconfig as the rest
+ * of the repo, which targets the DOM lib - adding the Workers types
+ * globally would redefine Request/Response/fetch for every file in the
+ * project to no benefit. Two members are all this file uses.
+ */
+interface ExecutionContext {
+  waitUntil(promise: Promise<unknown>): void;
+  passThroughOnException(): void;
+}
+
 export interface Env {
   /** Fine-grained PAT with contents:write on the site repo. Secret. */
   GITHUB_TOKEN: string;
@@ -42,7 +56,26 @@ export interface Env {
   ALLOWED_ORIGINS: string;
   /** Label for the single operator, recorded in the session. */
   ADMIN_SUBJECT?: string;
+  /** Where to read the published site catalogue from, for /api/live. Defaults to the live site. */
+  SITE_BASE_URL?: string;
 }
+
+/**
+ * How long a live-wind response is reused at the edge.
+ *
+ * Two minutes. The sources themselves update every five (Holfuy's
+ * widget, Sjöbo's WeeWX archive) to sixty (an airport METAR), so this
+ * gives a reader data that is essentially as current as the station
+ * publishes, while capping what we ask of the providers at thirty
+ * requests an hour per station no matter how many people are looking.
+ *
+ * Compare what it replaces: the build-time collector read each station
+ * about seven times a DAY. This is not a load increase anyone will
+ * notice at Startvind's traffic - and unlike a cron, it costs nothing at
+ * all when nobody is using the site.
+ */
+const LIVE_CACHE_SECONDS = 120;
+const CATALOGUE_CACHE_SECONDS = 600;
 
 function githubConfig(env: Env): GitHubConfig {
   return {
@@ -103,9 +136,9 @@ async function requireSession(request: Request, env: Env): Promise<string | null
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     try {
-      return await route(request, env);
+      return await route(request, env, ctx);
     } catch (err) {
       // Last line of defence. An uncaught throw would return Cloudflare's
       // own error page with a stack trace in it - internal paths, and no
@@ -120,7 +153,7 @@ export default {
   },
 };
 
-async function route(request: Request, env: Env): Promise<Response> {
+async function route(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   {
     const cors = corsHeaders(request, env);
     const url = new URL(request.url);
@@ -248,6 +281,54 @@ async function route(request: Request, env: Env): Promise<Response> {
         return json({ ok: false, code: result.code, error: result.message }, status, cors);
       }
       return json(result, 200, cors);
+    }
+
+    if (url.pathname === "/api/live") {
+      // Live wind, read from the stations on demand.
+      //
+      // live.json is still built and still deployed; this exists because
+      // that file is only as fresh as the deploy, and the deploy runs
+      // about seven times a day. A live reading goes stale in thirty
+      // minutes, so most of the day every site fell back to forecast and
+      // no station reading was visible at all - the delivery was the
+      // bottleneck, not the stations.
+      //
+      // The response is byte-for-byte the same shape as live.json, so
+      // the page treats this as the same data from a fresher place. If
+      // this endpoint is unreachable the page falls back to the file,
+      // which makes the worst case exactly the old behaviour.
+      const cache = (caches as unknown as { default: Cache }).default;
+      const cached = await cache.match(request);
+      if (cached) return cached;
+
+      const siteBase = (env.SITE_BASE_URL ?? "https://startvind.se").replace(/\/+$/, "");
+      let sites: SiteWithStation[];
+      try {
+        const response = await fetch(`${siteBase}/generated/sites.json`, {
+          cf: { cacheTtl: CATALOGUE_CACHE_SECONDS, cacheEverything: true },
+        } as RequestInit);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        ({ sites } = (await response.json()) as { sites: SiteWithStation[] });
+      } catch (err) {
+        // No catalogue means no idea which stations to read. Saying so
+        // lets the page keep using the file it already has rather than
+        // showing nothing.
+        return json(
+          { ok: false, error: `Could not read the site catalogue. ${(err as Error).message}` },
+          502,
+          cors,
+        );
+      }
+
+      const live = await collectLiveSamples(sites);
+      const response = json(live, 200, {
+        ...cors,
+        "Cache-Control": `public, max-age=${LIVE_CACHE_SECONDS}`,
+      });
+      // Shared across every reader hitting this edge, so a busy morning
+      // costs the providers no more than a quiet one.
+      ctx.waitUntil(cache.put(request, response.clone()));
+      return response;
     }
 
     if (url.pathname === "/api/station-observation") {

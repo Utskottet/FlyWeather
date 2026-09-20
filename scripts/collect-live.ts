@@ -2,96 +2,39 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCatalogue } from "./build-sites-catalogue.ts";
-import { isKnownProvider, resolveLiveSample } from "../src/providers/live/resolver.ts";
-import type { SiteLiveSource } from "../src/providers/live/types.ts";
-import type { WindSample } from "../src/domain/types.ts";
+import { collectLiveSamples } from "../src/providers/live/collectLive.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
 const outPath = resolve(repoRoot, "public/generated/live.json");
 
-interface LiveEntry {
-  status: "ok" | "unavailable" | "failed";
-  sample: WindSample | null;
-}
-
 /**
- * Adapts a site's single `station` (§ FlyWeather Site Catalogue
- * Migration) back into the ordered array resolveLiveSample expects -
- * every site in the current catalogue has at most one station, so this
- * is always a 0- or 1-element array, never a lossy truncation.
+ * Writes public/generated/live.json at build time.
  *
- * It DOES pass the url through now. It did not, and that was the whole
- * reason a club station could be saved, look complete in the editor and
- * in the file, and still never produce a reading: for a feed with no
- * directory behind it the URL is the only way to find the station at
- * all, and it was being dropped one function short of the reader.
+ * Still here, and still the fallback the website uses when no Worker is
+ * configured - but no longer the primary path for a deployed site. The
+ * build runs about seven times a day (GitHub honours a five-minute
+ * cron at two-to-five-hour intervals), and a live reading goes stale in thirty
+ * minutes, so this alone left every site showing forecast for most of
+ * the day. The Worker's /api/live reads the same stations on demand;
+ * this file is what the page falls back to when that is unreachable,
+ * which makes the worst case exactly the old behaviour.
+ *
+ * The reading itself is shared code (domain-side collectLiveSamples), so
+ * the file and the endpoint cannot produce different shapes.
  */
-function stationAsSources(
-  station:
-    | { provider: string; station_id?: string | null; url?: string; name?: string; verified: boolean }
-    | null
-    | undefined,
-): SiteLiveSource[] {
-  if (!station) return [];
-  return [
-    {
-      provider: station.provider,
-      station_id: station.station_id ?? undefined,
-      url: station.url ?? undefined,
-      name: station.name ?? undefined,
-      priority: 1,
-      verified: station.verified,
-    },
-  ];
-}
-
 async function main() {
   const catalogue = buildCatalogue();
-  const candidates = catalogue.sites.filter((s) => s.enabled && s.station);
 
-  let sourcesOk = 0;
-  let sourcesFailed = 0;
-  const sites: Record<string, LiveEntry> = {};
-
-  for (const site of candidates) {
-    try {
-      const sample = await resolveLiveSample(stationAsSources(site.station));
-      if (sample) {
-        sourcesOk++;
-        sites[site.id] = { status: "ok", sample };
-      } else {
-        sourcesFailed++;
-        sites[site.id] = { status: "unavailable", sample: null };
-        // Naming the provider turns "something did not work" into a
-        // one-line diagnosis: an unknown provider is a typo in a site
-        // file, a known one is the source being down or having changed.
-        const provider = site.station?.provider ?? "(none)";
-        const known = site.station ? isKnownProvider(provider) : false;
-        console.warn(
-          `live collector: no usable source for "${site.id}" (provider "${provider}"${known ? "" : " - no reader for this provider"})`,
-        );
-      }
-    } catch (err) {
-      sourcesFailed++;
-      sites[site.id] = { status: "failed", sample: null };
-      console.warn(`live collector: "${site.id}" failed - ${(err as Error).message}`);
-    }
-  }
-
-  const output = {
-    generatedAt: new Date().toISOString(),
-    liveCollector: {
-      status: sourcesFailed === 0 ? "ok" : sourcesOk > 0 ? "partial" : "failed",
-      sourcesOk,
-      sourcesFailed,
-    },
-    sites,
-  };
+  const output = await collectLiveSamples(catalogue.sites, {
+    onSiteFailed: (siteId, reason) => console.warn(`live collector: ${siteId} - ${reason}`),
+  });
 
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, JSON.stringify(output, null, 2) + "\n", "utf-8");
-  console.log(`Live collector: ${sourcesOk} ok, ${sourcesFailed} failed/unavailable -> ${outPath}`);
+  console.log(
+    `Live collector: ${output.liveCollector.sourcesOk} ok, ${output.liveCollector.sourcesFailed} failed/unavailable -> ${outPath}`,
+  );
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
