@@ -191,7 +191,7 @@ describe("the generated catalogue carries every authored field", () => {
 
       for (const key of authored) {
         expect(
-          (built as Record<string, unknown>)[key],
+          (built as unknown as Record<string, unknown>)[key],
           `build-sites-catalogue.ts drops "${key}" - it is authored in the file but never reaches sites.json`,
         ).toBeDefined();
       }
