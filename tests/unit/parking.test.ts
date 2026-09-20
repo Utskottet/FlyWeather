@@ -137,3 +137,67 @@ description: A ridge.
     expect(merged.parking).toEqual({ lat: 55.41102, lon: 13.99515, note: "Vid grinden" });
   });
 });
+
+describe("the generated catalogue carries every authored field", () => {
+  it("copies every key of siteFileSchema into the published site", async () => {
+    // Real bug, the day parking shipped: build-sites-catalogue.ts lists
+    // the fields it copies one by one, and `parking` was not among them.
+    // The YAML was written correctly and the field simply never reached
+    // sites.json - so no button appeared, and reopening the editor showed
+    // an empty parking box, because the editor loads from the catalogue
+    // rather than from the file. Both symptoms, one missing line.
+    //
+    // Tested against a synthetic site that authors EVERY field rather
+    // than against the real catalogue: a field no site happens to use yet
+    // (images, today) would otherwise look identical to one the builder
+    // is dropping. This asserts the mapping, so any field added to
+    // siteFileSchema and forgotten in the builder fails here.
+    const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { stringify } = await import("yaml");
+    const { siteFileSchema } = await import("../../src/domain/siteFile.ts");
+    const { buildCatalogue } = await import("../../scripts/build-sites-catalogue.ts");
+
+    const complete = {
+      schema_version: 2,
+      id: "everything",
+      name: "Everything",
+      short_name: "Every",
+      coordinates: { lat: 55.4, lon: 13.9, verified: true, source: "hand" },
+      sector: { ranges: [{ from_deg: 180, to_deg: 260 }], verified: true },
+      wind: { verified: true, min_ms: 4, max_ms: 8, hard_max_gust_ms: 12, notes: "prose" },
+      station: { provider: "holfuy", station_id: "214", verified: false },
+      parking: { lat: 55.41, lon: 13.99, note: "by the gate" },
+      pilot_level: "easy",
+      ridge_height_m: 37,
+      description: "Authors every field the schema allows.",
+      last_edited_by: "Anna Andersson",
+      last_edited_at: "2026-09-20T18:00:00.000Z",
+      warnings: ["a warning"],
+      links: [{ label: "a link", url: "https://example.com" }],
+      images: [{ url: "https://example.com/a.jpg", caption: "a caption" }],
+    };
+    // Sanity: the fixture really is a valid, complete site file.
+    expect(siteFileSchema.safeParse(complete).success).toBe(true);
+
+    const root = mkdtempSync(join(tmpdir(), "startvind-catalogue-"));
+    try {
+      mkdirSync(join(root, "se", "skane", "ridge"), { recursive: true });
+      writeFileSync(join(root, "se", "skane", "ridge", "everything.yaml"), stringify(complete), "utf-8");
+
+      const built = buildCatalogue(root).sites.find((s) => s.id === "everything")!;
+      const authored = Object.keys(siteFileSchema.shape).filter((key) => key !== "schema_version");
+
+      for (const key of authored) {
+        expect(
+          (built as Record<string, unknown>)[key],
+          `build-sites-catalogue.ts drops "${key}" - it is authored in the file but never reaches sites.json`,
+        ).toBeDefined();
+      }
+      expect(built.parking).toEqual({ lat: 55.41, lon: 13.99, note: "by the gate" });
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});

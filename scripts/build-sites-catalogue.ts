@@ -136,6 +136,7 @@ export function buildCatalogue(root: string = sitesRoot): GeneratedSitesFile {
       sector: parsed.sector,
       wind: parsed.wind,
       station: parsed.station,
+      parking: parsed.parking,
       pilot_level: parsed.pilot_level,
       ridge_height_m: parsed.ridge_height_m,
       description: parsed.description,
