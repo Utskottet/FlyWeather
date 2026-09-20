@@ -1,6 +1,7 @@
 import { bearerFrom, issueToken, passwordMatches, verifyToken } from "./auth.ts";
 import { createGitHubGateway, deploymentStatus, type GitHubConfig } from "./github.ts";
 import { publishSite, verifySite, type PublishRequest, type VerifyRequest } from "./publish.ts";
+import { resolveLiveSample } from "../../src/providers/live/resolver.ts";
 
 /**
  * Startvind's publishing Worker.
@@ -247,6 +248,61 @@ async function route(request: Request, env: Env): Promise<Response> {
         return json({ ok: false, code: result.code, error: result.message }, status, cors);
       }
       return json(result, 200, cors);
+    }
+
+    if (url.pathname === "/api/station-observation") {
+      // The station finder's "does this actually work?" check.
+      //
+      // It exists because of CORS, not secrecy: SMHI and ViVa send
+      // Access-Control-Allow-Origin:*, but the Aviation Weather Center,
+      // Holfuy's widget and club WeeWX feeds do not, so a browser cannot
+      // read three of the five sources at all. The Worker can, and it is
+      // already the thing that talks to the outside world on this app's
+      // behalf.
+      //
+      // Deliberately NOT a general fetch proxy. It takes a provider and
+      // a station id, builds its own URLs, and any URL it is handed is
+      // checked against the same allowlist the collector uses - the
+      // readers are shared code, so there is one set of rules, not two.
+      if (!fromAllowedOrigin(request, env)) {
+        return json({ ok: false, error: "Not available from this origin." }, 403, cors);
+      }
+
+      const provider = url.searchParams.get("provider") ?? "";
+      const stationId = url.searchParams.get("station_id");
+      const stationUrl = url.searchParams.get("url");
+      if (provider === "") return json({ ok: false, error: "provider is required." }, 400, cors);
+
+      try {
+        const sample = await resolveLiveSample([
+          {
+            provider,
+            station_id: stationId,
+            url: stationUrl,
+            priority: 1,
+            // Nothing here is verified, and this endpoint must never be
+            // the thing that decides otherwise.
+            verified: false,
+          },
+        ]);
+        if (!sample) {
+          return json(
+            { ok: true, status: "unavailable", error: "The station did not return a usable wind reading." },
+            200,
+            { ...cors, "Cache-Control": "no-store" },
+          );
+        }
+        // Cached briefly at the edge: several pilots comparing the same
+        // few stations near one site should not each cost the upstream a
+        // request, and a minute is well inside every source's own update
+        // interval.
+        return json({ ok: true, status: "ok", sample }, 200, { ...cors, "Cache-Control": "max-age=60" });
+      } catch (err) {
+        return json({ ok: true, status: "unavailable", error: (err as Error).message }, 200, {
+          ...cors,
+          "Cache-Control": "no-store",
+        });
+      }
     }
 
     if (url.pathname === "/api/deployment") {

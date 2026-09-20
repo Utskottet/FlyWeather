@@ -1892,3 +1892,245 @@
   font-size: 13px;
   color: var(--success);
 }
+
+/* ---------------------------------------------------------------------
+   The station finder, inside the site editor.
+
+   A panel within the editor panel rather than a separate screen: the
+   whole point is to pick a station while looking at the site you are
+   editing, and navigating away would mean carrying an unsaved draft
+   somewhere else and back.
+   --------------------------------------------------------------------- */
+.station-finder {
+  margin: 8px 0 12px;
+  border: var(--panel-border);
+  border-radius: var(--panel-radius-sm);
+  background: var(--surface-sunken);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.station-finder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.station-finder-header h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.station-finder-header button {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.station-finder-radius {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.station-finder-radius input {
+  flex: 1;
+  min-width: 0;
+}
+
+.station-finder-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.station-finder-list > li {
+  border-top: 1px solid var(--divider);
+}
+
+.station-finder-list > li.selected {
+  background: var(--accent-soft);
+}
+
+/* The whole row is the target. On a phone, picking between stations a
+   few hundred metres apart should not require hitting a link. */
+.station-finder-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 13px;
+}
+
+/* Distance is the first thing to read, so it is the first thing in the
+   row and the only coloured thing in it. The colours are advisory and
+   say nothing about terrain - see domain/stations.ts. */
+.station-finder-distance {
+  flex: none;
+  min-width: 56px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.station-finder-distance.close {
+  color: var(--success);
+}
+
+.station-finder-distance.nearby {
+  color: var(--text-strong);
+}
+
+.station-finder-distance.far {
+  color: var(--text-muted);
+}
+
+.station-finder-name {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-strong);
+}
+
+.station-finder-kind {
+  flex: none;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.station-finder-preview {
+  padding: 0 10px 10px;
+  font-size: 12px;
+}
+
+.station-finder-wind {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/* Age is stated, never implied. An unknown age is its own state and
+   deliberately does not read as a failure - plenty of usable sources
+   simply do not date their readings. */
+.station-finder-age {
+  margin: 0 0 6px;
+  color: var(--text-muted);
+}
+
+.station-finder-observation.stale .station-finder-age,
+.station-finder-observation.suspect .station-finder-age {
+  color: var(--danger);
+}
+
+.station-finder-observation.unknown-age .station-finder-age {
+  color: var(--warning, #e0a33a);
+}
+
+.station-finder-unavailable {
+  margin: 0 0 6px;
+  color: var(--danger);
+}
+
+.station-finder-note {
+  margin: 0 0 6px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.station-finder-use {
+  border: none;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.station-finder-empty,
+.station-finder-footer {
+  margin: 0;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.station-finder-footer {
+  border-top: 1px solid var(--divider);
+}
+
+.station-finder-footer p {
+  margin: 0 0 4px;
+}
+
+.station-fields-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.station-fields-actions button {
+  border: 1px solid var(--divider);
+  background: var(--control-bg);
+  color: var(--text-strong);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.station-fields-find {
+  border-color: var(--accent) !important;
+  color: var(--accent-strong) !important;
+}
+
+.station-fields-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.station-fields-status {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.station-fields-status.unavailable {
+  color: var(--danger);
+}
+
+.station-fields-status.ok {
+  color: var(--success);
+}
+
+/* A provider nothing can read is the difference between a station that
+   works and one that is silently inert - a real site spent months with a
+   station id typed into its provider field. */
+.station-fields-warning {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--danger);
+}

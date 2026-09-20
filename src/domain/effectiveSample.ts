@@ -13,6 +13,15 @@ export interface EffectiveSample extends ForecastPoint {
   /** Only meaningful when sourceKind is "observation". */
   freshness: Freshness | null;
   ageMinutes: number | null;
+  /**
+   * False when the age above is measured from a download rather than
+   * from the observation itself (Holfuy's widget publishes no date).
+   * The reading is still shown - it is very probably current - but
+   * nothing should quote an age as though it were measured.
+   */
+  ageConfirmed?: boolean;
+  /** True when the observer recorded a variable wind, so direction is null by intent, not by omission. */
+  variableDirection?: boolean;
 }
 
 /**
@@ -42,6 +51,8 @@ export function selectEffectiveSample(
         sourceId: liveSample.sourceId,
         freshness,
         ageMinutes,
+        ageConfirmed: liveSample.ageConfirmed,
+        variableDirection: liveSample.variableDirection,
       };
     }
   }

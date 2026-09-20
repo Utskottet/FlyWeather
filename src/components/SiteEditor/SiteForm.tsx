@@ -83,7 +83,13 @@ export function SiteForm({ value, onChange }: Props) {
 
       <WindFields value={value.wind} onChange={(wind) => onChange({ ...value, wind })} />
 
-      <StationFields value={value.station} onChange={(station) => onChange({ ...value, station })} />
+      {/* The finder searches from the site's own coordinates, so they
+          are handed down rather than asked for a second time. */}
+      <StationFields
+        value={value.station}
+        onChange={(station) => onChange({ ...value, station })}
+        point={{ lat: value.coordinates.lat, lon: value.coordinates.lon }}
+      />
 
       <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
         <label style={{ flex: 1 }}>

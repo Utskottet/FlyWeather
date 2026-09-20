@@ -3,6 +3,7 @@ import { dirname, resolve, relative, sep } from "node:path";
 import type { Plugin } from "vite";
 import { mergeSiteYaml } from "../src/domain/siteYaml.ts";
 import { buildCatalogue } from "./build-sites-catalogue.ts";
+import { resolveLiveSample } from "../src/providers/live/resolver.ts";
 
 /**
  * Dev-only endpoint that lets the in-app site editor write a real file
@@ -67,6 +68,43 @@ export function siteWriterPlugin(repoRoot: string): Plugin {
     name: "startvind-site-writer",
     apply: "serve",
     configureServer(server) {
+      /**
+       * The station finder's connection check, for development.
+       *
+       * The same endpoint the publishing Worker serves in production, so
+       * the finder has one code path and the whole finder -> preview ->
+       * save -> collect chain can be exercised on a laptop. It exists
+       * because three of the five sources send no CORS headers, not
+       * because anything here is secret - and like the Worker's version
+       * it takes a provider and a station id rather than a URL to fetch,
+       * with the same allowlist underneath.
+       */
+      server.middlewares.use("/api/station-observation", async (req, res) => {
+        const query = new URL(req.url ?? "", "http://localhost").searchParams;
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Cache-Control", "no-store");
+        try {
+          const sample = await resolveLiveSample([
+            {
+              provider: query.get("provider") ?? "",
+              station_id: query.get("station_id"),
+              url: query.get("url"),
+              priority: 1,
+              verified: false,
+            },
+          ]);
+          res.end(
+            JSON.stringify(
+              sample
+                ? { ok: true, status: "ok", sample }
+                : { ok: true, status: "unavailable", error: "The station did not return a usable wind reading." },
+            ),
+          );
+        } catch (err) {
+          res.end(JSON.stringify({ ok: true, status: "unavailable", error: (err as Error).message }));
+        }
+      });
+
       server.middlewares.use("/api/site", async (req, res) => {
         if (req.method !== "POST") {
           res.statusCode = 405;

@@ -14,6 +14,7 @@
     "validate:sites": "tsx scripts/build-sites-catalogue.ts",
     "sites:index": "tsx scripts/generate-sites-index.ts",
     "collect:live": "tsx scripts/collect-live.ts",
+    "stations:build": "tsx scripts/build-station-catalogue.ts",
     "collect:forecasts": "tsx scripts/collect-forecasts.ts",
     "copy:maplibre-worker": "tsx scripts/copy-maplibre-worker.ts",
     "worker:dev": "wrangler dev --config editor-worker/wrangler.toml",

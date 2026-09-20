@@ -42,6 +42,26 @@ export const PROVIDER_ALIASES: Record<string, string> = {
   airport: "metar",
 };
 
+/**
+ * What to call a provider in front of a pilot.
+ *
+ * The ids are machine keys chosen for stability in YAML; "weewx" on a
+ * site panel tells a reader nothing. Falls back to the raw id rather
+ * than hiding an unknown one - a site whose provider is a typo should
+ * look odd, not tidy.
+ */
+export const PROVIDER_LABELS: Record<string, string> = {
+  holfuy: "Holfuy",
+  viva: "ViVa",
+  smhi: "SMHI",
+  metar: "Airport METAR",
+  weewx: "Club station",
+};
+
+export function providerLabel(provider: string): string {
+  return PROVIDER_LABELS[canonicalProvider(provider)] ?? provider;
+}
+
 export function canonicalProvider(provider: string): string {
   const key = provider.trim().toLowerCase();
   return PROVIDER_ALIASES[key] ?? key;

@@ -393,3 +393,67 @@ describe("provider resolution", () => {
     expect(sample?.stationId).toBe("esmi");
   });
 });
+
+describe("the collector's view of a saved station", () => {
+  /**
+   * Mirrors scripts/collect-live.ts's stationAsSources. Restated here
+   * rather than imported because the script is an entry point with
+   * top-level side effects; what matters is that the shape it produces
+   * carries every field a reader needs.
+   */
+  function stationAsSources(station: {
+    provider: string;
+    station_id?: string | null;
+    url?: string;
+    name?: string;
+    verified: boolean;
+  }) {
+    return [
+      {
+        provider: station.provider,
+        station_id: station.station_id ?? undefined,
+        url: station.url ?? undefined,
+        name: station.name ?? undefined,
+        priority: 1,
+        verified: station.verified,
+      },
+    ];
+  }
+
+  it("carries the saved URL to the reader", async () => {
+    // The regression this whole integration turns on: the URL was
+    // dropped here, so a club station could be saved, look complete, and
+    // never produce a reading.
+    let seen: string | null | undefined;
+    const spy: LiveWindProvider = {
+      fetch: async (source) => {
+        seen = source.url;
+        return [];
+      },
+    };
+    await resolveLiveSample(
+      stationAsSources({
+        provider: "sjoboflyg",
+        station_id: "esmi",
+        url: "https://vader.sjoboflyg.se/json/weewx_data.json",
+        verified: false,
+      }),
+      { weewx: spy },
+    );
+    expect(seen).toBe("https://vader.sjoboflyg.se/json/weewx_data.json");
+  });
+
+  it("never lets a saved verified flag reach a reader as permission to do anything", async () => {
+    // verified describes suitability for flying, and no reader should be
+    // branching on it. Recorded here so that stays true.
+    const spy: LiveWindProvider = {
+      fetch: async (source) => {
+        expect(source.verified).toBe(false);
+        return [];
+      },
+    };
+    await resolveLiveSample(stationAsSources({ provider: "weewx", url: "https://x", verified: false }), {
+      weewx: spy,
+    });
+  });
+});

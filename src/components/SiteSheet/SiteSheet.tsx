@@ -3,6 +3,7 @@ import { SiteHistorySection } from "./SiteHistorySection.tsx";
 import { siteToDraft, sitePathFor } from "../../domain/siteEditor.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { degreesToCompass16 } from "../../domain/direction.ts";
+import { providerLabel } from "../../providers/live/resolver.ts";
 import { WindRose } from "../WindRose/index.ts";
 import type { WeatherKind } from "../../domain/weather.ts";
 import type { Freshness } from "../../domain/freshness.ts";
@@ -16,6 +17,8 @@ export interface SiteSheetSample {
   sourceId: string | null;
   freshness: Freshness | null;
   ageMinutes: number | null;
+  /** False when `ageMinutes` is measured from a download rather than from the observation - see WindSample. */
+  ageConfirmed?: boolean;
 }
 
 export interface SiteSheetProps {
@@ -51,8 +54,12 @@ const SURFACE_HEIGHT_M = 10;
  */
 function sourceLabel(sample: SiteSheetSample, effectiveHeightM: number | null): string {
   if (sample.sourceKind === "observation") {
-    const age = sample.ageMinutes !== null ? `${Math.round(sample.ageMinutes)} min ago` : "";
-    const source = sample.sourceId === "holfuy" ? "Holfuy live" : (sample.sourceId ?? "live");
+    const source = sample.sourceId ? providerLabel(sample.sourceId) : "live";
+    // An age is only quoted when the source actually dated its reading.
+    // Holfuy's widget does not, and "3 min ago" would be describing when
+    // we downloaded it - see WindSample.ageConfirmed.
+    if (sample.ageConfirmed === false) return `${source} (age unconfirmed)`;
+    const age = sample.ageMinutes !== null ? `${Math.round(sample.ageMinutes)} min ago` : "age unknown";
     return `${source} (${sample.freshness}, ${age})`;
   }
   if (effectiveHeightM === null) return "Open-Meteo forecast";

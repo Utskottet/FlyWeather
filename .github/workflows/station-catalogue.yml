@@ -1,0 +1,59 @@
+name: Station Catalogue Refresh
+
+# The directory of wind stations the site editor's finder searches.
+#
+# Daily, and committed rather than built on deploy - deliberately, for
+# two reasons. Holfuy publishes no coordinate API, so placing its
+# stations means fetching each station page; the deploy pipeline runs
+# every five minutes (weather-refresh.yml), and crawling sixty pages
+# twelve times an hour to rediscover a list that changes maybe monthly
+# would be rude at best. And committing it makes the diff reviewable: a
+# provider changing its directory format shows up as a suspicious number
+# of stations appearing or vanishing, rather than as a silent change to
+# what the editor offers.
+#
+# Daily rather than weekly (as airspace-refresh.yml is) because a club
+# putting up a new station should be findable within a day, not within a
+# week.
+on:
+  schedule:
+    - cron: "15 3 * * *" # 03:15 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  # Never two crawls at once - they would race on the same commit, and
+  # the providers would see double the traffic for no benefit.
+  group: station-catalogue
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild the station catalogue
+        run: npm run stations:build
+
+      - name: Commit updated stations.json if changed
+        run: |
+          if git diff --quiet -- public/static/stations.json; then
+            echo "No station catalogue changes - nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/static/stations.json
+          git commit -m "Refresh the wind-station catalogue"
+          git push

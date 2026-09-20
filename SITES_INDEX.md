@@ -39,4 +39,4 @@ Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a
 | no | se | skane |  |  | Vinschfält Brandstad |  |  |  | no |  |
 | no | se | skane |  |  | Vinschfält Uråsa |  |  |  | no |  |
 | no | se | skane |  | Vitemölla | Vitemölla | 56.25–78.75 |  |  | no | no |
-| yes | se | smaland | ridge | Test Knäckebrödhult | Test Knäckebrödhult | 11–38 | viva #206 | difficult | yes | no |
+| yes | se | smaland | ridge | Test Knäckebrödhult | Test Knäckebrödhult | 184–106 | viva #206 | difficult | yes | no |
