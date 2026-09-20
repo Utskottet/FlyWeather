@@ -484,3 +484,22 @@ describe("fetching a source", () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe("provider names shown to contributors", () => {
+  it("names every reader in both languages", async () => {
+    // The editor's instruction screen lists what works, in Swedish and
+    // in English, from these maps. Adding a reader without naming it
+    // should fail here rather than put an English phrase in the middle
+    // of a Swedish sentence - or quietly omit a provider that works.
+    const { PROVIDER_LABELS, PROVIDER_LABELS_SV, knownProviderIds } = await import(
+      "../../src/providers/live/resolver.ts"
+    );
+    const ids = knownProviderIds().sort();
+    expect(Object.keys(PROVIDER_LABELS).sort()).toEqual(ids);
+    expect(Object.keys(PROVIDER_LABELS_SV).sort()).toEqual(ids);
+    for (const id of ids) {
+      expect(PROVIDER_LABELS[id], id).toBeTruthy();
+      expect(PROVIDER_LABELS_SV[id], id).toBeTruthy();
+    }
+  });
+});

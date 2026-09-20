@@ -123,6 +123,14 @@ test("the editor opens on an instruction screen that has to be acknowledged", as
   await expect(intro).toContainText(/flying site/i);
   await expect(intro).toContainText(/några minuter/);
   await expect(intro).toContainText(/few minutes/i);
+  // Why the rules exist, before the rules.
+  await expect(intro).toContainText(/wikipedia/i);
+  await expect(intro).toContainText(/litar på varandra/);
+  // And what a contributor needs to know to add a wind meter at all,
+  // named from the live registry so it cannot promise a dead provider.
+  await expect(intro).toContainText(/stationsverktyget/);
+  await expect(intro).toContainText(/Holfuy/);
+  await expect(intro).toContainText(/klubbstationer/);
 
   // The form is behind it - advice beside a form is advice scrolled past.
   await expect(page.locator('[data-testid="editor-save"]')).toHaveCount(0);

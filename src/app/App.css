@@ -2170,6 +2170,38 @@
   color: var(--text-strong);
 }
 
+/* The framing, not a rule - why the rules exist. Set apart from the
+   list so it reads as context rather than as instruction number one. */
+.editor-intro-lead {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--surface-sunken);
+  border-radius: 0 var(--panel-radius-sm) var(--panel-radius-sm) 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.editor-intro-lead p {
+  margin: 0;
+}
+
+/* Practical help rather than a rule, so it sits after the list and
+   carries no number. */
+.editor-intro-note {
+  margin: 0 0 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--divider);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.editor-intro-note p {
+  margin: 0;
+}
+
 .editor-intro-points {
   margin: 14px 0 18px;
   padding-left: 20px;

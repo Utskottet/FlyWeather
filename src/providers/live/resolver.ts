@@ -58,6 +58,22 @@ export const PROVIDER_LABELS: Record<string, string> = {
   weewx: "Club station",
 };
 
+/**
+ * The same names in Swedish, for the contributor-facing screens.
+ *
+ * A separate map rather than a translated-on-the-fly string, and covered
+ * by a test that its keys match PROVIDER_LABELS exactly - so adding a
+ * reader without naming it in Swedish fails the suite rather than
+ * putting an English phrase in the middle of a Swedish sentence.
+ */
+export const PROVIDER_LABELS_SV: Record<string, string> = {
+  holfuy: "Holfuy",
+  viva: "ViVa",
+  smhi: "SMHI",
+  metar: "flygplatser (METAR)",
+  weewx: "klubbstationer",
+};
+
 export function providerLabel(provider: string): string {
   return PROVIDER_LABELS[canonicalProvider(provider)] ?? provider;
 }
