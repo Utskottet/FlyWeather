@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseSmhi, parseSmhiStationId } from "../../src/providers/live/smhiProvider.ts";
 import { parseMetar } from "../../src/providers/live/metarProvider.ts";
 import { parseBelchertown, parseSpeedWithUnit } from "../../src/providers/live/weewxProvider.ts";
 import { parseVivaResponse } from "../../src/providers/live/vivaProvider.ts";
 import { numeric, stockholmTimestamp, validGust, validWind } from "../../src/providers/live/parse.ts";
-import { isAllowedSourceUrl, ALLOWED_SOURCE_HOSTS } from "../../src/providers/live/sourceUrl.ts";
+import { fetchSource, isAllowedSourceUrl, ALLOWED_SOURCE_HOSTS } from "../../src/providers/live/sourceUrl.ts";
 import { canonicalProvider, isKnownProvider, resolveLiveSample } from "../../src/providers/live/resolver.ts";
 import type { LiveWindProvider } from "../../src/providers/live/types.ts";
 import type { WindSample } from "../../src/domain/types.ts";
@@ -455,5 +455,32 @@ describe("the collector's view of a saved station", () => {
     await resolveLiveSample(stationAsSources({ provider: "weewx", url: "https://x", verified: false }), {
       weewx: spy,
     });
+  });
+});
+
+describe("fetching a source", () => {
+  it("never follows a redirect, and never asks for a mode the Workers runtime rejects", async () => {
+    // Both halves matter. Following a redirect is how an allowlisted host
+    // hands the request to one that is not. And `redirect: "error"` -
+    // which reads better and works fine in Node - throws outright in
+    // Cloudflare Workers, which silently broke every reader except
+    // Holfuy the first time this ran in production.
+    const calls: RequestInit[] = [];
+    vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
+      calls.push(init);
+      return new Response("", { status: 302, headers: { location: "https://evil.example/x" } });
+    });
+
+    await expect(fetchSource("https://vader.sjoboflyg.se/json/weewx_data.json")).rejects.toThrow(/redirect/i);
+    expect(calls[0].redirect).toBe("manual");
+    vi.unstubAllGlobals();
+  });
+
+  it("refuses a non-allowlisted URL without making a request at all", async () => {
+    const spy = vi.fn();
+    vi.stubGlobal("fetch", spy);
+    await expect(fetchSource("https://evil.example/feed.json")).rejects.toThrow(/allowlist/i);
+    expect(spy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });

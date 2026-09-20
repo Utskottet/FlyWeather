@@ -63,9 +63,17 @@ export class SourceError extends Error {}
 /**
  * Fetches an allowlisted source, with a timeout and a size cap.
  *
- * `redirect: "error"` rather than "follow": a redirect is how an
- * allowlisted host hands the request to one that is not, and following it
- * would quietly undo the check above.
+ * Redirects are never followed: a redirect is how an allowlisted host
+ * hands the request to one that is not, and following it would quietly
+ * undo the check above.
+ *
+ * Implemented as `redirect: "manual"` plus an explicit 3xx check rather
+ * than `redirect: "error"`, which reads better and works in Node - and
+ * throws `TypeError: Unsupported redirect mode` in Cloudflare Workers,
+ * where the Workers runtime supports only "follow" and "manual". That
+ * broke every reader except Holfuy the moment this ran in the Worker
+ * (Holfuy alone still calls fetch directly), which was invisible locally
+ * because Node accepts all three.
  */
 export async function fetchSource(url: string, format: "json" | "text" = "json"): Promise<unknown> {
   if (!isAllowedSourceUrl(url)) {
@@ -74,9 +82,12 @@ export async function fetchSource(url: string, format: "json" | "text" = "json")
 
   const response = await fetch(url, {
     signal: AbortSignal.timeout(TIMEOUT_MS),
-    redirect: "error",
+    redirect: "manual",
     headers: { "User-Agent": "Startvind/1.0 (+https://startvind.se)" },
   });
+  if (response.status >= 300 && response.status < 400) {
+    throw new SourceError(`Source redirected to ${response.headers.get("location") ?? "elsewhere"}; refusing to follow it`);
+  }
   if (!response.ok) throw new SourceError(`Source returned HTTP ${response.status}`);
 
   const declared = Number(response.headers.get("content-length") ?? "");
