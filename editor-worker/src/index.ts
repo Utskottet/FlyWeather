@@ -1,6 +1,6 @@
 import { bearerFrom, issueToken, passwordMatches, verifyToken } from "./auth.ts";
 import { createGitHubGateway, deploymentStatus, type GitHubConfig } from "./github.ts";
-import { publishSite, verifySite, type PublishRequest, type VerifyRequest } from "./publish.ts";
+import { postIssue, publishSite, verifySite, type IssueRequest, type PublishRequest, type VerifyRequest } from "./publish.ts";
 import { resolveLiveSample } from "../../src/providers/live/resolver.ts";
 import { collectLiveSamples, type SiteWithStation } from "../../src/providers/live/collectLive.ts";
 
@@ -278,6 +278,27 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
               : result.code === "unsigned"
                 ? 422
                 : 400;
+        return json({ ok: false, code: result.code, error: result.message }, status, cors);
+      }
+      return json(result, 200, cors);
+    }
+
+    if (url.pathname === "/api/issue" && request.method === "POST") {
+      // "Issues and improvements": anybody can post, everybody can read.
+      // Same signature requirement as editing a site - a name, a real
+      // club, the tick - and the same public, revertable storage.
+      if (!fromAllowedOrigin(request, env)) {
+        return json({ ok: false, error: "Förslag tas bara emot från startvind.se." }, 403, cors);
+      }
+
+      const body = (await request.json().catch(() => null)) as IssueRequest | null;
+      if (!body) return json({ ok: false, error: "Malformed request." }, 400, cors);
+
+      const admin = (await requireSession(request, env)) !== null;
+      const result = await postIssue(createGitHubGateway(githubConfig(env)), body, { admin });
+      if (!result.ok) {
+        const status =
+          result.code === "conflict" ? 409 : result.code === "upstream_error" ? 502 : result.code === "unsigned" ? 422 : 400;
         return json({ ok: false, code: result.code, error: result.message }, status, cors);
       }
       return json(result, 200, cors);

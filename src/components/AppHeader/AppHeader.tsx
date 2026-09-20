@@ -9,6 +9,8 @@ export interface AppHeaderProps {
   raspUpdated: string | null;
   /** Undefined when there is nowhere for a save to go (see app/editorApi.ts's PUBLISH_TARGET) - the menu item is then not rendered at all rather than shown and guaranteed to fail. */
   onAddSite?: () => void;
+  /** Same rule: no publish target means nowhere to post a suggestion, so no menu item. */
+  onOpenIssues?: () => void;
 }
 
 /**
@@ -30,7 +32,14 @@ export interface AppHeaderProps {
  * difference now (two stacked lines instead of one row), not a different
  * component tree, so there is no second layout to keep in step.
  */
-export function AppHeader({ sitesMeasured, raspOn, windUpdated, raspUpdated, onAddSite }: AppHeaderProps) {
+export function AppHeader({
+  sitesMeasured,
+  raspOn,
+  windUpdated,
+  raspUpdated,
+  onAddSite,
+  onOpenIssues,
+}: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -100,6 +109,20 @@ export function AppHeader({ sitesMeasured, raspOn, windUpdated, raspUpdated, onA
                 data-testid="add-site-button"
               >
                 Add site
+              </button>
+            )}
+            {onOpenIssues && (
+              <button
+                type="button"
+                role="menuitem"
+                className="app-header-menu-item"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onOpenIssues();
+                }}
+                data-testid="issues-button"
+              >
+                Issues and improvements
               </button>
             )}
           </div>

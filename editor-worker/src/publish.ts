@@ -8,6 +8,7 @@ import {
   type Contributor,
 } from "../../src/domain/contributor.ts";
 import { appendEntry, summariseChanges, type EditAction, type EditLogEntry } from "../../src/domain/editLog.ts";
+import { appendIssue, validateIssueText, type Issue } from "../../src/domain/issues.ts";
 
 /**
  * The publish use-case: turn an editor payload into one atomic commit on
@@ -78,6 +79,11 @@ export interface PublishRequest {
   baseSha?: string;
 }
 
+export interface IssueRequest {
+  text: string;
+  contributor: Contributor;
+}
+
 /** A one-tap "I was there and this is still right", which writes only to the log. */
 export interface VerifyRequest {
   /** Path relative to sites/ of the site being confirmed. */
@@ -102,6 +108,7 @@ export type PublishErrorCode =
 
 const SITES_ROOT = "sites";
 const EDIT_LOG_PATH = "data/edit-log.jsonl";
+const ISSUES_PATH = "data/issues.jsonl";
 
 /** Rejects anything that is not a plain 4-segment path under sites/. */
 export function validateSitePath(relPath: string): string | null {
@@ -439,5 +446,62 @@ function safeParse(text: string): unknown {
     return parseYaml(text);
   } catch {
     return null;
+  }
+}
+
+/**
+ * Posting something that should be better.
+ *
+ * Same bargain as editing a site: no account, but no anonymity either -
+ * a name, a club that has to be a real one, and the whole thing lands in
+ * a public file in a real commit. Somebody who wants to be rude has to
+ * sign it, and one `git revert` removes it.
+ *
+ * Deliberately writes nothing but the list. A suggestion is not a change
+ * to the catalogue, and it should never be able to become one by
+ * accident.
+ */
+export async function postIssue(
+  repo: RepoGateway,
+  request: IssueRequest,
+  options: { now?: Date; admin?: boolean } = {},
+): Promise<PublishResult> {
+  const now = options.now ?? new Date();
+  try {
+    const contributorError = checkContributor(request.contributor);
+    if (contributorError) return fail("unsigned", contributorError);
+
+    if (typeof request.text !== "string") return fail("invalid_site", "Missing text.");
+    const textError = validateIssueText(request.text);
+    if (textError) return fail("invalid_site", textError);
+
+    const contributor = canonicalContributor(request.contributor);
+    const issue: Issue = {
+      // Stamped here, not taken from the browser - a wrong clock would
+      // otherwise sort the list wrongly forever.
+      at: now.toISOString(),
+      by: contributor.name,
+      ...(contributor.club ? { club: contributor.club } : {}),
+      text: request.text.trim(),
+    };
+
+    const headSha = await repo.head();
+    const text = appendIssue(await repo.readFile(headSha, ISSUES_PATH), issue);
+    const who = contributorLabel(contributor.name, contributor.club);
+
+    const { commitSha } = await repo.commit({
+      writes: [{ path: ISSUES_PATH, text }],
+      message: `Issue reported by ${who}\n\n${issue.text.slice(0, 400)}`,
+      expectedHeadSha: headSha,
+    });
+    return { ok: true, commitSha, path: ISSUES_PATH, changes: [] };
+  } catch (err) {
+    const message = (err as Error).message ?? "Unknown error";
+    if (/conflict|not a fast forward|non-fast-forward/i.test(message)) {
+      // Two people posting at once is a retry, not a failure worth
+      // explaining - the list has no conflicts, only an append order.
+      return fail("conflict", "Någon annan skrev samtidigt. Försök igen. / Somebody posted at the same moment - try again.");
+    }
+    return fail("upstream_error", `Kunde inte spara. ${message}`);
   }
 }

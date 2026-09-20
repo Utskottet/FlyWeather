@@ -4,6 +4,8 @@ import type { Plugin } from "vite";
 import { mergeSiteYaml } from "../src/domain/siteYaml.ts";
 import { buildCatalogue } from "./build-sites-catalogue.ts";
 import { resolveLiveSample } from "../src/providers/live/resolver.ts";
+import { appendIssue, validateIssueText } from "../src/domain/issues.ts";
+import { canonicalContributor, validateContributor, type Contributor } from "../src/domain/contributor.ts";
 
 /**
  * Dev-only endpoint that lets the in-app site editor write a real file
@@ -102,6 +104,45 @@ export function siteWriterPlugin(repoRoot: string): Plugin {
           );
         } catch (err) {
           res.end(JSON.stringify({ ok: true, status: "unavailable", error: (err as Error).message }));
+        }
+      });
+
+      /**
+       * Posting an issue, for development. The production path is the
+       * Worker's /api/issue; this writes straight into data/issues.jsonl
+       * so the whole form can be exercised on a laptop.
+       */
+      server.middlewares.use("/api/issue", async (req, res) => {
+        res.setHeader("Content-Type", "application/json");
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.end(JSON.stringify({ ok: false, error: "POST only" }));
+          return;
+        }
+        try {
+          const body = JSON.parse(await readBody(req)) as { text?: string; contributor?: Contributor };
+          const problems = validateContributor(body.contributor as Contributor);
+          const textError = validateIssueText(body.text ?? "");
+          if (problems.length > 0 || textError) {
+            throw new Error(textError ?? problems.map((p) => p.message).join(" "));
+          }
+          const contributor = canonicalContributor(body.contributor as Contributor);
+          const issuesPath = resolve(repoRoot, "data/issues.jsonl");
+          const existing = existsSync(issuesPath) ? readFileSync(issuesPath, "utf-8") : null;
+          writeFileSync(
+            issuesPath,
+            appendIssue(existing, {
+              at: new Date().toISOString(),
+              by: contributor.name,
+              ...(contributor.club ? { club: contributor.club } : {}),
+              text: (body.text ?? "").trim(),
+            }),
+            "utf-8",
+          );
+          res.end(JSON.stringify({ ok: true, commitSha: "local" }));
+        } catch (err) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ ok: false, error: (err as Error).message }));
         }
       });
 

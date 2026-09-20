@@ -2246,3 +2246,152 @@
   line-height: 1.4;
   color: var(--text-muted);
 }
+
+/* ---------------------------------------------------------------------
+   Issues and improvements - a public list and the form to add to it.
+
+   Same panel shape as the site editor, because it is the same kind of
+   thing: a form over the map that writes to the repository. Public on
+   both sides deliberately - a suggestion box only the owner can see is
+   one people stop using, because they cannot tell whether theirs was the
+   third report of the same thing or the first.
+   --------------------------------------------------------------------- */
+.issues-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  width: min(560px, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  border-left: var(--panel-border);
+  box-shadow: var(--panel-shadow);
+}
+
+.issues-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.issues-header h2 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-strong);
+}
+
+.issues-header button {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.issues-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px 20px;
+}
+
+.issues-lead {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.issues-text-label textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  /* 16px stops iOS Safari zooming the page when the field takes focus. */
+  font-size: 16px;
+  line-height: 1.4;
+  font-family: inherit;
+  color: var(--text-strong);
+  background: var(--surface-sunken);
+  border: var(--panel-border);
+  border-radius: var(--panel-radius-sm);
+  resize: vertical;
+}
+
+.issues-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-bottom: 18px;
+}
+
+.issues-actions button {
+  border: 1px solid var(--divider);
+  background: var(--control-bg);
+  color: var(--text-strong);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.issues-actions button:last-child {
+  border-color: transparent;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.issues-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.issues-sent {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--success);
+}
+
+.issues-list-section {
+  border-top: 1px solid var(--divider);
+  padding-top: 12px;
+}
+
+.issues-list-section h3 {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.issues-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.issues-item-text {
+  margin: 0 0 2px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-strong);
+  /* Somebody's own paragraph breaks are theirs to keep. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.issues-item-by {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
