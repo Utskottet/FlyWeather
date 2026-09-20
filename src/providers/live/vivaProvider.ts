@@ -1,5 +1,7 @@
 import type { WindSample } from "../../domain/types.ts";
 import type { LiveWindProvider, SiteLiveSource } from "./types.ts";
+import { fetchSource } from "./sourceUrl.ts";
+import { numeric, stockholmTimestamp, validGust, validWind } from "./parse.ts";
 
 /**
  * Uses Sjöfartsverket's (Swedish Maritime Administration) public ViVa
@@ -24,6 +26,8 @@ interface VivaSample {
   Unit: string;
   Type: string;
   Quality: string;
+  /** Swedish wall-clock time, no offset - see parse.ts's stockholmTimestamp. */
+  Updated?: string;
 }
 
 interface VivaResponse {
@@ -37,7 +41,10 @@ interface VivaResponse {
 export interface ParsedVivaStation {
   windDirectionDeg: number;
   windSpeedMs: number;
-  windGustMs: number;
+  /** Null when this station does not report gusts, or reports one it flags as bad. */
+  windGustMs: number | null;
+  /** ViVa's own measurement time, or null when it cannot be resolved unambiguously. */
+  observedAt: string | null;
 }
 
 /**
@@ -64,26 +71,45 @@ export function parseVivaResponse(json: unknown): ParsedVivaStation | null {
   const mean = bySample("Medelvind");
   const gust = bySample("Byvind");
   const direction = bySample("Vindriktning");
-  if (!mean || !gust || !direction) return null;
-  if (mean.Quality !== "Ok" || gust.Quality !== "Ok" || direction.Quality !== "Ok") return null;
 
-  const speedMatch = mean.Value.match(/([\d.]+)\s*$/);
-  const gustMatch = gust.Value.match(/([\d.]+)\s*$/);
-  const windSpeedMs = speedMatch ? Number(speedMatch[1]) : NaN;
-  const windGustMs = gustMatch ? Number(gustMatch[1]) : NaN;
-  const windDirectionDeg = Number(direction.Value);
+  // Gust is NOT required. This used to demand all three samples and all
+  // three qualities, so a ViVa station that simply does not report gusts
+  // produced no live wind at all - a missing gust silently cost the whole
+  // reading, which is exactly backwards: missing gust means unknown gust,
+  // not unknown wind.
+  if (!mean || !direction) return null;
+  if (mean.Quality !== "Ok" || direction.Quality !== "Ok") return null;
+  if (mean.Unit !== "m/s") return null;
 
-  if (!Number.isFinite(windSpeedMs) || !Number.isFinite(windGustMs) || !Number.isFinite(windDirectionDeg)) {
-    return null;
-  }
+  const trailingNumber = (value: string | undefined) => numeric(value?.match(/([-+]?\d+(?:[.,]\d+)?)\s*$/)?.[1]);
+  const windSpeedMs = trailingNumber(mean.Value);
+  const windDirectionDeg = numeric(direction.Value);
+  if (!validWind(windSpeedMs, windDirectionDeg)) return null;
 
-  return { windDirectionDeg, windSpeedMs, windGustMs };
+  // Only when the gust was measured at the same instant as the mean -
+  // ViVa timestamps each sample separately, and pairing a gust from a
+  // different minute with this wind would describe a moment that never
+  // happened.
+  const gustMs =
+    gust && gust.Quality === "Ok" && gust.Unit === "m/s" && gust.Updated === mean.Updated
+      ? validGust(trailingNumber(gust.Value))
+      : null;
+
+  // Both must resolve, and to the same instant. A speed from 14:35 and a
+  // direction from 14:30 is not one observation.
+  const meanAt = stockholmTimestamp(mean.Updated);
+  const directionAt = stockholmTimestamp(direction.Updated);
+  const observedAt = meanAt !== null && meanAt === directionAt ? meanAt : null;
+
+  return { windDirectionDeg: windDirectionDeg! % 360, windSpeedMs: windSpeedMs!, windGustMs: gustMs, observedAt };
 }
 
 async function fetchVivaJson(stationId: string): Promise<unknown | null> {
-  const res = await fetch(buildVivaUrl(stationId));
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    return await fetchSource(buildVivaUrl(stationId));
+  } catch {
+    return null;
+  }
 }
 
 export const vivaProvider: LiveWindProvider = {
@@ -94,24 +120,28 @@ export const vivaProvider: LiveWindProvider = {
     const parsed = parseVivaResponse(json);
     if (!parsed) return [];
 
-    // ViVa's own "Updated" field is a local Swedish time with no explicit
-    // date/timezone info in the samples we use - same ambiguity as
-    // Holfuy's widget "HH:MM". Using the fetch time is honest and safe:
-    // the ViVa frontend itself polls every 30s (config.json's
-    // widgetUpdateInterval), so the underlying reading is never stale by
-    // more than that when we fetch it.
-    const timestamp = new Date().toISOString();
-
+    // ViVa's "Updated" IS a full date and time - it is simply Swedish
+    // wall-clock with no offset, which parse.ts resolves (and refuses to
+    // guess at, for the one repeated hour each autumn). This used to
+    // stamp the fetch time instead and call it honest; it is strictly
+    // better to publish the time the wind was actually measured, and to
+    // say "age unknown" on the rare occasion it cannot be pinned down.
     return [
       {
         sourceId: "viva",
         sourceKind: "observation",
         stationId: source.station_id,
-        timestamp,
+        timestamp: parsed.observedAt ?? new Date().toISOString(),
+        ageConfirmed: parsed.observedAt !== null,
         windDirectionDeg: parsed.windDirectionDeg,
         windSpeedMs: parsed.windSpeedMs,
         windGustMs: parsed.windGustMs,
         quality: "good",
+        staleAfterMinutes: 20,
+        note:
+          parsed.observedAt !== null
+            ? undefined
+            : "ViVa reported a local time that falls in the repeated hour when clocks go back, so its age cannot be confirmed.",
       },
     ];
   },

@@ -100,11 +100,17 @@ export const holfuyWidgetProvider: LiveWindProvider = {
     if (!parsed) return [];
 
     // The widget shows only a local "HH:MM", with no date or explicit
-    // timezone - too ambiguous to parse into a trustworthy ISO instant.
-    // Using the fetch time as the observation timestamp is honest and
-    // safe here: Holfuy's own widget refreshes every 5 min (its
-    // `<meta refresh>` tag), so the underlying reading is never more
-    // than ~5 min older than when we fetched it.
+    // timezone - too ambiguous to parse into a trustworthy instant. The
+    // fetch time is a reasonable STAND-IN (Holfuy's own widget refreshes
+    // every 5 min per its <meta refresh>, so the reading is rarely much
+    // older than the download) but it is not a measurement time, and
+    // ageConfirmed:false says so rather than letting the rest of the app
+    // compute a freshness it cannot actually justify.
+    //
+    // This is the compromise chosen deliberately over publishing no
+    // timestamp at all: twelve of sixteen stations are Holfuy, and
+    // dropping their times would take LIVE away from most of the
+    // catalogue to fix a caveat that can simply be stated.
     const timestamp = new Date().toISOString();
 
     return [
@@ -113,10 +119,13 @@ export const holfuyWidgetProvider: LiveWindProvider = {
         sourceKind: "observation",
         stationId: source.station_id,
         timestamp,
+        ageConfirmed: false,
         windDirectionDeg: parsed.windDirectionDeg,
         windSpeedMs: parsed.windSpeedMs,
         windGustMs: parsed.windGustMs,
         quality: "good",
+        staleAfterMinutes: 20,
+        note: "Holfuy's public widget reports a time with no date or timezone, so the reading's exact age cannot be confirmed.",
       },
     ];
   },

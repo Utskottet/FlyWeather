@@ -9,11 +9,51 @@ export interface WindSample {
   lat?: number;
   lon?: number;
   timestamp: string; // ISO-8601 UTC
+  /**
+   * Whether `timestamp` is when the wind was MEASURED, or merely when we
+   * downloaded it.
+   *
+   * Absent means true - every reader that can supply a real observation
+   * time does. False is for sources that publish a reading with no usable
+   * date: Holfuy's public widget prints a bare "HH:MM" with no date and
+   * no timezone, so the honest statement is "this is roughly current, and
+   * we cannot prove how current". Freshness must not be computed from a
+   * download time as though it were a measurement time, so anything that
+   * reports age checks this first.
+   */
+  ageConfirmed?: boolean;
   windDirectionDeg: number | null;
   windSpeedMs: number | null;
+  /**
+   * Missing stays missing. A station that does not report gusts is not a
+   * station reporting zero gusts, and flattening the two would turn "we
+   * do not know" into a reassuring number - the exact direction a wind
+   * app must never round in.
+   */
   windGustMs: number | null;
+  /**
+   * The wind is genuinely variable in direction (METAR's VRB), rather
+   * than blowing from 0°. Direction is null in that case and must stay
+   * null: rendering VRB as north would point a rose confidently at the
+   * one direction the observer specifically declined to give.
+   */
+  variableDirection?: boolean;
+  /**
+   * A gust reported separately from the mean wind, with its own time.
+   *
+   * SMHI's hourly gust maximum is not simultaneous with the wind reading
+   * it accompanies - it is the highest gust of some preceding period,
+   * published on its own schedule. Presenting it as this instant's gust
+   * would be a small, confident lie, so it travels beside the sample
+   * carrying its own timestamp and its own label.
+   */
+  gustReport?: { windGustMs: number; timestamp: string; label: string } | null;
   temperatureC?: number | null;
   quality?: "good" | "suspect" | "stale";
+  /** How long a reading from this source stays meaningful - an airport METAR is hourly, a club station is minutes. */
+  staleAfterMinutes?: number;
+  /** Provider-supplied caveat, shown as-is rather than summarised away. */
+  note?: string;
 }
 
 export interface HeightWindSeries {

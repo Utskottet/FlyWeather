@@ -2,7 +2,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCatalogue } from "./build-sites-catalogue.ts";
-import { resolveLiveSample } from "../src/providers/live/resolver.ts";
+import { isKnownProvider, resolveLiveSample } from "../src/providers/live/resolver.ts";
 import type { SiteLiveSource } from "../src/providers/live/types.ts";
 import type { WindSample } from "../src/domain/types.ts";
 
@@ -20,10 +20,30 @@ interface LiveEntry {
  * Migration) back into the ordered array resolveLiveSample expects -
  * every site in the current catalogue has at most one station, so this
  * is always a 0- or 1-element array, never a lossy truncation.
+ *
+ * It DOES pass the url through now. It did not, and that was the whole
+ * reason a club station could be saved, look complete in the editor and
+ * in the file, and still never produce a reading: for a feed with no
+ * directory behind it the URL is the only way to find the station at
+ * all, and it was being dropped one function short of the reader.
  */
-function stationAsSources(station: { provider: string; station_id?: string | null; verified: boolean } | null | undefined): SiteLiveSource[] {
+function stationAsSources(
+  station:
+    | { provider: string; station_id?: string | null; url?: string; name?: string; verified: boolean }
+    | null
+    | undefined,
+): SiteLiveSource[] {
   if (!station) return [];
-  return [{ provider: station.provider, station_id: station.station_id ?? undefined, priority: 1, verified: station.verified }];
+  return [
+    {
+      provider: station.provider,
+      station_id: station.station_id ?? undefined,
+      url: station.url ?? undefined,
+      name: station.name ?? undefined,
+      priority: 1,
+      verified: station.verified,
+    },
+  ];
 }
 
 async function main() {
@@ -43,7 +63,14 @@ async function main() {
       } else {
         sourcesFailed++;
         sites[site.id] = { status: "unavailable", sample: null };
-        console.warn(`live collector: no usable source for "${site.id}"`);
+        // Naming the provider turns "something did not work" into a
+        // one-line diagnosis: an unknown provider is a typo in a site
+        // file, a known one is the source being down or having changed.
+        const provider = site.station?.provider ?? "(none)";
+        const known = site.station ? isKnownProvider(provider) : false;
+        console.warn(
+          `live collector: no usable source for "${site.id}" (provider "${provider}"${known ? "" : " - no reader for this provider"})`,
+        );
       }
     } catch (err) {
       sourcesFailed++;
