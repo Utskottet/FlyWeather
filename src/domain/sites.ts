@@ -19,6 +19,22 @@ export type { Sector, SiteGroup };
 export interface Site extends Omit<SiteFile, "schema_version"> {
   country: string;
   region: string;
+  /**
+   * How far the site's live station is from the site, in km.
+   *
+   * Derived at build time by looking the station up in the wind-station
+   * catalogue (public/static/stations.json) and measuring from the site's
+   * own coordinates - not stored in the site file. Deliberately: a
+   * distance written into YAML is a snapshot that goes quietly wrong the
+   * moment somebody corrects the site's position, and this is a fact
+   * about two coordinates rather than a decision anybody made.
+   *
+   * Absent when the site has no station, when the station is not in the
+   * catalogue (a provider directory can fail, and Holfuy does not publish
+   * coordinates for every station), or when the site itself has none. No
+   * distance is better than a guessed one.
+   */
+  station_distance_km?: number;
   /** null only for archived sites, whose original group isn't recoverable from the path alone - see SITE_MIGRATION_REPORT.md. */
   group: SiteGroup | null;
   enabled: boolean;

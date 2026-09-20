@@ -243,14 +243,23 @@ describe("mergeSiteYaml preserves everything the editor does not model", () => {
     expect(parsed.coordinates.source).toContain("User-supplied field coordinates");
   });
 
-  it("keeps station.note, which the editor has no field for", () => {
+  it("keeps station.note through an edit that does not touch it", () => {
+    // Asserts that the note SURVIVES, not what it currently says. It used
+    // to check for a phrase out of Klamby's real note, which broke the
+    // first time somebody edited that station through the site editor -
+    // a test failing because the data it reads over improved is a test
+    // measuring the wrong thing.
     const catalogue = buildCatalogue();
-    const draft = siteToDraft(catalogue.sites.find((s) => s.id === "klamby")!);
+    const klamby = catalogue.sites.find((s) => s.id === "klamby")!;
+    const noteBefore = klamby.station?.note;
+    expect(noteBefore, "Klamby is expected to have a station note for this test to mean anything").toBeTruthy();
+
+    const draft = siteToDraft(klamby);
     const merged = mergeSiteYaml(original, draftToSiteFields({ ...draft, name: "Klamby Field" }));
     const parsed = parseYaml(merged);
 
     expect(parsed.name).toBe("Klamby Field");
-    expect(parsed.station.note).toContain("Sjöbo Flyg");
+    expect(parsed.station.note).toBe(noteBefore);
   });
 
   it("keeps wind.notes on a site that has them", () => {

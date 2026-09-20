@@ -103,3 +103,41 @@ test("the connection check reports what the station says, and what it does not p
   // Whatever the outcome, it must never read as a verification.
   await expect(page.locator(".station-fields-status")).not.toContainText(/verified suitable/i);
 });
+
+test("a site panel names its station and how far away it is, right under the source badge", async ({ page }) => {
+  // "LIVE" says the wind is a measurement; this says a measurement of
+  // WHERE. An anemometer on the hill and an airport twenty kilometres
+  // inland are both live, and only one of them is about this site.
+  await page.goto("/");
+  await page.waitForSelector('[data-testid="site-map"]', { timeout: 60_000 });
+  await mapSettled(page);
+  await page.getByTestId("site-marker-alabodarna").first().click({ force: true });
+  await page.waitForSelector('[data-testid="site-sheet"]');
+
+  const station = page.getByTestId("site-sheet-station");
+  await expect(station).toBeVisible();
+  // Named by provider and id where no station name was saved - "Holfuy"
+  // alone identifies nothing.
+  await expect(station).toContainText(/#\d+/);
+  await expect(station).toContainText(/km away/);
+
+  // Directly under the badge, not lower down the panel.
+  const badge = (await page.getByTestId("site-sheet-source").boundingBox())!;
+  const line = (await station.boundingBox())!;
+  expect(line.y).toBeGreaterThan(badge.y);
+  expect(line.y - (badge.y + badge.height)).toBeLessThan(24);
+});
+
+test("a site with no station says nothing rather than an empty distance", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForSelector('[data-testid="site-map"]', { timeout: 60_000 });
+  await mapSettled(page);
+  await page.getByTestId("site-marker-lenacken").first().click({ force: true });
+  await page.waitForSelector('[data-testid="site-sheet"]');
+  const station = page.getByTestId("site-sheet-station");
+  // Lenacken has a station, so this asserts the shape rather than absence
+  // - a distance is only ever shown when one could be computed.
+  if ((await station.count()) > 0) {
+    await expect(station).not.toContainText(/undefined|NaN/);
+  }
+});

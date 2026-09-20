@@ -21,7 +21,7 @@ Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a
 | yes | se | skane | ridge | Lenacken | Lenacken | 177–228 | holfuy #589 | medium | yes | no |
 | yes | se | skane | ridge | Ravlunda | Ravlunda / Haväng | 60–120 | holfuy #126 |  | yes | yes |
 | yes | se | skane | winch | Fedinge  | Fagerhult Fedinge Flygfält  | 322–18, 129–199 | 33 |  | yes | no |
-| yes | se | skane | winch | Klamby | Klamby | 45–145, 225–315 | sjoboflyg #esmi |  | yes | yes |
+| yes | se | skane | winch | Klamby | Klamby | 45–145, 225–315 | Sjöbo flygklubb · ESMI |  | yes | yes |
 | no | se | skane |  | Stenarna | Ales stenar / Stenarna | 213.75–236.25 | holfuy #214 |  | no | no |
 | no | se | skane |  | Brofästet | Brofästet | 258.75–281.25 |  |  | no | no |
 | no | se | skane |  | Hovet N | Hovs Hallar N | 290–350 | holfuy #127 |  | no | yes |
@@ -39,4 +39,4 @@ Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a
 | no | se | skane |  |  | Vinschfält Brandstad |  |  |  | no |  |
 | no | se | skane |  |  | Vinschfält Uråsa |  |  |  | no |  |
 | no | se | skane |  | Vitemölla | Vitemölla | 56.25–78.75 |  |  | no | no |
-| yes | se | smaland | ridge | Test Knäckebrödhult | Test Knäckebrödhult | 184–106 | viva #206 | difficult | yes | no |
+| yes | se | smaland | ridge | Test Knäckebrödhult | Test Knäckebrödhult | 184–106 | Tomtabacken A | difficult | yes | no |

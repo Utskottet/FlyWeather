@@ -2134,3 +2134,33 @@
   line-height: 1.4;
   color: var(--danger);
 }
+
+/* Which station the live wind comes from, under the source badge. "LIVE"
+   says it is a measurement; this says a measurement of where - an
+   anemometer on the hill and an airport twenty kilometres inland are
+   both live, and only one is about this site. */
+.site-sheet-station {
+  margin: -4px 0 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.site-sheet-station-distance {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Same three bands the finder uses. Advisory only: a coastal station 3 km
+   along the same shoreline can describe a ridge better than one 1 km
+   inland behind a hill, and nothing here can read terrain. */
+.site-sheet-station-distance.close {
+  color: var(--success);
+}
+
+.site-sheet-station-distance.nearby {
+  color: var(--text);
+}
+
+.site-sheet-station-distance.far {
+  color: var(--warning, #e0a33a);
+}

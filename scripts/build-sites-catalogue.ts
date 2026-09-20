@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { siteFileSchema, parseSitePath } from "../src/domain/siteFile.ts";
 import type { Site, GeneratedSitesFile } from "../src/domain/sites.ts";
+import { distanceKm, type StationCatalogue } from "../src/domain/stations.ts";
+import { canonicalProvider } from "../src/providers/live/resolver.ts";
 
 /**
  * Recursively discovers sites/**\/*.yaml, validates every file
@@ -22,6 +24,45 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
 const sitesRoot = resolve(repoRoot, "sites");
 const outPath = resolve(repoRoot, "public/generated/sites.json");
+const stationCataloguePath = resolve(repoRoot, "public/static/stations.json");
+
+/**
+ * The station directory, by "<provider>:<id>", or an empty map when it
+ * cannot be read.
+ *
+ * Missing is not fatal: the catalogue is refreshed by its own scheduled
+ * job, and a site build must not fail because that job has not run yet.
+ * Sites then simply carry no station distance.
+ */
+function loadStationIndex(): Map<string, { lat: number; lon: number }> {
+  try {
+    const catalogue = JSON.parse(readFileSync(stationCataloguePath, "utf-8")) as StationCatalogue;
+    return new Map(catalogue.stations.map((s) => [`${s.provider}:${s.id}`, { lat: s.lat, lon: s.lon }]));
+  } catch {
+    return new Map();
+  }
+}
+
+/**
+ * How far a site's station is from it.
+ *
+ * The provider is canonicalised first: a site file may say "sjoboflyg"
+ * where the catalogue says "weewx", and the two are the same reader (see
+ * resolver.ts's aliases). Looking up the raw string would silently find
+ * nothing for exactly the sites whose provider names are oldest.
+ */
+function stationDistanceKm(
+  site: { coordinates: { lat: number | null; lon: number | null }; station?: { provider: string; station_id?: string | null } | null },
+  index: Map<string, { lat: number; lon: number }>,
+): number | undefined {
+  const station = site.station;
+  if (!station?.station_id) return undefined;
+  if (site.coordinates.lat === null || site.coordinates.lon === null) return undefined;
+
+  const found = index.get(`${canonicalProvider(station.provider)}:${station.station_id}`);
+  if (!found) return undefined;
+  return Math.round(distanceKm({ lat: site.coordinates.lat, lon: site.coordinates.lon }, found) * 10) / 10;
+}
 
 // These have never varied across the project's lifetime - see
 // SITE_MIGRATION_REPORT.md for why they became hardcoded constants here
@@ -57,6 +98,7 @@ export function buildCatalogue(root: string = sitesRoot): GeneratedSitesFile {
   const sites: Site[] = [];
   const seenIds = new Map<string, string>();
   const errors: string[] = [];
+  const stationIndex = loadStationIndex();
 
   for (const file of files) {
     const rel = toPosixRelative(root, file);
@@ -107,6 +149,8 @@ export function buildCatalogue(root: string = sitesRoot): GeneratedSitesFile {
       group: meta.group,
       enabled: !meta.archived,
     };
+    const distance = stationDistanceKm(site, stationIndex);
+    if (distance !== undefined) site.station_distance_km = distance;
 
     const existing = seenIds.get(site.id);
     if (existing) {

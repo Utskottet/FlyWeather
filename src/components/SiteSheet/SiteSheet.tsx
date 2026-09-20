@@ -4,6 +4,7 @@ import { siteToDraft, sitePathFor } from "../../domain/siteEditor.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { degreesToCompass16 } from "../../domain/direction.ts";
 import { providerLabel } from "../../providers/live/resolver.ts";
+import { proximityAdvice } from "../../domain/stations.ts";
 import { WindRose } from "../WindRose/index.ts";
 import type { WeatherKind } from "../../domain/weather.ts";
 import type { Freshness } from "../../domain/freshness.ts";
@@ -67,6 +68,20 @@ function sourceLabel(sample: SiteSheetSample, effectiveHeightM: number | null): 
   return `Open-Meteo forecast (${height})`;
 }
 
+/**
+ * What to call a site's station.
+ *
+ * The name where one was saved - only stations chosen with the finder
+ * have one. Otherwise the provider and the id, which is what the person
+ * who set it up actually wrote down, and enough to look the station up.
+ * "Holfuy" alone identifies nothing.
+ */
+function stationLabel(station: NonNullable<LocatedSite["station"]>): string {
+  if (station.name) return station.name;
+  const provider = providerLabel(station.provider);
+  return station.station_id ? `${provider} #${station.station_id}` : provider;
+}
+
 export function SiteSheet({
   site,
   sample,
@@ -112,6 +127,31 @@ export function SiteSheet({
       <p className="site-sheet-source-badge" data-testid="site-sheet-source">
         {sample.sourceKind === "observation" ? "LIVE" : "FORECAST"} — {sourceLabel(sample, effectiveHeightM)}
       </p>
+      {/*
+        Which station this site's live wind comes from, and how far away
+        it is - directly under the source badge, because the two answer
+        one question together. "LIVE" tells you it is a measurement;
+        this tells you a measurement of WHERE. A reading from an
+        anemometer on the hill and one from an airport twenty kilometres
+        inland are both live, and only one of them is about this site.
+
+        Shown in forecast mode too: the station is a property of the
+        site, and knowing what it would be reading is worth having even
+        when the panel is showing a model.
+      */}
+      {site.station && (
+        <p className="site-sheet-station" data-testid="site-sheet-station">
+          Station: {stationLabel(site.station)}
+          {site.station_distance_km !== undefined && (
+            <>
+              {" · "}
+              <span className={`site-sheet-station-distance ${proximityAdvice(site.station_distance_km)}`}>
+                {site.station_distance_km.toFixed(1)} km away
+              </span>
+            </>
+          )}
+        </p>
+      )}
       {!heightSupported && (
         <p className="site-sheet-height-warning" data-testid="site-sheet-height-warning">
           No wind-aloft data available for this site at this time - not silently shown as surface wind.
