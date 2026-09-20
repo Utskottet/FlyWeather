@@ -7,3 +7,4 @@
 {"at":"2026-09-20T16:49:34.502Z","site":"grimeton","path":"se/halland/winch/grimeton.yaml","by":"Edvin Buregren","club":"Club Parapente Syd","action":"move","changes":["Flyttad från se/halland/ridge/grimeton.yaml till se/halland/winch/grimeton.yaml","Beskrivning ändrad","Vindmätare ändrad"]}
 {"at":"2026-09-20T17:59:58.248Z","site":"ven","path":"se/skane/ridge/ven.yaml","by":"Edvin Buregren","club":"Club Parapente Syd","action":"add","changes":["Ny plats (sektor 9–304°, vind 5–7 m/s)"]}
 {"at":"2026-09-20T18:16:59.539Z","site":"hovs-hallar-nv","path":"se/skane/ridge/hovs-hallar-nv.yaml","by":"edvin burgren","club":"Club Parapente Syd","action":"edit","changes":["Beskrivning ändrad","Varningar ändrade"]}
+{"at":"2026-09-20T18:20:02.299Z","site":"lenacken","path":"se/skane/ridge/lenacken.yaml","by":"edvin burgren","club":"Club Parapente Syd","action":"edit","changes":["Vindmätare ändrad"]}
