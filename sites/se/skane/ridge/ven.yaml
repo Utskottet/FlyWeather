@@ -1,0 +1,30 @@
+schema_version: 2
+id: ven
+name: Ven
+short_name: Ven
+coordinates:
+  lat: 55.90359827974417
+  lon: 12.722125246388645
+  verified: true
+sector:
+  ranges:
+    - from_deg: 9
+      to_deg: 304
+      margin_under_deg: 33
+      margin_over_deg: 5
+  verified: false
+wind:
+  verified: true
+  min_ms: 5
+  max_ms: 7
+  margin_over_ms: 1
+  margin_under_ms: 1
+station:
+  verified: false
+  provider: holfuy
+  name: Ålis SV
+  station_id: "216"
+  note: Holfuy. 5.0 km from the site. Chosen with the station finder; suitability for this site not verified.
+description: Här kan någon som flyger på ven skriva :)
+last_edited_by: Edvin Buregren
+last_edited_at: 2026-09-20T17:59:58.248Z
