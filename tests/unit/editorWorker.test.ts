@@ -273,16 +273,42 @@ describe("publishSite: moving a site", () => {
 });
 
 describe("publishSite: conflicting edits", () => {
-  it("refuses when the branch moved since the editor loaded", async () => {
+  it("refuses when somebody else changed THIS site while it was being edited", async () => {
     const repo = fakeRepo();
     repo.headSha = "head-9";
-    const result = await publishAs(repo, {
+    // The file now says something different from what the editor loaded.
+    const racy: RepoGateway = {
+      ...repo,
+      async readFile(sha, path) {
+        if (path.startsWith("sites/")) {
+          return sha === "head-1" ? HAMMAR : HAMMAR.replace("max_ms: 8", "max_ms: 12");
+        }
+        return repo.readFile(sha, path);
+      },
+    };
+    const result = await publishSite(racy, {
       path: "se/skane/ridge/hammar.yaml",
       fields: hammarFields(),
+      contributor: CONTRIBUTOR,
       baseSha: "head-1",
     });
     expect(result).toMatchObject({ ok: false, code: "conflict" });
     expect(repo.commits).toHaveLength(0);
+  });
+
+  it("does NOT refuse merely because the branch moved", async () => {
+    // Any commit at all used to invalidate every open editor: a deploy,
+    // the daily station-catalogue job, or another pilot editing a
+    // completely different hill. Losing your work to a change that had
+    // nothing to do with you is the surest way to stop contributing.
+    const repo = fakeRepo();
+    repo.headSha = "head-9";
+    const result = await publishAs(repo, {
+      path: "se/skane/ridge/hammar.yaml",
+      fields: hammarFields({ description: "A changed description." }),
+      baseSha: "head-1",
+    });
+    expect(result.ok).toBe(true);
   });
 
   it("proceeds when the editor's base is still current", async () => {

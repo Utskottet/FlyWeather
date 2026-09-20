@@ -227,12 +227,6 @@ async function attemptPublish(
   }
 
   const headSha = await repo.head();
-  if (request.baseSha && request.baseSha !== headSha) {
-    return fail(
-      "conflict",
-      "The site catalogue changed while you were editing. Reload to pick up the newer version, then re-apply your change.",
-    );
-  }
 
   // THE MOVE FIX: merge into the file being edited, which on a move is the
   // one at previousPath - never the (nonexistent) destination. Reading the
@@ -240,6 +234,31 @@ async function attemptPublish(
   // model, because the merge had no prior document and wrote a fresh one.
   const sourcePath = `${SITES_ROOT}/${request.previousPath ?? request.path}`;
   const existing = await repo.readFile(headSha, sourcePath);
+
+  // A conflict is somebody else changing THIS SITE while you were editing
+  // it - not the branch moving.
+  //
+  // This used to compare the head sha, which meant any commit at all
+  // invalidated every open editor: a push, the daily station-catalogue
+  // job, the weekly airspace refresh, or another pilot editing a
+  // completely different hill. The person editing then lost their work to
+  // a message about a change that had nothing to do with them, which is
+  // both infuriating and the surest way to teach somebody not to bother
+  // contributing.
+  //
+  // Comparing the file's own content answers the question actually being
+  // asked. A true race - two people saving the same site within the same
+  // second - is still caught, by the compare-and-swap on the ref at
+  // commit time, which is the check that cannot be fooled.
+  if (request.baseSha && request.baseSha !== headSha && existing !== null) {
+    const asLoaded = await repo.readFile(request.baseSha, sourcePath);
+    if (asLoaded !== existing) {
+      return fail(
+        "conflict",
+        "Someone else changed this site while you were editing it. Reload to pick up their version, then re-apply your change.",
+      );
+    }
+  }
   if (request.previousPath && existing === null) {
     return fail("not_found", `The site being moved no longer exists at ${request.previousPath}.`);
   }
@@ -370,13 +389,20 @@ export async function verifySite(
     const contributor = canonicalContributor(request.contributor);
 
     const headSha = await repo.head();
-    if (request.baseSha && request.baseSha !== headSha) {
-      return fail("conflict", "The site catalogue changed while you were looking at it. Reload and confirm again.");
-    }
 
     const sitePath = `${SITES_ROOT}/${request.path}`;
     if ((await repo.readFile(headSha, sitePath)) === null) {
       return fail("not_found", `There is no site at ${request.path}.`);
+    }
+    // A confirmation says "these values are right", so what invalidates
+    // it is the values changing - not any commit landing anywhere. Same
+    // reasoning as publishing, above.
+    if (request.baseSha && request.baseSha !== headSha) {
+      const asLoaded = await repo.readFile(request.baseSha, sitePath);
+      const current = await repo.readFile(headSha, sitePath);
+      if (asLoaded !== current) {
+        return fail("conflict", "This site changed while you were looking at it. Reload and confirm again.");
+      }
     }
 
     const siteId = idFromPath(request.path);
