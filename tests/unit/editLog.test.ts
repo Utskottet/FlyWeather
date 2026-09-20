@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appendEntry,
-  deriveMaintainer,
+  firstContributor,
   entriesForSite,
   parseEditLog,
   serialiseEntry,
@@ -76,64 +76,60 @@ describe("edit log storage", () => {
   });
 });
 
-describe("derived maintainer", () => {
-  it("is nobody until somebody has edited the site", () => {
-    expect(deriveMaintainer([], "hammar")).toBeNull();
+describe("who added a site", () => {
+  it("is nobody for a site older than the log", () => {
+    // Most sites pre-date the log entirely. Better to say nothing than
+    // to credit whoever happened to make the first edit after it began.
+    expect(firstContributor([], "hammar")).toBeNull();
   });
 
-  it("is whoever has edited it most", () => {
+  it("is whoever added it, not whoever has edited it most", () => {
+    // This replaced a derived "maintainer". That read as an appointment
+    // nobody had made, and changed under somebody's feet as soon as a
+    // second pilot edited twice.
     const entries = [
-      entry({ by: "Anna Andersson", at: "2026-09-01T10:00:00.000Z" }),
+      entry({ by: "Anna Andersson", action: "add", at: "2026-01-01T10:00:00.000Z" }),
+      entry({ by: "Bo Bengtsson", at: "2026-09-01T10:00:00.000Z" }),
       entry({ by: "Bo Bengtsson", at: "2026-09-02T10:00:00.000Z" }),
-      entry({ by: "Anna Andersson", at: "2026-09-03T10:00:00.000Z" }),
     ];
-    expect(deriveMaintainer(entries, "hammar")?.name).toBe("Anna Andersson");
-    expect(deriveMaintainer(entries, "hammar")?.edits).toBe(2);
+    expect(firstContributor(entries, "hammar")?.by).toBe("Anna Andersson");
   });
 
-  it("breaks a tie on who did it most recently, so a site that changed hands re-credits", () => {
+  it("prefers an explicit add over merely the oldest entry", () => {
+    // A site can be edited before anybody's edit was logged, so the
+    // oldest line is not always the one that created it.
+    const entries = [
+      entry({ by: "Bo Bengtsson", at: "2026-01-01T10:00:00.000Z" }),
+      entry({ by: "Anna Andersson", action: "add", at: "2026-02-01T10:00:00.000Z" }),
+    ];
+    expect(firstContributor(entries, "hammar")?.by).toBe("Anna Andersson");
+  });
+
+  it("claims nobody when the site was never added through the editor", () => {
+    // Most sites pre-date the log. Calling whoever first edited one of
+    // them its author would be a plain untruth about a named person -
+    // exactly the confident small wrongness this log exists to avoid.
     const entries = [
       entry({ by: "Anna Andersson", at: "2026-01-01T10:00:00.000Z" }),
       entry({ by: "Bo Bengtsson", at: "2026-09-01T10:00:00.000Z" }),
     ];
-    expect(deriveMaintainer(entries, "hammar")?.name).toBe("Bo Bengtsson");
+    expect(firstContributor(entries, "hammar")).toBeNull();
   });
 
-  it("matches the same person across capitalisation and stray spaces", () => {
+  it("never credits an admin action", () => {
     const entries = [
-      entry({ by: "Anna Andersson", at: "2026-09-01T10:00:00.000Z" }),
-      entry({ by: "  anna andersson ", at: "2026-09-02T10:00:00.000Z" }),
-      entry({ by: "Bo Bengtsson", at: "2026-09-03T10:00:00.000Z" }),
+      entry({ by: "Admin Adminsson", action: "add", admin: true, at: "2026-01-01T10:00:00.000Z" }),
+      entry({ by: "Anna Andersson", action: "add", at: "2026-02-01T10:00:00.000Z" }),
     ];
-    expect(deriveMaintainer(entries, "hammar")?.edits).toBe(2);
+    expect(firstContributor(entries, "hammar")?.by).toBe("Anna Andersson");
   });
 
-  it("credits the club they used most recently, not the one they started with", () => {
+  it("only looks at the site asked about", () => {
     const entries = [
-      entry({ by: "Anna Andersson", club: "Gamla klubben", at: "2026-01-01T10:00:00.000Z" }),
-      entry({ by: "Anna Andersson", club: "Nya klubben", at: "2026-09-01T10:00:00.000Z" }),
+      entry({ by: "Bo Bengtsson", site: "molle", action: "add", at: "2026-01-01T10:00:00.000Z" }),
+      entry({ by: "Anna Andersson", action: "add", at: "2026-02-01T10:00:00.000Z" }),
     ];
-    expect(deriveMaintainer(entries, "hammar")?.club).toBe("Nya klubben");
-  });
-
-  it("never makes the admin a maintainer for cleaning up", () => {
-    // Reverting vandalism on twelve sites in one evening must not make the
-    // admin the maintainer of all twelve.
-    const entries = [
-      entry({ by: "Anna Andersson", at: "2026-09-01T10:00:00.000Z" }),
-      entry({ by: "Admin Adminsson", action: "revert", admin: true, at: "2026-09-02T10:00:00.000Z" }),
-      entry({ by: "Admin Adminsson", action: "revert", admin: true, at: "2026-09-03T10:00:00.000Z" }),
-    ];
-    expect(deriveMaintainer(entries, "hammar")?.name).toBe("Anna Andersson");
-  });
-
-  it("only counts the site asked about", () => {
-    const entries = [
-      entry({ by: "Anna Andersson" }),
-      entry({ by: "Bo Bengtsson", site: "molle" }),
-      entry({ by: "Bo Bengtsson", site: "molle" }),
-    ];
-    expect(deriveMaintainer(entries, "hammar")?.name).toBe("Anna Andersson");
+    expect(firstContributor(entries, "hammar")?.by).toBe("Anna Andersson");
   });
 });
 

@@ -100,40 +100,30 @@ export function entriesForSite(entries: EditLogEntry[], siteId: string): EditLog
 }
 
 /**
- * Who looks after this site, derived rather than declared.
+ * Who put this site here.
  *
- * Nobody is appointed and there is no "maintainer" field to fight over:
- * the person who has touched a site most is the person who has, in fact,
- * been maintaining it. Ties go to whoever did it most recently, so a site
- * someone has taken over does not keep crediting a pilot who stopped
- * flying it years ago.
+ * A flat fact rather than a judgement: the oldest entry in the log for
+ * this site. It replaces a derived "maintainer" (whoever had edited
+ * most), which read as an appointment nobody had made and implied an
+ * ongoing duty nobody had agreed to. Being the person who added a site
+ * is simply true, and stays true.
  *
- * Admin actions are excluded. Reverting vandalism on twelve sites in an
- * evening should not make the admin the maintainer of all twelve.
+ * Null for the many sites that pre-date the log entirely - better to say
+ * nothing than to credit whoever happened to make the first edit after
+ * the log existed.
  */
-export function deriveMaintainer(
-  entries: EditLogEntry[],
-  siteId: string,
-): { name: string; club?: string; edits: number; lastAt: string } | null {
+export function firstContributor(entries: EditLogEntry[], siteId: string): EditLogEntry | null {
   const mine = entriesForSite(entries, siteId).filter((e) => !e.admin);
-  if (mine.length === 0) return null;
-
-  const byName = new Map<string, { name: string; club?: string; edits: number; lastAt: string }>();
-  for (const entry of mine) {
-    const key = entry.by.trim().toLowerCase();
-    const found = byName.get(key);
-    if (!found) {
-      // entriesForSite is newest-first, so the first sighting of a person
-      // already carries their latest timestamp and the club they used most
-      // recently - which is the one worth crediting.
-      byName.set(key, { name: entry.by.trim(), club: entry.club, edits: 1, lastAt: entry.at });
-      continue;
-    }
-    found.edits += 1;
-    if (entry.at > found.lastAt) found.lastAt = entry.at;
+  // Scanned from the oldest end rather than with findLast, which needs a
+  // newer lib target than the app builds against.
+  for (let i = mine.length - 1; i >= 0; i--) {
+    if (mine[i].action === "add") return mine[i];
   }
-
-  return [...byName.values()].sort((a, b) => b.edits - a.edits || b.lastAt.localeCompare(a.lastAt))[0] ?? null;
+  // No fallback to "the oldest entry". Most sites pre-date the log, and
+  // calling whoever first edited one of those its author would be a
+  // plain untruth about a named person - the kind of small confident
+  // wrongness this log exists to prevent.
+  return null;
 }
 
 /* ------------------------------------------------------------------ */

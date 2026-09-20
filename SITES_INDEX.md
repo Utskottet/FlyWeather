@@ -2,7 +2,7 @@
 
 Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a generated view for humans, not authoritative - edit the YAML files under `sites/`, then re-run `npm run sites:index`.
 
-35 sites total, 16 active.
+36 sites total, 17 active.
 
 | Active | Country | Region | Group | Short name | Full name | Sector (deg) | Station | Pilot level | Coords verified | Sector verified |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -21,6 +21,7 @@ Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a
 | yes | se | skane | ridge | Mölle | Kullaberg / Mölle | 185–255 | holfuy #597 |  | no | no |
 | yes | se | skane | ridge | Lenacken | Lenacken | 177–228 | holfuy #589 | medium | yes | no |
 | yes | se | skane | ridge | Ravlunda | Ravlunda / Haväng | 60–120 | holfuy #126 |  | yes | yes |
+| yes | se | skane | ridge | Ven | Ven | 9–304 | Ålis SV |  | yes | no |
 | yes | se | skane | winch | Fedinge  | Fagerhult Fedinge Flygfält  | 322–18, 129–199 | Hässleholm PM |  | yes | no |
 | yes | se | skane | winch | Klamby | Klamby | 45–145, 225–315 | Sjöbo flygklubb · ESMI | easy | yes | yes |
 | no | se | skane |  | Stenarna | Ales stenar / Stenarna | 213.75–236.25 | holfuy #214 |  | no | no |

@@ -1,11 +1,11 @@
 import type { LocatedSite } from "../../domain/sites.ts";
 import { SiteHistorySection } from "./SiteHistorySection.tsx";
-import { siteToDraft, sitePathFor } from "../../domain/siteEditor.ts";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { degreesToCompass16 } from "../../domain/direction.ts";
 import { providerLabel } from "../../providers/live/resolver.ts";
 import { proximityAdvice } from "../../domain/stations.ts";
 import { navigationUrl } from "../../domain/parking.ts";
+import { stationPageUrl } from "../../domain/stationLinks.ts";
 import { WindRose } from "../WindRose/index.ts";
 import type { WeatherKind } from "../../domain/weather.ts";
 import type { Freshness } from "../../domain/freshness.ts";
@@ -94,11 +94,7 @@ export function SiteSheet({
   onEdit,
 }: SiteSheetProps) {
   const sector = site.sector ? site.sector.ranges.map((r) => ({ fromDeg: r.from_deg, toDeg: r.to_deg })) : null;
-  // Where this site's file lives, which is what a confirmation is
-  // recorded against. Derived the same way the editor derives it rather
-  // than stored on the site, since the path is a function of the site's
-  // own country/region/group (§ the sites/ layout).
-  const sitePath = sitePathFor(siteToDraft(site));
+  const stationUrl = site.station ? stationPageUrl(site.station) : null;
   const { state, reasons } = evaluateFlyability(
     sample.windDirectionDeg,
     sample.windSpeedMs,
@@ -112,7 +108,15 @@ export function SiteSheet({
       <button type="button" className="site-sheet-close" onClick={onClose} aria-label="Close">
         &times;
       </button>
-      <div className="site-sheet-rose-row">
+      {/*
+        The verdict in words, for anybody who cannot use the colour.
+        The reasons used to be a visible list under the badge; on a red
+        site it said "direction outside the sector" and "speed outside
+        safe limits", which the rose had already said louder. Removed
+        from the page and kept here, so the rose is not colour-only -
+        a screen reader gets the same verdict the colour carries.
+      */}
+      <div className="site-sheet-rose-row" role="img" aria-label={reasons.join(". ")}>
         <WindRose
           size={140}
           sector={sector}
@@ -142,12 +146,24 @@ export function SiteSheet({
       */}
       {site.station && (
         <p className="site-sheet-station" data-testid="site-sheet-station">
-          Station: {stationLabel(site.station)}
+          Station:{" "}
+          {/*
+            Linked to the station's own page, which is where a pilot goes
+            for the thing this panel cannot show: yesterday's trace, or a
+            month of it. One current reading is not the whole story.
+          */}
+          {stationUrl ? (
+            <a href={stationUrl} target="_blank" rel="noreferrer" data-testid="site-sheet-station-link">
+              {stationLabel(site.station)}
+            </a>
+          ) : (
+            stationLabel(site.station)
+          )}
           {site.station_distance_km !== undefined && (
             <>
-              {" · "}
+              {" · Distance to station: "}
               <span className={`site-sheet-station-distance ${proximityAdvice(site.station_distance_km)}`}>
-                {site.station_distance_km.toFixed(1)} km away
+                {site.station_distance_km.toFixed(1)} km
               </span>
             </>
           )}
@@ -158,11 +174,6 @@ export function SiteSheet({
           No wind-aloft data available for this site at this time - not silently shown as surface wind.
         </p>
       )}
-      <ul className="site-sheet-reasons">
-        {reasons.map((r, i) => (
-          <li key={i}>{r}</li>
-        ))}
-      </ul>
       <dl className="site-sheet-facts">
         <dt>Direction</dt>
         <dd>
@@ -229,7 +240,7 @@ export function SiteSheet({
           Edit site
         </button>
       )}
-      <SiteHistorySection siteId={site.id} sitePath={sitePath} />
+      <SiteHistorySection siteId={site.id} />
     </div>
   );
 }

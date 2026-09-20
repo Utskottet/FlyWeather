@@ -118,10 +118,13 @@ test("a site panel names its station and how far away it is, right under the sou
 
   const station = page.getByTestId("site-sheet-station");
   await expect(station).toBeVisible();
-  // Named by provider and id where no station name was saved - "Holfuy"
-  // alone identifies nothing.
-  await expect(station).toContainText(/#\d+/);
-  await expect(station).toContainText(/km away/);
+  // Named, and linked to its own page - which is where a pilot goes for
+  // the history this panel cannot show. Whether the name is the
+  // station's own or the "Holfuy #216" fallback depends on whether
+  // somebody picked it with the finder, so that is a unit test's job
+  // rather than something to assert against live site data.
+  await expect(page.getByTestId("site-sheet-station-link")).toBeVisible();
+  await expect(station).toContainText(/Distance to station: [\d.]+ km/);
 
   // Directly under the badge, not lower down the panel.
   const badge = (await page.getByTestId("site-sheet-source").boundingBox())!;

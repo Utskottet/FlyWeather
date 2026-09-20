@@ -24,11 +24,11 @@ test.describe("Live data at NOW", () => {
     await expect(badge).toContainText("LIVE");
     await expect(badge).toContainText("Holfuy");
 
-    // The verdict headline ("BAD at lör 07:00") is gone - the rose says it
-    // in colour, the slider says the time, and the reasons list says it in
-    // words. What is checked instead is that the reasons are actually
-    // there, since they are now the only wording of the verdict.
-    await expect(page.locator(".site-sheet-reasons li").first()).toBeVisible();
+    // The verdict is the rose's colour now - the reasons list under the
+    // badge said in words what the rose had already said louder. It is
+    // not gone, though: it is the rose's accessible label, so the panel
+    // is never colour-only for somebody who cannot use the colour.
+    await expect(page.locator(".site-sheet-rose-row")).toHaveAttribute("aria-label", /wind (direction|speed)/);
 
     await page.getByTestId("time-slider-range").fill("24");
     await expect(badge).toContainText("FORECAST");

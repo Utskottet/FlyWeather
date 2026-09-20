@@ -145,3 +145,44 @@ describe("how fresh a reading is", () => {
     expect(observationFreshness(sample({ timestamp: "not a time" }))).toBe("unknown-age");
   });
 });
+
+describe("linking to a station's own page", () => {
+  it("builds a real page for every provider that has one", async () => {
+    const { stationPageUrl } = await import("../../src/domain/stationLinks.ts");
+    expect(stationPageUrl({ provider: "holfuy", station_id: "127" })).toBe("https://holfuy.com/en/weather/127");
+    expect(stationPageUrl({ provider: "viva", station_id: "25" })).toBe(
+      "https://viva.sjofartsverket.se/station/25",
+    );
+    expect(stationPageUrl({ provider: "metar", station_id: "esms" })).toBe(
+      "https://aviationweather.gov/data/metar/?id=ESMS",
+    );
+  });
+
+  it("drops the SMHI product suffix, since the page is about the station", async () => {
+    const { stationPageUrl } = await import("../../src/domain/stationLinks.ts");
+    expect(stationPageUrl({ provider: "smhi", station_id: "63160@60" })).toContain("/station/63160.json");
+  });
+
+  it("trims a club feed back to the dashboard a person can read", async () => {
+    // The saved URL points at JSON. The site root is the page with the
+    // history on it.
+    const { stationPageUrl } = await import("../../src/domain/stationLinks.ts");
+    expect(
+      stationPageUrl({ provider: "weewx", station_id: "esmi", url: "https://vader.sjoboflyg.se/json/weewx_data.json" }),
+    ).toBe("https://vader.sjoboflyg.se");
+  });
+
+  it("resolves an aliased provider, so older site files link too", async () => {
+    const { stationPageUrl } = await import("../../src/domain/stationLinks.ts");
+    expect(stationPageUrl({ provider: "sjoboflyg", station_id: "esmi", url: "https://vader.sjoboflyg.se/x.json" })).toBe(
+      "https://vader.sjoboflyg.se",
+    );
+  });
+
+  it("returns nothing rather than a guess for a provider it does not know", async () => {
+    const { stationPageUrl } = await import("../../src/domain/stationLinks.ts");
+    expect(stationPageUrl({ provider: "windy", station_id: "1" })).toBeNull();
+    expect(stationPageUrl({ provider: "holfuy" })).toBeNull();
+    expect(stationPageUrl({ provider: "weewx", station_id: "x" })).toBeNull();
+  });
+});

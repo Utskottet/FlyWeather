@@ -157,3 +157,57 @@ describe("SiteSheet - parking", () => {
     expect(warnings.compareDocumentPosition(parking) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
+
+describe("SiteSheet - the station line", () => {
+  function renderSheet(site: LocatedSite) {
+    return render(
+      <SiteSheet
+        site={site}
+        sample={baseSample}
+        effectiveHeightM={10}
+        heightSupported={true}
+        isNight={false}
+        onClose={() => {}}
+      />,
+    );
+  }
+
+  it("links to the station's own page, where the history is", () => {
+    const { getByTestId } = renderSheet(
+      locatedSite({ station: { provider: "holfuy", station_id: "127", verified: false } }),
+    );
+    const link = getByTestId("site-sheet-station-link");
+    expect(link.getAttribute("href")).toBe("https://holfuy.com/en/weather/127");
+    expect(link.textContent).toBe("Holfuy #127");
+  });
+
+  it("spells out what the distance is a distance to", () => {
+    // "Holfuy #127 · 1.9 km" left the reader to infer what the number
+    // measured.
+    const { getByTestId } = renderSheet(
+      locatedSite({
+        station: { provider: "holfuy", station_id: "127", verified: false },
+        station_distance_km: 1.9,
+      }),
+    );
+    expect(getByTestId("site-sheet-station").textContent).toContain("Distance to station: 1.9 km");
+  });
+
+  it("still names a station it cannot link to", () => {
+    const { getByTestId, queryByTestId } = renderSheet(
+      locatedSite({ station: { provider: "somethingnew", station_id: "1", verified: false } }),
+    );
+    expect(queryByTestId("site-sheet-station-link")).toBeNull();
+    expect(getByTestId("site-sheet-station").textContent).toContain("somethingnew #1");
+  });
+
+  it("keeps the verdict available to a screen reader, though not on the page", () => {
+    // The reasons list is gone - it said in words what the rose says in
+    // colour. It survives as the rose's label so the panel is never
+    // colour-only.
+    const { container } = renderSheet(locatedSite());
+    expect(container.querySelector(".site-sheet-reasons")).toBeNull();
+    const rose = container.querySelector(".site-sheet-rose-row")!;
+    expect(rose.getAttribute("aria-label")).toMatch(/wind direction/);
+  });
+});

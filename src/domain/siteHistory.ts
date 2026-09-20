@@ -1,5 +1,5 @@
 import logRaw from "../../data/edit-log.jsonl?raw";
-import { deriveMaintainer, entriesForSite, parseEditLog, type EditLogEntry } from "./editLog.ts";
+import { entriesForSite, firstContributor, parseEditLog, type EditLogEntry } from "./editLog.ts";
 
 /**
  * The edit log as the website sees it, read from data/edit-log.jsonl at
@@ -22,7 +22,8 @@ export const EDIT_LOG: EditLogEntry[] = parseEditLog(logRaw);
 
 export interface SiteHistory {
   entries: EditLogEntry[];
-  maintainer: ReturnType<typeof deriveMaintainer>;
+  /** The log entry that first put this site here, or null for sites older than the log. */
+  addedBy: EditLogEntry | null;
   /** The most recent confirmation that the site is still accurate, if anybody has given one. */
   lastVerified: EditLogEntry | null;
   /** The most recent actual change, which is a different question. */
@@ -33,7 +34,7 @@ export function historyFor(siteId: string, log: EditLogEntry[] = EDIT_LOG): Site
   const entries = entriesForSite(log, siteId);
   return {
     entries,
-    maintainer: deriveMaintainer(log, siteId),
+    addedBy: firstContributor(log, siteId),
     lastVerified: entries.find((e) => e.action === "verify") ?? null,
     lastChanged: entries.find((e) => e.action !== "verify") ?? null,
   };
