@@ -2,7 +2,7 @@
 
 Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a generated view for humans, not authoritative - edit the YAML files under `sites/`, then re-run `npm run sites:index`.
 
-34 sites total, 15 active.
+35 sites total, 16 active.
 
 | Active | Country | Region | Group | Short name | Full name | Sector (deg) | Station | Pilot level | Coords verified | Sector verified |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -11,6 +11,7 @@ Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a
 | no | dk | nordsjaelland |  | Gilbjerg | Gilbjerg Hoved | 326.25–348.75 |  |  | no | no |
 | no | dk | nordsjaelland |  | Rågeleje | Strandbjerggård / Rågeleje | 303.75–326.25 |  |  | no | no |
 | yes | se | halland | ridge | Kevik | Kevik | 191–238 | viva #76 |  | yes | no |
+| yes | se | halland | winch | Grimeton | Grimeton | 219–295, 39–107 | Subbeberget | easy | yes | no |
 | yes | se | skane | ridge | Ålabodarna | Ålabodarna | 215–265 | holfuy #216 |  | no | no |
 | yes | se | skane | ridge | Barsebäck | Barsebäck camping | 292.5–337.5 | viva #25 |  | yes | no |
 | yes | se | skane | ridge | Hammar | Hammars backar | 190–255 | holfuy #214 |  | yes | no |
@@ -20,8 +21,8 @@ Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a
 | yes | se | skane | ridge | Mölle | Kullaberg / Mölle | 185–255 | holfuy #597 |  | no | no |
 | yes | se | skane | ridge | Lenacken | Lenacken | 177–228 | holfuy #589 | medium | yes | no |
 | yes | se | skane | ridge | Ravlunda | Ravlunda / Haväng | 60–120 | holfuy #126 |  | yes | yes |
-| yes | se | skane | winch | Fedinge  | Fagerhult Fedinge Flygfält  | 322–18, 129–199 | 33 |  | yes | no |
-| yes | se | skane | winch | Klamby | Klamby | 45–145, 225–315 | Sjöbo flygklubb · ESMI |  | yes | yes |
+| yes | se | skane | winch | Fedinge  | Fagerhult Fedinge Flygfält  | 322–18, 129–199 | Hässleholm PM |  | yes | no |
+| yes | se | skane | winch | Klamby | Klamby | 45–145, 225–315 | Sjöbo flygklubb · ESMI | easy | yes | yes |
 | no | se | skane |  | Stenarna | Ales stenar / Stenarna | 213.75–236.25 | holfuy #214 |  | no | no |
 | no | se | skane |  | Brofästet | Brofästet | 258.75–281.25 |  |  | no | no |
 | no | se | skane |  | Hovet N | Hovs Hallar N | 290–350 | holfuy #127 |  | no | yes |
