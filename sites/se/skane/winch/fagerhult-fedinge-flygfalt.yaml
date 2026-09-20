@@ -23,8 +23,11 @@ wind:
   max_ms: 5
   margin_over_ms: 1
 station:
-  provider: "33"
+  provider: holfuy
   verified: true
+  name: Hässleholm PM
+  station_id: "217"
+  note: Holfuy. 28.3 km from the site. Chosen with the station finder; suitability for this site not verified.
 description: Flyfält, Winch, kontakta ägare. 56.38711300866733, 13.469648612257375
-last_edited_by: Edvin Buregren
-last_edited_at: 2026-09-19T08:36:50.974Z
+last_edited_by: håkan bråkan
+last_edited_at: 2026-09-20T12:36:17.363Z
