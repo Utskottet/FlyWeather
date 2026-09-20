@@ -24,9 +24,9 @@ station:
   station_id: "597"
   verified: true
 ridge_height_m: 80
-description: Advanced Kullaberg/Mölle ridge; CPS gives SSW–WSW orientation and about 80 m site height.
-warnings:
-  - Landing area is on private land within a nature reserve; respect posted signs and reserve personnel instructions. CPS warns of strong currents near the landing beach with a history of drowning incidents - pilots typically fly out over water to lose altitude before final approach.
+description: "Update this: Advanced Kullaberg/Mölle ridge; CPS gives SSW–WSW orientation and about 80 m site height."
 links:
   - label: CPS listing
     url: https://www.cps.to/flygstallen/172-2/
+last_edited_by: edvin buregren
+last_edited_at: 2026-09-20T19:16:57.318Z
