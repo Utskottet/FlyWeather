@@ -20,6 +20,8 @@ async function openKlambyEditor(page: import("@playwright/test").Page) {
   await page.getByTestId("site-marker-klamby").first().click({ force: true });
   await page.getByTestId("site-sheet-edit").click();
   await page.waitForSelector('[data-testid="site-editor"]');
+  // The editor opens on its instruction screen; the form is behind it.
+  await page.getByTestId("editor-intro-ok").click();
 }
 
 test("finds the club station 9.9 km from Klamby, nearest first", async ({ page }) => {

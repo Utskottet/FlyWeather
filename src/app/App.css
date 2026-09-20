@@ -1206,20 +1206,6 @@
   color: var(--text-strong);
 }
 
-/* Advice at the top of the Add form, not a warning - it is about
-   judgement (is this really a separate site?), and styling it as an error
-   would cry wolf on every new site somebody adds correctly. */
-.site-editor-guidance {
-  margin: 0 0 12px;
-  padding: 8px 10px;
-  border-left: 3px solid var(--accent);
-  background: var(--surface-sunken);
-  border-radius: 0 var(--panel-radius-sm) var(--panel-radius-sm) 0;
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--text);
-}
-
 /* Name and club share a row. Two short fields stacked cost two labels and
    two inputs of height for no reason, and this block sits directly above
    Save on a screen where everything below the fold is a scroll away.
@@ -2163,4 +2149,78 @@
 
 .site-sheet-station-distance.far {
   color: var(--warning, #e0a33a);
+}
+
+/* ---------------------------------------------------------------------
+   What to know before editing.
+
+   Replaces the form rather than sitting above it: advice beside a form
+   is advice scrolled past. Swedish first, English under it in a quieter
+   weight - most pilots here read Swedish, but the visiting pilot who
+   spots a wrong number is exactly the person worth keeping, so neither
+   language is a footnote.
+   --------------------------------------------------------------------- */
+.editor-intro {
+  max-width: 46ch;
+}
+
+.editor-intro h3 {
+  margin: 0 0 2px;
+  font-size: 17px;
+  color: var(--text-strong);
+}
+
+.editor-intro-points {
+  margin: 14px 0 18px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.editor-intro-points li {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.editor-intro-points p {
+  margin: 0;
+}
+
+.editor-intro-points strong {
+  color: var(--text-strong);
+}
+
+/* Quieter, not smaller past the point of legibility - somebody relying
+   on it still has to be able to read it comfortably. */
+.editor-intro-en {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.editor-intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.editor-intro-actions button {
+  border: 1px solid var(--divider);
+  background: var(--control-bg);
+  color: var(--text-strong);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.editor-intro-actions button:last-child {
+  border-color: transparent;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font-weight: 700;
 }

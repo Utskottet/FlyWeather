@@ -48,6 +48,7 @@ test("Edit site is always on an open site", async ({ page }) => {
 test("the editor opens straight into the form - no password stands in the way", async ({ page }) => {
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
+  await page.getByTestId("editor-intro-ok").click();
 
   await expect(page.locator('[data-testid="site-editor"]')).toBeVisible();
   await expect(page.locator('[data-testid="editor-save"]')).toBeVisible();
@@ -57,6 +58,7 @@ test("the editor opens straight into the form - no password stands in the way", 
 test("the editor asks who is making the change, and says where that goes", async ({ page }) => {
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
+  await page.getByTestId("editor-intro-ok").click();
 
   await expect(page.locator('[data-testid="contributor-name"]')).toBeVisible();
   await expect(page.locator('[data-testid="contributor-club"]')).toBeVisible();
@@ -74,6 +76,7 @@ test("the tickbox never arrives pre-ticked", async ({ page }) => {
   // is not an affirmation.
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
+  await page.getByTestId("editor-intro-ok").click();
 
   await expect(page.locator('[data-testid="contributor-affirm"]')).not.toBeChecked();
 });
@@ -84,6 +87,7 @@ test("the signature block is one box and one row, not a page of its own", async 
   // and one affirmation instead of two is what pays for that.
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
+  await page.getByTestId("editor-intro-ok").click();
 
   await expect(page.locator('[data-testid="contributor-fields"] input[type="checkbox"]')).toHaveCount(1);
 
@@ -103,24 +107,58 @@ test("the signature block is one box and one row, not a page of its own", async 
   expect(caption.x).toBeGreaterThan(box.x);
 });
 
-test("Add site says not to crowd the map; editing an existing site does not", async ({ page }) => {
+test("the editor opens on an instruction screen that has to be acknowledged", async ({ page }) => {
+  // A speed bump before anybody types, not a warning afterwards. Every
+  // point on it is expensive to undo later: a duplicate site has to be
+  // found and deleted by somebody, a guessed wind band gets flown on,
+  // and a contributor who does not know a deploy takes minutes assumes
+  // the save failed and does it three more times.
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
-  await expect(page.locator('[data-testid="editor-proximity-note"]')).toContainText("too close");
-  await page.locator('[aria-label="Close editor"]').click();
 
-  // Whether this site should exist is already answered by the time
-  // somebody is editing one, and a standing warning is one people learn
-  // to stop reading.
+  const intro = page.getByTestId("editor-intro");
+  await expect(intro).toBeVisible();
+  // Both languages, neither as a footnote.
+  await expect(intro).toContainText("startplats");
+  await expect(intro).toContainText(/flying site/i);
+  await expect(intro).toContainText(/några minuter/);
+  await expect(intro).toContainText(/few minutes/i);
+
+  // The form is behind it - advice beside a form is advice scrolled past.
+  await expect(page.locator('[data-testid="editor-save"]')).toHaveCount(0);
+
+  await page.getByTestId("editor-intro-ok").click();
+  await expect(intro).toHaveCount(0);
+  await expect(page.locator('[data-testid="editor-save"]')).toBeVisible();
+});
+
+test("the Add screen warns about duplicates; the Edit screen does not", async ({ page }) => {
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+  await expect(page.getByTestId("editor-intro")).toContainText(/redan finns/);
+  await page.getByTestId("editor-intro-cancel").click();
+
+  // Whether a site should exist is settled by the time somebody is
+  // editing one; it says something useful about editing instead.
   await mapSettled(page);
   await page.locator('[data-testid^="site-marker-"]').first().click({ force: true });
   await page.locator('[data-testid="site-sheet-edit"]').click();
-  await expect(page.locator('[data-testid="editor-proximity-note"]')).toHaveCount(0);
+  const intro = page.getByTestId("editor-intro");
+  await expect(intro).not.toContainText(/redan finns/);
+  await expect(intro).toContainText(/kontrollerat/);
+});
+
+test("cancelling the instruction screen closes the editor rather than opening the form", async ({ page }) => {
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+  await page.getByTestId("editor-intro-cancel").click();
+  await expect(page.locator('[data-testid="site-editor"]')).toHaveCount(0);
 });
 
 test("the honeypot is hidden from people and never focusable", async ({ page }) => {
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
+  await page.getByTestId("editor-intro-ok").click();
 
   const trap = page.locator('[data-testid="contributor-trap"]');
   await expect(trap).toHaveCount(1);
@@ -131,6 +169,7 @@ test("the honeypot is hidden from people and never focusable", async ({ page }) 
 test("the club is recognised as you type, and echoed back by its own name", async ({ page }) => {
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
+  await page.getByTestId("editor-intro-ok").click();
 
   await page.locator('[data-testid="contributor-club"]').fill("cps");
   await expect(page.locator('[data-testid="contributor-club-ok"]')).toContainText("Club Parapente Syd");
@@ -139,6 +178,7 @@ test("the club is recognised as you type, and echoed back by its own name", asyn
 test("a club that does not exist is refused, but never as a dead end", async ({ page }) => {
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
+  await page.getByTestId("editor-intro-ok").click();
 
   await page.locator('[data-testid="contributor-name"]').fill("Anna Andersson");
   await page.locator('[data-testid="contributor-club"]').fill("Manchester United");
@@ -153,6 +193,7 @@ test("a club that does not exist is refused, but never as a dead end", async ({ 
 test("saving is refused until the edit is signed, and says which part is missing", async ({ page }) => {
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await page.locator('[data-testid="add-site-button"]').click();
+  await page.getByTestId("editor-intro-ok").click();
 
   // Nothing is marked wrong before a save is attempted - a form that turns
   // red while you are still filling it in is scolding you for not having

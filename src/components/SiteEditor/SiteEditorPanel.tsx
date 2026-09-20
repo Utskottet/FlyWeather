@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SiteForm } from "./SiteForm.tsx";
 import { ContributorFields } from "./ContributorFields.tsx";
+import { EditorIntro } from "./EditorIntro.tsx";
 import { PublishProgress } from "./PublishProgress.tsx";
 import {
   draftToSiteFields,
@@ -73,6 +74,12 @@ export function SiteEditorPanel({
   // form that turns red while you are still filling in the first field is
   // scolding you for not having finished yet.
   const [attempted, setAttempted] = useState(false);
+  // Shown every time the editor opens rather than once per browser. This
+  // is a form people use a handful of times a year, so "once" would mean
+  // most contributors never see it again after their first visit - and
+  // the points on it are exactly the ones a returning occasional editor
+  // has forgotten.
+  const [introRead, setIntroRead] = useState(false);
   const [baseSha, setBaseSha] = useState<string | undefined>(undefined);
   const pollCount = useRef(0);
 
@@ -208,19 +215,25 @@ export function SiteEditorPanel({
 
       <div className="site-editor-body">
         {/*
-          Only when adding. It is advice about whether this site should
-          exist at all, which is a question that has already been answered
-          by the time somebody is editing one - and a standing warning on
-          every edit is a warning people stop reading.
+          The intro replaces the form rather than sitting above it: the
+          point is to be read before anybody starts typing, and advice
+          beside a form is advice scrolled past. The draft is untouched
+          underneath - this is the same component, so nothing typed
+          before a reopen is lost.
         */}
-        {mode === "create" && (
-          <p className="site-editor-guidance" data-testid="editor-proximity-note">
-            To avoid a cluttered map, do not add a site if there is another site too close.
-          </p>
+        {!introRead ? (
+          <EditorIntro
+            mode={mode}
+            siteName={mode === "edit" ? initialDraft.name : undefined}
+            onAccept={() => setIntroRead(true)}
+            onCancel={onClose}
+          />
+        ) : (
+          <SiteForm value={draftWithId} onChange={setDraft} />
         )}
-        <SiteForm value={draftWithId} onChange={setDraft} />
       </div>
 
+      {introRead && (
       <footer className="site-editor-footer">
         {targetPath && (
           <p className="site-editor-path">
@@ -289,6 +302,7 @@ export function SiteEditorPanel({
           )}
         </div>
       </footer>
+      )}
     </div>
   );
 }

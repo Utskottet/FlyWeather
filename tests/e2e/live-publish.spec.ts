@@ -46,6 +46,7 @@ test.describe("live publishing", () => {
     await page.goto(`${LIVE}?admin=1`);
     await page.waitForSelector('[data-testid="site-map"]', { timeout: 60_000 });
     await page.locator('[data-testid="add-site-button"]').click();
+    await page.getByTestId('editor-intro-ok').click();
     await page.locator('[data-testid="editor-password"]').fill(PASSWORD!);
     await page.locator('[data-testid="editor-signin-submit"]').click();
     await expect(page.locator('[data-testid="editor-save"]')).toBeVisible({ timeout: 30_000 });
@@ -91,6 +92,7 @@ test.describe("live publishing", () => {
 
     await page.locator(`[data-testid="site-marker-${SITE_ID}"]`).click({ force: true });
     await page.locator('[data-testid="site-sheet-edit"]').click();
+    await page.getByTestId('editor-intro-ok').click();
     await page.locator('[data-testid="editor-password"]').fill(PASSWORD!);
     await page.locator('[data-testid="editor-signin-submit"]').click();
     await expect(page.locator('[data-testid="editor-save"]')).toBeVisible({ timeout: 30_000 });
