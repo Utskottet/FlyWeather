@@ -23,9 +23,14 @@ station:
   station_id: "127"
   verified: true
 ridge_height_m: 25
-description: NW–NNW Hovs Hallar coastal ridge; CPS lists intermediate/advanced use.
+description: Please update this description. NW–NNW Hovs Hallar coastal ridge; CPS lists intermediate/advanced use.
 warnings:
-  - "CPS: bring pruning shears (pilots have gotten entangled in bushes); do not launch to the right of the inn; do not land on the field above launch (risk of dislodging stones from the boundary wall) - land on the beach instead."
+  - Taggbuskar,
 links:
   - label: CPS listing
     url: https://www.cps.to/flygstallen/nv-hovshallar/
+last_edited_by: edvin burgren
+parking:
+  lat: 56.468245
+  lon: 12.707537
+last_edited_at: 2026-09-20T18:16:59.539Z
