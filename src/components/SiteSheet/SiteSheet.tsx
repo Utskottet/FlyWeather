@@ -5,6 +5,7 @@ import { evaluateFlyability } from "../../domain/flyability.ts";
 import { degreesToCompass16 } from "../../domain/direction.ts";
 import { providerLabel } from "../../providers/live/resolver.ts";
 import { proximityAdvice } from "../../domain/stations.ts";
+import { navigationUrl } from "../../domain/parking.ts";
 import { WindRose } from "../WindRose/index.ts";
 import type { WeatherKind } from "../../domain/weather.ts";
 import type { Freshness } from "../../domain/freshness.ts";
@@ -197,6 +198,30 @@ export function SiteSheet({
               </a>
             </span>
           ))}
+        </p>
+      )}
+      {/*
+        Below the warnings, deliberately. Several of these sites exist on
+        a landowner's goodwill, and "private field, contact CPS" has to be
+        read BEFORE a button that drives you there - a navigate button
+        above the restriction would be the app quietly overruling it.
+      */}
+      {site.parking && (
+        <p className="site-sheet-parking">
+          <a
+            className="site-sheet-parking-link"
+            href={navigationUrl(site.parking)}
+            target="_blank"
+            rel="noreferrer"
+            data-testid="site-sheet-parking"
+          >
+            Navigate to parking
+          </a>
+          {site.parking.note && (
+            <span className="site-sheet-parking-note" data-testid="site-sheet-parking-note">
+              {site.parking.note}
+            </span>
+          )}
         </p>
       )}
       {onEdit && (

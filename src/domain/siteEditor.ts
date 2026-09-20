@@ -43,6 +43,7 @@ export interface SiteDraft {
   sectorVerified: boolean;
   wind: SiteFile["wind"];
   station?: NonNullable<SiteFile["station"]>;
+  parking?: NonNullable<SiteFile["parking"]>;
   pilot_level?: string;
   ridge_height_m: number | null;
   description: string;
@@ -189,6 +190,7 @@ export function siteToDraft(site: Site): SiteDraft {
     lastEditedBy: "",
     wind: site.wind,
     station: site.station ?? undefined,
+    parking: site.parking ?? undefined,
     pilot_level: site.pilot_level,
     ridge_height_m: site.ridge_height_m ?? null,
     description: site.description,
@@ -238,6 +240,7 @@ export function draftToSiteFields(draft: SiteDraft): Record<string, unknown> {
     };
   }
   if (draft.station) fields.station = draft.station;
+  if (draft.parking) fields.parking = draft.parking;
   if (draft.pilot_level) fields.pilot_level = draft.pilot_level;
   if (draft.ridge_height_m !== null) fields.ridge_height_m = draft.ridge_height_m;
   // "+ Add warning" and "+ Add link" both append an empty row, and an
@@ -294,6 +297,9 @@ export function validateDraft(draft: SiteDraft, takenIds: Iterable<string>): Dra
     if (band.from_deg === band.to_deg) {
       problems.push({ field: "bands", message: "A sector cannot be zero-width (from and to are equal)." });
     }
+  }
+  if (draft.parking && !Number.isFinite(draft.parking.lat + draft.parking.lon)) {
+    problems.push({ field: "parking", message: "Parking needs a coordinate (or remove the parking spot)." });
   }
   if (draft.station && !draft.station.provider?.trim()) {
     problems.push({ field: "station", message: "A station needs a provider name (or remove the station)." });

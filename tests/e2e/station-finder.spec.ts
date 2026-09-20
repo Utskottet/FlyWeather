@@ -143,3 +143,28 @@ test("a site with no station says nothing rather than an empty distance", async 
     await expect(station).not.toContainText(/undefined|NaN/);
   }
 });
+
+test("parking is authored by pasting whatever Google Maps gave you", async ({ page }) => {
+  await openKlambyEditor(page);
+
+  // Coordinates, as Google Maps' "Copy coordinates" puts them on the
+  // clipboard - the actual authoring flow, rather than two number boxes.
+  await page.getByTestId("parking-location").fill("55.411020, 13.995150");
+  await expect(page.getByTestId("parking-confirmed")).toContainText("55.41102");
+  await expect(page.getByTestId("parking-problem")).toHaveCount(0);
+
+  // A full maps URL works too.
+  await page.getByTestId("parking-location").fill("https://www.google.com/maps/@55.6,13.7,17z");
+  await expect(page.getByTestId("parking-confirmed")).toContainText("55.6");
+
+  // A short link cannot be read without following a redirect, so it says
+  // so and tells you what to do instead.
+  await page.getByTestId("parking-location").fill("https://maps.app.goo.gl/AbCdEf");
+  await expect(page.getByTestId("parking-problem")).toContainText(/Kopiera koordinater/);
+
+  // The caution about landowner goodwill is on screen while filling it in.
+  await expect(page.getByTestId("parking-caution")).toContainText(/markägarens goodwill/);
+
+  // Nothing is published by any of this.
+  await expect(page.locator('[data-testid="site-editor"]')).toBeVisible();
+});

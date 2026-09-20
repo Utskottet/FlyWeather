@@ -30,6 +30,7 @@ const EDITOR_OWNED_OPTIONAL_KEYS = [
   "short_name",
   "sector",
   "station",
+  "parking",
   "pilot_level",
   "ridge_height_m",
   "warnings",
@@ -56,6 +57,13 @@ const EDITOR_OWNED_OPTIONAL_KEYS = [
 const SUBMERGED_KEYS: Record<string, { ownedOptional: string[] }> = {
   coordinates: { ownedOptional: [] },
   wind: { ownedOptional: ["min_ms", "max_ms", "margin_under_ms", "margin_over_ms"] },
+  // The editor owns every subkey parking has today, so sub-merging looks
+  // redundant - it is not. It means a `parking:` that later grows a field
+  // nobody has taught the editor about survives an edit, which is exactly
+  // how coordinates.source and wind.notes were lost before anyone thought
+  // to protect them. Listing it now costs one line; discovering it later
+  // costs somebody's prose.
+  parking: { ownedOptional: ["lat", "lon", "note"] },
 };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -89,6 +97,7 @@ const NEW_FILE_KEY_ORDER = [
   "sector",
   "wind",
   "station",
+  "parking",
   "pilot_level",
   "ridge_height_m",
   "description",

@@ -159,6 +159,27 @@ export const stationSchema = z.object({
   note: z.string().optional(),
 });
 
+/**
+ * Where to leave the car.
+ *
+ * Coordinates rather than a pasted Google Maps URL, deliberately. Two
+ * numbers open in Google Maps, Apple Maps, Waze or OSM alike, cannot rot
+ * or redirect somewhere else, and are data the map can use - a distance
+ * from the launch, a marker - rather than an opaque string we could only
+ * ever hand straight back to a visitor. The editor still lets somebody
+ * PASTE a maps link; it just keeps the useful half.
+ *
+ * `note` is for the condition attached to the spot: how many cars fit,
+ * which gate, or that the field belongs to somebody who should be asked
+ * first. Several of these sites exist on a landowner's goodwill, and a
+ * navigable pin with no context is how that goodwill gets spent.
+ */
+export const parkingSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+  note: z.string().optional(),
+});
+
 export const linkSchema = z.object({
   label: z.string().min(1),
   url: z.string().min(1),
@@ -207,6 +228,7 @@ export const siteFileSchema = z.object({
   sector: sectorSchema.nullable().optional(),
   wind: windSchema,
   station: stationSchema.nullable().optional(),
+  parking: parkingSchema.nullable().optional(),
   pilot_level: z.string().optional(),
   ridge_height_m: z.number().nullable().optional(),
   description: z.string().min(1),

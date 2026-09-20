@@ -104,3 +104,56 @@ describe("SiteSheet - height display (§ FlyWeather Interaction Model altitude s
     expect(queryByTestId("site-sheet-height-warning")).toBeNull();
   });
 });
+
+describe("SiteSheet - parking", () => {
+  function renderSheet(site: LocatedSite) {
+    return render(
+      <SiteSheet
+        site={site}
+        sample={baseSample}
+        effectiveHeightM={10}
+        heightSupported={true}
+        isNight={false}
+        onClose={() => {}}
+      />,
+    );
+  }
+
+  it("offers navigation when a site has a parking spot", () => {
+    const { getByTestId } = renderSheet(locatedSite({ parking: { lat: 55.41102, lon: 13.99515 } }));
+    const link = getByTestId("site-sheet-parking");
+    expect(link.getAttribute("href")).toBe("https://www.google.com/maps/dir/?api=1&destination=55.41102,13.99515");
+    // Opened in a new tab, and without handing the destination to the
+    // referrer of whatever the visitor clicks next.
+    expect(link.getAttribute("rel")).toContain("noreferrer");
+  });
+
+  it("says nothing at all when a site has no parking", () => {
+    const { queryByTestId } = renderSheet(locatedSite());
+    expect(queryByTestId("site-sheet-parking")).toBeNull();
+  });
+
+  it("shows the note, which is where the access condition lives", () => {
+    const { getByTestId } = renderSheet(
+      locatedSite({ parking: { lat: 55.41102, lon: 13.99515, note: "Fråga i klubben först" } }),
+    );
+    expect(getByTestId("site-sheet-parking-note").textContent).toBe("Fråga i klubben först");
+  });
+
+  it("puts the button BELOW the site's warnings", () => {
+    // Several of these sites exist on a landowner's goodwill. "Private
+    // field, contact the club" has to be read before a button that
+    // drives you there - a navigate button above the restriction would
+    // be the app quietly overruling it.
+    const { getByTestId, container } = renderSheet(
+      locatedSite({
+        warnings: ["Privat mark - kontakta klubben"],
+        parking: { lat: 55.41102, lon: 13.99515 },
+      }),
+    );
+    const warnings = container.querySelector(".site-sheet-restrictions")!;
+    const parking = getByTestId("site-sheet-parking");
+    // Node.DOCUMENT_POSITION_FOLLOWING: parking comes after the warnings.
+    expect(warnings.compareDocumentPosition(parking) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});

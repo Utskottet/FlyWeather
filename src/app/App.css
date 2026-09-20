@@ -2256,3 +2256,59 @@
   color: var(--on-accent);
   font-weight: 700;
 }
+
+/* Parking, in the site panel. A real button rather than a text link: it
+   is a thing you press on a phone with one hand, in the dark, before
+   driving. Placed below the site's warnings - "private field, contact
+   the club" has to be read before a button that navigates you there. */
+.site-sheet-parking {
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.site-sheet-parking-link {
+  align-self: flex-start;
+  border: 1px solid var(--divider);
+  background: var(--control-bg);
+  color: var(--text-strong);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.site-sheet-parking-link::before {
+  content: "🅿 ";
+}
+
+.site-sheet-parking-note {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.parking-problem {
+  margin: 0 0 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--danger);
+}
+
+.parking-confirmed {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--success);
+}
+
+/* The caution sits under the fields rather than above them: read after
+   filling it in, it is a prompt to add the note; read before, it is one
+   more thing between a contributor and the form. */
+.parking-caution {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}

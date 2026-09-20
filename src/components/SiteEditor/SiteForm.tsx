@@ -3,6 +3,7 @@ import { COUNTRIES, REGIONS_BY_COUNTRY, PILOT_LEVELS } from "../../domain/siteEd
 import { CoordinatesFields } from "./CoordinatesFields.tsx";
 import { WindFields } from "./WindFields.tsx";
 import { StationFields } from "./StationFields.tsx";
+import { ParkingFields } from "./ParkingFields.tsx";
 import { WarningsEditor } from "./WarningsEditor.tsx";
 import { LinksEditor } from "./LinksEditor.tsx";
 import { CompassRoseEditor } from "./CompassRoseEditor.tsx";
@@ -82,6 +83,8 @@ export function SiteForm({ value, onChange }: Props) {
       <CoordinatesFields value={value.coordinates} onChange={(coordinates) => onChange({ ...value, coordinates })} />
 
       <WindFields value={value.wind} onChange={(wind) => onChange({ ...value, wind })} />
+
+      <ParkingFields value={value.parking} onChange={(parking) => onChange({ ...value, parking })} />
 
       {/* The finder searches from the site's own coordinates, so they
           are handed down rather than asked for a second time. */}
