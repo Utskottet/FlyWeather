@@ -1,0 +1,35 @@
+schema_version: 2
+id: grimeton
+name: Grimeton
+short_name: Grimeton
+coordinates:
+  lat: 57.127989917978255
+  lon: 12.41762734244743
+  verified: true
+sector:
+  ranges:
+    - from_deg: 219
+      to_deg: 295
+      margin_under_deg: 22
+      margin_over_deg: 22
+    - from_deg: 39
+      to_deg: 107
+      margin_under_deg: 22
+      margin_over_deg: 22
+  verified: false
+wind:
+  verified: true
+  min_ms: 0
+  max_ms: 5
+  margin_over_ms: 1
+station:
+  verified: false
+  provider: viva
+  name: Subbeberget
+  station_id: "164"
+  note: Sjöfartsverket ViVa. 11.8 km from the site. Chosen with the station finder; suitability for this site not verified.
+pilot_level: easy
+ridge_height_m: 0
+description: nedlagt Järnvägspår utan räls paralell med väg. Både pay in och pay out. gården Närmast silon äger marken
+last_edited_by: Edvin Buregren
+last_edited_at: 2026-09-20T16:44:03.266Z
