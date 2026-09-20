@@ -1,0 +1,29 @@
+schema_version: 2
+id: arild
+name: Arild
+short_name: Skäret
+coordinates:
+  lat: 56.260042645817265
+  lon: 12.566240561256759
+  verified: true
+sector:
+  ranges:
+    - from_deg: 351
+      to_deg: 49
+      margin_under_deg: 9
+      margin_over_deg: 9
+  verified: false
+wind:
+  verified: true
+  min_ms: 4
+  max_ms: 6
+  margin_over_ms: 2
+station:
+  verified: false
+  provider: holfuy
+  station_id: "215"
+  url: https://holfuy.com/en/weather/215
+pilot_level: difficult
+description: 56.27739979423313, 12.566240561256759
+last_edited_by: edvin buregren
+last_edited_at: 2026-09-20T19:14:37.512Z
