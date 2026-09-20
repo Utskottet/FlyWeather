@@ -23,13 +23,13 @@ wind:
   max_ms: 5
   margin_over_ms: 1
 station:
-  verified: false
-  provider: viva
   name: Subbeberget
+  provider: viva
   station_id: "164"
+  verified: false
   note: Sjöfartsverket ViVa. 11.8 km from the site. Chosen with the station finder; suitability for this site not verified.
 pilot_level: easy
 ridge_height_m: 0
-description: nedlagt Järnvägspår utan räls paralell med väg. Både pay in och pay out. gården Närmast silon äger marken
+description: Nedlagt järnvägspår utan räls paralell med väg. Både pay in och pay out. Gården närmast silon äger åkrarna på båda sidor vägen.
 last_edited_by: Edvin Buregren
-last_edited_at: 2026-09-20T16:44:03.266Z
+last_edited_at: 2026-09-20T16:49:34.502Z
