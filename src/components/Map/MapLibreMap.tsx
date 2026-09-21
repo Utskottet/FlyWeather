@@ -59,6 +59,15 @@ export interface MapLibreMapProps {
   /** null covers BOTH "toggled off" and "no product available for the current forecast hour" - either way, nothing is shown. The caller (SiteMap) is responsible for surfacing an "unavailable" notice in the latter case; this component only knows whether there's something to paint. */
   raspOverlay?: RaspOverlay | null;
   className?: string;
+  /**
+   * Called with the map's zoom whenever it changes, so a caller can size
+   * things that should not be one fixed size at every scale.
+   *
+   * Fires continuously through a pinch or a wheel, which is what makes
+   * the result smooth; callers are expected to quantise whatever they
+   * derive from it rather than re-render on every fractional change.
+   */
+  onZoomChange?: (zoom: number) => void;
   children?: (map: MapLibreGLMap | null) => React.ReactNode;
 }
 
@@ -79,8 +88,14 @@ export function MapLibreMap({
   windMotionEnabled = true,
   raspOverlay = null,
   className,
+  onZoomChange,
   children,
 }: MapLibreMapProps) {
+  // Held in a ref so the map is created once and never torn down just
+  // because a caller passed a fresh closure - the whole "no map jump"
+  // property depends on this component not recreating the map.
+  const onZoomChangeRef = useRef(onZoomChange);
+  onZoomChangeRef.current = onZoomChange;
   const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreGLMap | null>(null);
   const styleRef = useRef(style);
@@ -172,6 +187,8 @@ export function MapLibreMap({
     // call (mode switch) - setStyle() clears sources/layers not part of
     // the new spec, so this must re-run every time to stay always-on
     // across RELIEF/TOPO/MAP per Block 18's "no toggle" requirement.
+    instance.on("zoom", () => onZoomChangeRef.current?.(instance.getZoom()));
+
     instance.on("style.load", () => {
       if (disposed) return;
       // RASP added first so it paints as the bottom-most overlay, directly

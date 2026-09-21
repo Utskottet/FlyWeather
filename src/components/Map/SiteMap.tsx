@@ -20,6 +20,7 @@ import { IssuesPanel } from "../Issues/IssuesPanel.tsx";
 import { LogPanel } from "../Log/LogPanel.tsx";
 import { emptyDraft, siteToDraft, sitePathFor, type SiteDraft } from "../../domain/siteEditor.ts";
 import { CAN_EDIT } from "../../app/adminMode.ts";
+import { SELECTED_MARKER_SCALE, markerSizeForZoom } from "../../domain/markerSize.ts";
 import { useIsCompact } from "../../app/useIsCompact.ts";
 import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
@@ -34,8 +35,6 @@ import { useSoaringManifest, resolveSoaringUrl } from "../../app/useSoaringManif
 import { buildWindFieldGrid, windGridPointAtHeight } from "../../domain/windField.ts";
 import { findNearestValidTime, findFileForValidTime, RASP_PARAM_KEYS, type RaspParamKey } from "../../domain/soaring.ts";
 
-const MARKER_SIZE = 48;
-const SELECTED_MARKER_SIZE = 60;
 const SURFACE_HEIGHT_M = 10;
 const SURFACE_ALTITUDE_M = 0;
 const ARROW_SIZE = 39; // 1.5x the original 26px, per user feedback
@@ -168,8 +167,9 @@ function buildRoseHtml(
   weatherKind: SiteForecast["weatherKind"][number],
   isNight: boolean,
   daylight: number,
+  baseSize: number,
 ): { html: string; size: number } {
-  const size = selected ? SELECTED_MARKER_SIZE : MARKER_SIZE;
+  const size = selected ? Math.round(baseSize * SELECTED_MARKER_SCALE) : baseSize;
   const sector = site.sector ? site.sector.ranges.map((r) => ({ fromDeg: r.from_deg, toDeg: r.to_deg })) : null;
   const { state } = evaluateFlyability(
     sample.windDirectionDeg,
@@ -213,6 +213,10 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
   const [isLiveMode, setIsLiveMode] = useState(true);
   const [issuesOpen, setIssuesOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  // Quantised to the whole pixels a rose is actually drawn at, so a slow
+  // pinch re-renders the markers only when their size really changes -
+  // the zoom event itself fires continuously.
+  const [markerSize, setMarkerSize] = useState(() => markerSizeForZoom(10));
   // The open editor, or null. Only ever set from the admin-gated buttons,
   // so a normal visitor can never reach it - see app/adminMode.ts.
   const [editor, setEditor] = useState<
@@ -493,6 +497,10 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
         // the accessibility one, prefers-reduced-motion, which was never a
         // user-facing toggle.
         windMotionEnabled={!prefersReducedMotion}
+        onZoomChange={(zoom) => {
+          const next = markerSizeForZoom(zoom);
+          setMarkerSize((current) => (current === next ? current : next));
+        }}
         className="site-map"
       >
         {(map) => {
@@ -528,7 +536,7 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
                 selectedHourIso ? new Date(selectedHourIso) : new Date(),
                 site.coordinates,
               );
-              const { html } = buildRoseHtml(site, selected, sample, weatherKind, isNight, daylight);
+              const { html } = buildRoseHtml(site, selected, sample, weatherKind, isNight, daylight, markerSize);
               return (
                 <MapMarker
                   key={site.id}
