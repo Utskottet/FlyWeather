@@ -29,17 +29,20 @@ describe("formatSliderLabel", () => {
 describe("findNowIndex", () => {
   it("finds the first hour at or after now", () => {
     const hours = ["2026-08-18T10:00", "2026-08-18T11:00", "2026-08-18T12:00", "2026-08-18T13:00"];
-    expect(findNowIndex(hours, new Date("2026-08-18T11:30"))).toBe(2);
+    // Both sides explicitly UTC. This used to read "11:30" as local time
+    // against hours read as local time - two wrongs that agreed with each
+    // other, which is how the two-hour display offset stayed hidden.
+    expect(findNowIndex(hours, new Date("2026-08-18T11:30:00Z"))).toBe(2);
   });
 
   it("returns 0 when now is before every hour", () => {
     const hours = ["2026-08-18T10:00", "2026-08-18T11:00"];
-    expect(findNowIndex(hours, new Date("2026-08-18T05:00"))).toBe(0);
+    expect(findNowIndex(hours, new Date("2026-08-18T05:00:00Z"))).toBe(0);
   });
 
   it("returns the last index when now is after every hour", () => {
     const hours = ["2026-08-18T10:00", "2026-08-18T11:00"];
-    expect(findNowIndex(hours, new Date("2026-08-19T00:00"))).toBe(1);
+    expect(findNowIndex(hours, new Date("2026-08-19T00:00:00Z"))).toBe(1);
   });
 });
 

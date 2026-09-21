@@ -1,4 +1,5 @@
 import { getTimes } from "suncalc";
+import { forecastHourMs } from "./forecastTime.ts";
 
 export interface GeoCoordinate {
   lat: number;
@@ -196,8 +197,8 @@ export interface SkyBandBlock {
  */
 export function buildSkyBandBlocks(hours: string[], location: GeoCoordinate): SkyBandBlock[] {
   if (hours.length < 2) return [];
-  const start = new Date(hours[0]).getTime();
-  const end = new Date(hours[hours.length - 1]).getTime();
+  const start = forecastHourMs(hours[0]);
+  const end = forecastHourMs(hours[hours.length - 1]);
   const span = end - start;
   if (!(span > 0)) return [];
 

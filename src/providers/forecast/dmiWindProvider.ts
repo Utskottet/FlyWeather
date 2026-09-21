@@ -1,6 +1,7 @@
 import type { GridPoint } from "../../domain/windGrid.ts";
 import { MODEL_HEIGHTS_M, type SiteForecast, type WindGridPoint } from "../../domain/types.ts";
 import { POINT_FORECAST_HEIGHTS_M } from "../../domain/forecastSource.ts";
+import { forecastHourMs } from "../../domain/forecastTime.ts";
 
 /**
  * Consumes FlyWeather-Soaring's real Wind v1 product (§ Simplify DMI Wind
@@ -199,13 +200,13 @@ export async function fetchDmiWindGrid(soaringBaseUrl: string, points: GridPoint
 const WIND_TIME_TOLERANCE_MINUTES = 30;
 
 function nearestDmiHourIndex(dmiHours: string[], targetIso: string): number | null {
-  const targetMs = new Date(targetIso).getTime();
+  const targetMs = forecastHourMs(targetIso);
   if (!Number.isFinite(targetMs)) return null;
   const toleranceMs = WIND_TIME_TOLERANCE_MINUTES * 60 * 1000;
   let bestIndex: number | null = null;
   let bestDiff = Infinity;
   for (let i = 0; i < dmiHours.length; i++) {
-    const ms = new Date(dmiHours[i]).getTime();
+    const ms = forecastHourMs(dmiHours[i]);
     if (!Number.isFinite(ms)) continue;
     const diff = Math.abs(ms - targetMs);
     if (diff < bestDiff) {

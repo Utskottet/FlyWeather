@@ -1,8 +1,12 @@
-# FORECAST_INTEGRITY.md — the site forecast source mix
+# FORECAST_INTEGRITY.md — forecast data integrity
+
+Two separate bugs, found in one afternoon by following the same thread: a
+pilot noticing that Startvind and YR disagreed. The first put the wrong
+number on screen; the second put the right number under the wrong hour.
 
 **Status:** diagnosed 2026-09-21. Steps 0-2 implemented the same day, not yet
 committed. The surface wind is correct and every value now names the model
-that produced it. The permanent fix for the 100/150 m seam (section 7) is
+that produced it. The permanent fix for the 100/150 m seam (section 8) is
 outstanding.
 **Severity:** safety-relevant. The error changes flyability verdicts in both
 directions, including green where the real forecast is red.
@@ -165,7 +169,7 @@ another, so that one band interpolates **across a source boundary** and may
 show a non-physical step — possibly wind appearing to fall with height.
 
 This is accepted for now and must be labelled, not smoothed. Smoothing it
-would be calibration by another name. Section 7 carries the permanent fix.
+would be calibration by another name. Section 8 carries the permanent fix.
 
 ### Steps
 
@@ -315,7 +319,7 @@ evidence do not depend on that:
 - The seam is directly observable: Hovs Hallar at the same hour reads 6.22 m/s
   at 100 m (point forecast) and 3.33 m/s at 150 m (raster). Wind appears to
   halve across the boundary. This is the documented cost of the split, it is
-  not smoothed, and section 7 carries its permanent fix.
+  not smoothed, and section 8 carries its permanent fix.
 
 ### Verification run
 
@@ -394,7 +398,77 @@ forecast timeline. Then unit tests, typecheck, lint, production build, and
 
 ---
 
-## 7. Remaining risk, and the permanent fix
+## 7. The second bug: forecast hours read two hours early
+
+Found 2026-09-21, after the first fix was already live, when the same pilot
+reported Hovs Hallar showing 4.4 m/s at Tuesday 17:00 where YR showed 6.
+
+The stored data was correct — every hour matched met.no exactly. The hours
+themselves were being read wrong.
+
+Open-Meteo is asked for `timezone=UTC` and answers `2026-09-22T17:00`, with
+nothing on the end saying so. JavaScript parses a bare date-time as **local**
+time:
+
+```
+new Date("2026-09-22T17:00")   -> 2026-09-22T15:00Z   what the app believed
+new Date("2026-09-22T17:00Z")  -> 2026-09-22T17:00Z   what it actually is
+```
+
+So under the label "17:00" the app displayed the row named `17:00`, which is
+valid at **19:00 local** — two hours into the future, one hour in winter.
+Eight call sites parsed hours this way: the slider label, which row counts as
+NOW, the NOW marker's position, the tick and day labels, and the day/night
+shading.
+
+### Why it hid so well
+
+The labels were **self-consistent**. The slider read the row name as local
+time and printed it back, so "17:00" was always shown against the row called
+`17:00`. Nothing on screen contradicted anything else on screen. Only an
+outside source — a pilot with YR open — could see it.
+
+The existing tests encoded the same assumption. `findNowIndex`'s test compared
+`new Date("2026-08-18T11:30")` against hours in the same bare form: two wrongs
+that agreed with each other, and therefore passed.
+
+`npm run check:forecast` could not see it either. It normalises the zone
+before comparing, deliberately, so it matches true instant to true instant —
+which is right for measuring the data and blind to how the data is displayed.
+**That is twice this session that the ruler's limits mattered.** A tool that
+measures one thing well is not a tool that measures everything.
+
+### The cross-source version, which was worse
+
+The wind grid publishes `2026-09-21T15:00:00Z` — with the Z. The site forecast
+does not. `nearestDmiHourIndex` compared them with naive `new Date()` on both,
+so it paired rows **two hours apart** while believing they matched, entirely
+inside its own 30-minute tolerance and without ever reporting a miss.
+
+### The fix
+
+New `src/domain/forecastTime.ts`. A bare timestamp is UTC — that is what was
+asked for and what every producer here publishes — and anything carrying its
+own zone is respected as written. Every consumer goes through it.
+
+Hours are also **stamped on the way in** now (`normaliseForecastHour` in both
+Open-Meteo providers), so data generated from here on says what it means. The
+defensive parse stays regardless: already-published files lack the Z, and the
+collector's own 429 fallback republishes them.
+
+### Tests, and a trap in them
+
+`tests/unit/forecastTime.test.ts`, plus two cross-source guards in
+`dmiWindProvider.test.ts`. Eight tests across three files fail if the naive
+parse returns.
+
+These tests **only mean anything outside UTC** — on a UTC machine the naive
+parse accidentally gives the right answer, so they would have passed on CI
+while the bug shipped. `tests/unit-setup.ts` therefore pins every run to
+Europe/Stockholm, verified by reintroducing the bug with `TZ=UTC` and watching
+them fail anyway.
+
+## 8. Remaining risk, and the permanent fix
 
 1. **The 100/150 m seam** described above. The real cure is to request
    Open-Meteo **pressure levels** (1000/925/850/700 hPa) in the same point
@@ -409,8 +483,32 @@ forecast timeline. Then unit tests, typecheck, lint, production build, and
    (step 2), which is what makes it acceptable in the meantime; item 1
    resolves it properly. The surface verdict - the one everybody actually
    reads - is unaffected.
-3. **No second opinion.** Only met.no is used as the check. If Open-Meteo's
-   point forecast is itself wrong at a site, nothing here will notice.
+3. **The check is not independent, and this is now confirmed.** Open-Meteo's
+   `best_match` selects MET Norway's Nordic model across this whole coverage
+   area - verified 2026-09-21 at Hovs Hallar and at Lokken in Denmark, where
+   `best_match`, `metno_seamless` and met.no's own API return identical
+   values to the decimal and the degree:
+
+   ```
+   best_match      5.8 m/s @ 316deg
+   metno_seamless  5.8 m/s @ 316deg
+   met.no (YR)     5.8 m/s @ 316deg
+   icon_eu         4.05 m/s @ 320deg
+   ecmwf_ifs025    3.89 m/s @ 316deg
+   gfs_seamless    4.55 m/s @ 310deg
+   ```
+
+   So Startvind and YR are the same forecast, not two that happen to agree.
+   `npm run check:forecast` therefore measures **pipeline correctness, not
+   forecast accuracy**: it catches this repository mangling, dropping or
+   mislabelling the data it was given - which is exactly the bug it was
+   built for, and it caught it decisively - but it cannot notice the model
+   itself being wrong, because it is comparing the model against itself.
+
+   A genuine second opinion means a different model: ECMWF, ICON or GFS,
+   which at that same hour spanned 3.9-4.6 m/s against MET Nordic's 5.8. A
+   2 m/s spread between models is itself useful information - it means the
+   forecast is uncertain, whichever number is displayed.
 4. **Nothing prevents a recurrence by construction.** The regression test
    catches this exact shape. A future merge of a different field would not be
    caught by it.

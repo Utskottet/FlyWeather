@@ -1,5 +1,6 @@
 import { openMeteoCodeToWeatherKind } from "../../domain/weather.ts";
 import { MODEL_HEIGHTS_M, type ModelHeightM } from "../../domain/types.ts";
+import { normaliseForecastHour } from "../../domain/forecastTime.ts";
 import type { ForecastProvider, ForecastSiteRequest, SiteForecast } from "../../domain/types.ts";
 
 const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
@@ -73,7 +74,12 @@ export function normalizeOpenMeteoResponse(siteId: string, raw: OpenMeteoRespons
   return {
     siteId,
     sourceId: "open-meteo",
-    hours: hourly.time,
+    // Stamped with their zone on the way in. Open-Meteo is asked for
+    // timezone=UTC and answers "2026-09-22T17:00" with nothing saying so,
+    // which every naive new Date() in the app then read as local time -
+    // see domain/forecastTime.ts. Normalising here means data generated
+    // from now on says what it means, and nothing downstream has to infer.
+    hours: hourly.time.map(normaliseForecastHour),
     heights,
     windGustMs: hourly.wind_gusts_10m,
     weatherKind: hourly.weather_code.map(openMeteoCodeToWeatherKind),

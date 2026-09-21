@@ -55,7 +55,9 @@ describe("normalizeOpenMeteoResponse", () => {
     const forecast = normalizeOpenMeteoResponse("hammar", fixture);
     expect(forecast.siteId).toBe("hammar");
     expect(forecast.sourceId).toBe("open-meteo");
-    expect(forecast.hours).toEqual(fixture.hourly.time);
+    // Open-Meteo answers timezone=UTC without saying so; the provider
+    // stamps the zone on so nothing downstream has to infer it.
+    expect(forecast.hours).toEqual(fixture.hourly.time.map((t) => `${t}Z`));
     expect(forecast.windGustMs).toEqual([7.1, 6.5, null]);
   });
 

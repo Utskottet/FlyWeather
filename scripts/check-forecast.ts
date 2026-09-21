@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { buildCatalogue } from "./build-sites-catalogue.ts";
 import { locatedEnabledSites, type LocatedSite } from "../src/domain/sites.ts";
 import { evaluateFlyability } from "../src/domain/flyability.ts";
+import { forecastHourMs } from "../src/domain/forecastTime.ts";
 import type { RoseState } from "../src/components/WindRose/index.ts";
 import type { GeneratedForecastSitesFile } from "../src/domain/types.ts";
 
@@ -163,15 +164,14 @@ function parseArgs(argv: string[]) {
 }
 
 /**
- * Our generated hours are Open-Meteo's `timezone=UTC` format
- * ("2026-09-21T14:00", no zone marker); met.no stamps a real Z. Both are
- * UTC, so both become the same epoch once the marker is made explicit -
- * but only if we add it rather than letting the runtime guess, because
- * an unmarked timestamp is parsed as *local* time by Date, which on a
- * Swedish machine would silently shift every comparison by two hours.
+ * Both sides become real instants before anything is compared.
+ *
+ * Our own generated hours may or may not carry a zone - files published
+ * before domain/forecastTime.ts landed do not - while met.no always
+ * stamps a Z. parseForecastHour settles that for both.
  */
 function toEpoch(iso: string): number {
-  return Date.parse(/[Zz]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`);
+  return forecastHourMs(iso);
 }
 
 async function fetchMetNo(site: LocatedSite): Promise<Map<number, HourComparison["theirs"]>> {

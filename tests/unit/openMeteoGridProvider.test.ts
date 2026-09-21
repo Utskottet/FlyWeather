@@ -9,6 +9,8 @@ const POINTS = [
 ];
 
 const HOURS = ["2026-08-19T00:00", "2026-08-19T01:00", "2026-08-19T02:00"];
+/** What the provider publishes: the same hours, stamped as the UTC they are. */
+const HOURS_UTC = HOURS.map((h) => `${h}Z`);
 
 describe("buildGridUrl", () => {
   it("comma-joins all point coordinates in request order, requesting hourly wind at all 14 backend model heights (§ UPPVIND recovery milestone - Open-Meteo is the fallback, requested at the same heights)", () => {
@@ -46,7 +48,7 @@ describe("normalizeGridResponse", () => {
       },
     ];
     const result = normalizeGridResponse([POINTS[0]], raw);
-    expect(result.hours).toEqual(HOURS);
+    expect(result.hours).toEqual(HOURS_UTC);
     expect(result.points).toHaveLength(1);
     const [p] = result.points;
     expect(p.lat).toBe(55.4);
@@ -128,7 +130,7 @@ describe("fetchWindGrid batching", () => {
     const result = await fetchWindGrid(points);
 
     expect(fetchMock.mock.calls.length).toBeGreaterThan(1); // 900 points exceeds the per-request cap
-    expect(result.hours).toEqual(HOURS);
+    expect(result.hours).toEqual(HOURS_UTC);
     expect(result.points).toHaveLength(900);
     // order preserved: first result point matches the first requested point
     expect(result.points[0].lat).toBeCloseTo(points[0].lat, 6);

@@ -1,3 +1,5 @@
+import { forecastHourMs } from "./forecastTime.ts";
+
 /**
  * NOW + this many hourly steps - shared by useSiteForecasts.ts and
  * useWindGrid.ts (previously duplicated in both), per MASTER_SPEC.md §6.
@@ -56,7 +58,7 @@ export function formatSliderLabel(date: Date, isNow: boolean): string {
 /** Index of the first hour >= now in an ascending ISO-UTC hours array. */
 export function findNowIndex(hours: string[], now: Date): number {
   const nowTime = now.getTime();
-  const index = hours.findIndex((h) => new Date(h).getTime() >= nowTime);
+  const index = hours.findIndex((h) => forecastHourMs(h) >= nowTime);
   return index === -1 ? Math.max(0, hours.length - 1) : index;
 }
 
@@ -95,7 +97,7 @@ export function tickHourLabel(date: Date): string {
  */
 export function nowPositionFraction(hours: string[], now: Date): number | null {
   if (hours.length < 2) return null;
-  const times = hours.map((h) => new Date(h).getTime());
+  const times = hours.map((h) => forecastHourMs(h));
   const maxIndex = times.length - 1;
   const nowMs = now.getTime();
 

@@ -273,6 +273,29 @@ describe("mergeDmiWindIntoSiteForecast", () => {
     expect(merged.heights[10].windSpeedMs).not.toContain(null);
   });
 
+  /**
+   * The two sources spell their timestamps differently: the site
+   * forecast carries "2026-08-23T07:00" (bare, UTC by convention) while
+   * the wind grid publishes "2026-08-23T07:00:00Z". Parsed naively, the
+   * bare one became local time, so the matcher silently paired rows two
+   * hours apart - inside its own 30-minute tolerance, reporting no miss.
+   * See domain/forecastTime.ts.
+   */
+  it("matches a bare site hour against the grid's zoned spelling of the same instant", () => {
+    const forecastHours = ["2026-08-23T07:00"];
+    const dmiHours = ["2026-08-23T07:00:00Z"];
+    const merged = mergeDmiWindIntoSiteForecast(baseForecast(forecastHours), dmiPoint(dmiHours, 9, 100), dmiHours);
+    expect(merged.heights[150].windSpeedMs[0]).toBe(9);
+  });
+
+  it("does not pair a bare site hour with a grid hour two hours away", () => {
+    // What the old naive parse did on any machine east of UTC.
+    const forecastHours = ["2026-08-23T07:00"];
+    const dmiHours = ["2026-08-23T05:00:00Z"];
+    const merged = mergeDmiWindIntoSiteForecast(baseForecast(forecastHours), dmiPoint(dmiHours, 9, 100), dmiHours);
+    expect(merged.heights[150].windSpeedMs[0]).toBeNull();
+  });
+
   it("matches within the tolerance window despite a small real timestamp offset", () => {
     const forecastHours = ["2026-08-23T07:00:00Z"];
     const dmiHours = ["2026-08-23T07:10:00Z"]; // 10 minutes off - within WIND_TIME_TOLERANCE_MINUTES

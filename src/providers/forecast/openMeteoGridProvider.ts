@@ -1,5 +1,6 @@
 import type { GridPoint } from "../../domain/windGrid.ts";
 import { MODEL_HEIGHTS_M, type ModelHeightM, type WindGridPoint } from "../../domain/types.ts";
+import { normaliseForecastHour } from "../../domain/forecastTime.ts";
 
 const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
 // Same window as site forecasts (openMeteoProvider.ts) - guarantees the
@@ -58,7 +59,8 @@ export interface WindGridBatch {
  * to reconcile between points.
  */
 export function normalizeGridResponse(points: GridPoint[], raw: OpenMeteoHourlyGridEntry[]): WindGridBatch {
-  const hours = raw.find((e) => e.hourly)?.hourly?.time ?? [];
+  // Stamped with their zone on the way in - see domain/forecastTime.ts.
+  const hours = (raw.find((e) => e.hourly)?.hourly?.time ?? []).map(normaliseForecastHour);
   const nulls = () => hours.map(() => null);
   const gridPoints = points.map((point, i) => {
     const hourly = raw[i]?.hourly;
