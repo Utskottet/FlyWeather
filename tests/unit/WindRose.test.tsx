@@ -404,3 +404,32 @@ describe("daylight fade", () => {
     }
   });
 });
+
+describe("WindRose - the speed number in its two homes", () => {
+  it("is dark and a touch larger on the map, where it sits over pale terrain", () => {
+    const { getByTestId } = render(
+      <WindRose sector={null} state="green" windDirectionDeg={240} windSpeedMs={6.7} />,
+    );
+    const text = getByTestId("speed-text");
+    expect(text.getAttribute("fill")).toBe("#111");
+    expect(Number(text.getAttribute("font-size"))).toBeGreaterThan(19);
+  });
+
+  it("is light on the panel, where the same ink all but disappears", () => {
+    // One rose drawn twice: a marker over pale terrain, and large on a
+    // dark sheet. One colour cannot suit both.
+    const { getByTestId } = render(
+      <WindRose sector={null} state="green" windDirectionDeg={240} windSpeedMs={6.7} context="panel" />,
+    );
+    expect(getByTestId("speed-text").getAttribute("fill")).toBe("#f2f5f8");
+  });
+
+  it("keeps the map's colours for everything else, in both", () => {
+    // Only the number changes. The wedge means something, and it means
+    // the same thing wherever the rose is drawn.
+    const { getByTestId } = render(
+      <WindRose sector={[{ fromDeg: 200, toDeg: 250 }]} state="green" windDirectionDeg={240} windSpeedMs={6.7} context="panel" />,
+    );
+    expect(getByTestId("wind-pointer").getAttribute("fill")).toBe("#111");
+  });
+});

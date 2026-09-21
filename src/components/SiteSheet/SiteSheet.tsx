@@ -126,6 +126,7 @@ export function SiteSheet({
           weatherKind={sample.weatherKind}
           isNight={isNight}
           daylight={daylight}
+          context="panel"
         />
         {/*
           What kind of site this is, beside the rose.

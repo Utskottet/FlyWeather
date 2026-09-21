@@ -39,6 +39,13 @@ export interface WindRoseProps {
   /** Swaps the rose's Sun for a crescent Moon when the selected instant is after dark at this site - see domain/skyBand.ts's isNightAt. */
   isNight?: boolean;
   /**
+   * Where this rose is being drawn, which decides the speed number's
+   * colour and size - dark and larger over the map's pale terrain,
+   * lighter and calmer on the panel's dark sheet. Defaults to the map,
+   * which is where most roses are.
+   */
+  context?: "map" | "panel";
+  /**
    * How lit this site is at the shown instant: 1 in daylight, 0 once it is
    * fully dark, fading between (domain/skyBand.ts's daylightFactor).
    *
@@ -61,6 +68,21 @@ const HISTORY_R = OUTER_R + 4;
 // Colors lifted directly from the user's uploaded reference
 // (uploads/wind-sector-rose.html)'s :root custom properties.
 const INK = "#111";
+
+/**
+ * The speed number in the site panel.
+ *
+ * The rose is drawn once and used twice: as a marker on the map, and
+ * large in a site's panel. On the map it sits over pale terrain, so dark
+ * ink is right. In the panel it sits on a dark sheet, where the same ink
+ * all but disappears - hence one colour per context rather than one
+ * compromise that suits neither.
+ */
+const INK_ON_DARK = "#f2f5f8";
+
+/** A touch larger on the map: at marker size the number is the one thing read from a distance. */
+const SPEED_SIZE_MAP = 22;
+const SPEED_SIZE_PANEL = 19;
 const GREEN = "#27c93f";
 const ORANGE = "#ff9800";
 const RED = "#f23535";
@@ -190,6 +212,7 @@ export function WindRose({
   windSpeedMs,
   weatherKind,
   isNight = false,
+  context = "map",
   daylight = 1,
   historyPoints = [],
   siteName,
@@ -203,6 +226,7 @@ export function WindRose({
   // Speed nudges to whichever vertical half the weather ISN'T in, so the two
   // never share space regardless of where the sector pushed the weather.
   const speedCy = CENTER + (iconCenter.y < CENTER ? SPEED_OFFSET : -SPEED_OFFSET);
+  const speedSize = context === "panel" ? SPEED_SIZE_PANEL : SPEED_SIZE_MAP;
 
   return (
     <div
@@ -295,10 +319,10 @@ export function WindRose({
           y={speedCy}
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize={windSpeedMs !== null ? 19 : 15}
+          fontSize={windSpeedMs !== null ? speedSize : speedSize - 4}
           fontWeight={800}
           letterSpacing={-0.5}
-          fill={INK}
+          fill={context === "panel" ? INK_ON_DARK : INK}
           data-testid="speed-text"
         >
           {windSpeedMs !== null ? windSpeedMs.toFixed(1) : "–"}
