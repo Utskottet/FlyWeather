@@ -13,6 +13,22 @@ site** button on the main map, with the editor running *inside* the app.
 > resolved, and the three decisions that gated the work. What follows
 > describes the state on 2026-09-18 *before* implementation - treat every
 > "would need to" below as "was done".
+>
+> Three of its conclusions were then overtaken, 2026-09-19 to 21:
+>
+> - §4c says to gate both buttons behind `?admin=1`. They are **not**
+>   gated - they are visible to every visitor wherever a Worker is
+>   configured, and so are Issues and Log.
+> - §4c sets aside a "suggest an edit" flow for pilots as needing
+>   moderation, spam handling and attribution. It was built, and
+>   attribution turned out to be the answer to the other two: a name, a
+>   club that has to be real, and a public log.
+> - §5 counts 24 of 30 sites unreachable from the map. The catalogue has
+>   grown since; it is now 19 of 37, and the list view is still missing.
+>
+> The merge-don't-overwrite advice in §4b was right, is implemented in
+> `src/domain/siteYaml.ts`, and its warning has come true twice more
+> since - for `station.url` and for `parking`.
 
 Written 2026-09-18 against `admin-experiment/` as built on 2026-08-25.
 
