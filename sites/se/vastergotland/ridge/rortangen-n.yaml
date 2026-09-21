@@ -1,0 +1,30 @@
+schema_version: 2
+id: rortangen-n
+name: Rörtången N
+short_name: RTN
+coordinates:
+  lat: 57.919763
+  lon: 11.766029
+  verified: true
+sector:
+  ranges:
+    - from_deg: 326
+      to_deg: 40
+      margin_under_deg: 8
+      margin_over_deg: 9
+  verified: false
+wind:
+  verified: true
+  min_ms: 3
+  max_ms: 5
+  margin_over_ms: 1
+  margin_under_ms: 2
+parking:
+  lat: 57.919817
+  lon: 11.781063
+  note: "Plats för 5 bilar. Gratis allmännparkering. finns även en parkering uppe närmare starten men denna är bäst då det är vid landningen "
+pilot_level: medium
+ridge_height_m: 65
+description: "Termiskthang. inga enkla landningar under men en fin stor landning öster om starten. lämplig för en pilot som har balanserat i starkvind (ca 50h balanserings erefarenhet) starten är inte stor. Därav krävs det balanseringserfarenhet. visa hänsyn till boende i området! "
+last_edited_by: Adam Alsofi
+last_edited_at: 2026-09-21T08:09:58.726Z
