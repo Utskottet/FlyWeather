@@ -3,6 +3,13 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    # Observation rows are data the site does not read at build time, and
+    # observations.yml appends to them several times a day. Rebuilding and
+    # redeploying the whole site for each of those would be pure waste.
+    # The recorder's default GITHUB_TOKEN already cannot trigger this
+    # workflow; this keeps that true if it is ever changed to a PAT.
+    paths-ignore:
+      - "data/observations/**"
   workflow_dispatch:
 
 permissions:

@@ -1,0 +1,17 @@
+{"at":"2026-09-21T19:22:22.420Z","site":"alabodarna","hour":"2026-09-21T19:00Z","obs":{"ms":4.44,"deg":338,"gust":6.11,"src":"holfuy","ageConfirmed":false},"fc":{"ms":6,"deg":326,"gust":9.7}}
+{"at":"2026-09-21T19:22:22.420Z","site":"hammar","hour":"2026-09-21T19:00Z","obs":{"ms":4.72,"deg":315,"gust":6.11,"src":"holfuy","ageConfirmed":false},"fc":{"ms":5.6,"deg":320,"gust":9.7}}
+{"at":"2026-09-21T19:22:22.420Z","site":"arild","hour":"2026-09-21T19:00Z","obs":{"ms":5.28,"deg":316,"gust":7.5,"src":"holfuy","ageConfirmed":false},"fc":{"ms":6.1,"deg":321,"gust":10.5}}
+{"at":"2026-09-21T19:22:22.420Z","site":"kevik","hour":"2026-09-21T19:00Z","obs":{"ms":2.2,"deg":8.5,"gust":3.5,"src":"viva","ageConfirmed":true},"fc":{"ms":5.2,"deg":333,"gust":9}}
+{"at":"2026-09-21T19:22:22.420Z","site":"grimeton","hour":"2026-09-21T19:00Z","obs":{"ms":6.3,"deg":357.3,"gust":7.5,"src":"viva","ageConfirmed":true},"fc":{"ms":2.5,"deg":321,"gust":4.6}}
+{"at":"2026-09-21T19:22:22.420Z","site":"barseback","hour":"2026-09-21T19:00Z","obs":{"ms":5.9,"deg":338,"gust":7.2,"src":"viva","ageConfirmed":true},"fc":{"ms":6,"deg":313,"gust":10.7}}
+{"at":"2026-09-21T19:22:22.420Z","site":"hoganas","hour":"2026-09-21T19:00Z","obs":{"ms":7.78,"deg":329,"gust":9.17,"src":"holfuy","ageConfirmed":false},"fc":{"ms":6.8,"deg":323,"gust":11.5}}
+{"at":"2026-09-21T19:22:22.420Z","site":"hovs-hallar-nv","hour":"2026-09-21T19:00Z","obs":{"ms":8.06,"deg":338,"gust":9.44,"src":"holfuy","ageConfirmed":false},"fc":{"ms":8.1,"deg":329,"gust":12}}
+{"at":"2026-09-21T19:22:22.420Z","site":"kaseberga-s","hour":"2026-09-21T19:00Z","obs":{"ms":3.33,"deg":332,"gust":4.44,"src":"holfuy","ageConfirmed":false},"fc":{"ms":5.6,"deg":317,"gust":10.1}}
+{"at":"2026-09-21T19:22:22.420Z","site":"vik-2","hour":"2026-09-21T19:00Z","obs":{"ms":3.06,"deg":276,"gust":4.44,"src":"holfuy","ageConfirmed":false},"fc":{"ms":5.9,"deg":304,"gust":9.9}}
+{"at":"2026-09-21T19:22:22.420Z","site":"ven","hour":"2026-09-21T19:00Z","obs":{"ms":4.44,"deg":338,"gust":6.11,"src":"holfuy","ageConfirmed":false},"fc":{"ms":5.4,"deg":311,"gust":8.8}}
+{"at":"2026-09-21T19:22:22.420Z","site":"fagerhult-fedinge-flygfalt","hour":"2026-09-21T19:00Z","obs":{"ms":3.89,"deg":308,"gust":5.83,"src":"holfuy","ageConfirmed":false},"fc":{"ms":2,"deg":304,"gust":5.7}}
+{"at":"2026-09-21T19:22:22.420Z","site":"lenacken","hour":"2026-09-21T19:00Z","obs":{"ms":3.33,"deg":335,"gust":6.39,"src":"holfuy","ageConfirmed":false},"fc":{"ms":5.9,"deg":312,"gust":10.1}}
+{"at":"2026-09-21T19:22:22.420Z","site":"ravlunda","hour":"2026-09-21T19:00Z","obs":{"ms":4.17,"deg":282,"gust":6.39,"src":"holfuy","ageConfirmed":false},"fc":{"ms":5.1,"deg":296,"gust":9.2}}
+{"at":"2026-09-21T19:22:22.420Z","site":"molle","hour":"2026-09-21T19:00Z","obs":{"ms":4.44,"deg":322,"gust":7.5,"src":"holfuy","ageConfirmed":false},"fc":{"ms":7.2,"deg":323,"gust":11.9}}
+{"at":"2026-09-21T19:22:22.420Z","site":"test-knackebrodhult","hour":"2026-09-21T19:00Z","obs":{"ms":1.42,"deg":341,"gust":null,"src":"smhi","ageConfirmed":true},"fc":{"ms":1.8,"deg":325,"gust":4.5}}
+{"at":"2026-09-21T19:22:22.420Z","site":"klamby","hour":"2026-09-21T19:00Z","obs":{"ms":1.54,"deg":322,"gust":2.06,"src":"weewx","ageConfirmed":true},"fc":{"ms":4,"deg":312,"gust":8.4}}

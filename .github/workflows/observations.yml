@@ -1,0 +1,87 @@
+name: Record Observations
+
+# Keeps what the anemometers actually measured, beside what was forecast
+# for the same hour - chunk A of BLOCKS.md Phase 4, designed in
+# docs/FORECAST_VERIFICATION.md.
+#
+# This project reads seventeen live wind stations and overwrites every
+# reading on the next collector run. Keeping them is the only way to
+# answer whether the forecast is true to what happens on the hill, which
+# no test in this repository can.
+#
+# Deliberately NOT trying to be hourly. GitHub honours a cron schedule at
+# two-to-five-hour intervals under load, and that is fine here: each row
+# is a self-contained forecast-versus-measurement pair, not a point in a
+# time series, so irregular sampling costs volume and nothing else. A
+# month of whatever this manages is hundreds of rows per site - far more
+# than a bias figure needs. Asking for every two hours yields roughly
+# seven to twelve runs a day in practice.
+#
+# Costs nothing and adds no infrastructure: no VPS, no Worker changes, no
+# key-value store, no monthly bill. The repository is the database,
+# exactly as it already is for the edit log and the suggestion list.
+on:
+  schedule:
+    - cron: "17 */2 * * *"
+  workflow_dispatch:
+
+# Only what it needs: this writes data/observations/ and nothing else.
+permissions:
+  contents: write
+
+# Two runs appending to the same file would race. Queue rather than
+# cancel - a run that has already read the stations should finish and
+# commit what it measured.
+concurrency:
+  group: record-observations
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The forecast half of each pair. collect:forecasts falls back to
+      # the last published file if Open-Meteo rate-limits, so a 429 costs
+      # freshness rather than the whole run.
+      - name: Collect current forecast
+        run: npm run collect:forecasts
+        env:
+          VITE_SOARING_BASE_URL: https://utskottet.github.io/FlyWeather-Soaring
+
+      - name: Read the stations and record the pairs
+        run: npm run record:observations
+
+      # Commits only when rows were actually added. The recorder skips
+      # any (site, hour) already present, so a run that lands in the same
+      # hour as the previous one changes nothing and commits nothing.
+      #
+      # The default GITHUB_TOKEN deliberately does not trigger other
+      # workflows, so this never sets off a Pages deploy. pages.yml also
+      # ignores this path, so that stays true if the token is ever
+      # changed to a PAT.
+      - name: Commit new rows
+        run: |
+          if [ -z "$(git status --porcelain data/observations)" ]; then
+            echo "No new rows this run - nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/observations
+          ROWS=$(cat data/observations/*.jsonl | wc -l)
+          git commit -m "Observations: $(date -u +%Y-%m-%dT%H:%MZ), ${ROWS} rows total"
+          # Another run (or a person) may have pushed since checkout.
+          # Rebase rather than force - nothing here is worth overwriting
+          # somebody's site edit for.
+          git pull --rebase origin main
+          git push origin HEAD:main

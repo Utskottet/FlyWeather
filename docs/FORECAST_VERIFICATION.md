@@ -1,6 +1,7 @@
 # FORECAST_VERIFICATION.md — scoring the forecast against real anemometers
 
-**Status:** designed 2026-09-21, not started.
+**Status:** designed 2026-09-21. Chunk A (the recorder) shipped the same
+day and is collecting. Chunks B-E not started.
 **Execution plan:** `BLOCKS.md` → Phase 4, chunks A–E.
 
 ## Why this exists
@@ -117,27 +118,33 @@ repo-as-database pattern as `data/edit-log.jsonl` and `data/issues.jsonl`:
 no database to disagree with the repository, backed up by every clone,
 readable by anyone, revertable with one git command.
 
+As shipped, in `data/observations/YYYY-MM.jsonl`:
+
 ```json
-{"at":"2026-09-21T17:00Z","site":"hovs-hallar-nv","obs":{"ms":9.2,"deg":322,"gust":12.1,"src":"holfuy","measuredAt":"2026-09-21T17:19:58Z"},
- "fc":[{"lead":1,"ms":6.1,"deg":316},{"lead":6,"ms":5.8,"deg":312},{"lead":24,"ms":4.9,"deg":305}]}
+{"at":"2026-09-21T19:22:22.420Z","site":"alabodarna","hour":"2026-09-21T19:00Z",
+ "obs":{"ms":4.44,"deg":338,"gust":6.11,"src":"holfuy","ageConfirmed":false},
+ "fc":{"ms":6,"deg":326,"gust":9.7}}
 ```
 
-The `fc` entries are **forecasts issued now for hours 1/6/24/48 ahead**, not
-the forecast for this hour. Storing them at issue time is what makes lead-time
-skill computable later without keeping whole forecast files. The join happens
-at analysis time: the observation for hour H meets the forecast that was made
-for H at each lead.
+**Not a time series.** Each row is a complete, self-contained
+forecast-versus-measurement pair, which is what makes the whole thing free:
+the only scheduler available at no cost (GitHub Actions cron) honours a
+schedule at two-to-five-hour intervals, and for a month's or a year's bias
+figure it does not matter *when* the samples landed, only how many there
+are. Roughly 7-12 runs a day across 17 stations is several hundred rows a
+month per site — far more than a bias figure needs, and about 1 MB a year.
 
-Volume: 17 sites × 24 h × 365 ≈ 150k rows a year, roughly 15 MB. Fine, but
-worth compacting per month once it is proven.
+Lead-time forecasts (+6/+24/+48 h) were deliberately left out — see chunk B.
+The question actually asked needs only the concurrent pair, and carrying
+four forecasts per row would double the file for an answer nobody is waiting
+on.
 
-**Open decision for chunk A:** where the file lives between writes. The
-weather cron runs every five minutes and publishes to Pages without
-committing, so an hourly commit would mean ~4,400 commits a year.
-Recommendation: hold the current day in the published artifact (the same
-"fetch last published, fall back to it" pattern the forecast collector
-already uses) and commit one row-block per day. Durable, and quiet in git
-history.
+**Storage, settled:** straight into the repository, like the edit log and
+the suggestion list. No Cloudflare KV, no Worker cron, no VPS, no monthly
+bill. `observations.yml` commits only when rows were added, and `pages.yml`
+ignores the path so recording never triggers a site deploy — the default
+`GITHUB_TOKEN` cannot trigger workflows anyway, and the ignore keeps that
+true if it is ever changed to a PAT.
 
 ## What it cannot do
 

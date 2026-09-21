@@ -589,37 +589,58 @@ overwritten on the next run. Keeping them turns "is the code correct" into
 until rows exist, and every day without the recorder is a day of
 measurements permanently gone. Do A first even if the rest waits months.
 
-## Chunk A — Record observations and forward forecasts
+## Chunk A — Record observations beside the forecast — DONE 2026-09-21
 
-Deliverables:
-- One appended row per site per hour: the anemometer reading, plus the
-  forecasts issued now for +1/+6/+24/+48 h (see the document for the shape
-  and why forecasts are stored at issue time).
-- Decide and document where rows live between writes - the recommendation
-  is the current day in the published artifact, one commit per day, to
-  avoid ~4,400 commits a year.
-- Dedupe: the cron runs every five minutes, the record is hourly.
-- Sites with no station record nothing, rather than a null that later reads
-  as a measurement.
+**Scope cut before building, on the owner's instruction**: "I don't care
+about 5 min accuracy... lets not get crazy but lets build something that
+doesn't force us into VPS territory and monthly bills but yet is actually
+building knowledge."
 
-Definition of done:
-- `npm run typecheck`, `npm run lint`, `npm test`, production build pass.
-- The file visibly grows across two real cron runs on the deployed site.
-- A malformed or missing reading is skipped without taking the run down.
-- No change to anything a visitor sees.
+Two things changed as a result, and both made it smaller:
 
-## Chunk B — Join, and prove the join
+- **Forward forecasts (+1/+6/+24/+48 h) are NOT recorded.** Lead-time skill
+  is a later question; the one that was asked is whether the forecast is
+  true to the local reading, which needs only the concurrent pair. Moved to
+  chunk B.
+- **No hourly guarantee, and no infrastructure to buy one.** The GitHub
+  cron honours a schedule at two-to-five-hour intervals, so the row format
+  is deliberately not a time series: each row is a self-contained
+  forecast-versus-measurement pair, and irregular sampling costs volume and
+  nothing else. No Worker cron, no KV namespace, no VPS, no monthly bill.
 
-Deliverables:
-- A pure function pairing each observation hour with the forecasts that
-  were issued for it, by lead time.
-- Tests over synthetic rows, including gaps, duplicate hours, a station
-  that went silent for a day, and DST boundaries - this is timestamp code
-  in a repo that has already shipped one timezone bug, so it gets the
-  scrutiny that deserves.
+Shipped:
+- `src/domain/observationLog.ts` - row shape, pairing, serialisation,
+  dedupe. Pure and tested (18 tests).
+- `scripts/record-observations.ts` / `npm run record:observations`.
+- `.github/workflows/observations.yml` - every two hours as asked, which is
+  roughly 7-12 runs a day in practice; commits only when rows were added.
+- `pages.yml` ignores `data/observations/**`, so recording never triggers a
+  site deploy.
+- First real run: 17 rows, and a second immediate run correctly added none.
 
-Definition of done: as chunk A, plus the join tested against a hand-built
-week of rows whose correct answer is known by construction.
+Decisions worth keeping:
+- A row exists only when **both** sides have a real wind speed. Half a pair
+  verifies nothing and would put nulls in a file whose only purpose is
+  arithmetic.
+- Observations are rejected if more than 30 minutes from the hour they
+  would describe - the same tolerance a two-hour offset once hid inside, so
+  here it is deliberate and has a test.
+- `ageConfirmed` travels on every row. Holfuy's widget publishes a bare
+  HH:MM with no date, so the analysis must be able to exclude those rather
+  than treat a download time as a measurement time.
+- Dedupe by (site, hour): two runs landing in the same hour must not let the
+  scheduler, rather than the weather, decide which hours carry more weight.
+
+## Chunk B — Lead time (deferred, not needed for the first answer)
+
+Records forecasts at issue time (+6/+24/+48 h) so skill can be split by how
+far ahead it was predicted - "day 1 is good here, day 3 is not". Moved out
+of chunk A because the question actually asked needs only the concurrent
+pair, and this doubles the row size for an answer nobody is waiting on.
+
+Worth doing once there is a month of chunk A data and the bias picture is
+established. Needs the same scrutiny chunk A's pairing got: this is
+timestamp code in a repo that has already shipped one timezone bug.
 
 ## Chunk C — The numbers
 
