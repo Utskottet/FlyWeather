@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T08:59:58.806Z",
+  "generatedAt": "2026-09-21T09:01:58.138Z",
   "providers": [
     {
       "id": "smhi",
@@ -571,8 +571,8 @@
       "provider": "holfuy",
       "id": "425",
       "name": "Örebro - N Ässundet",
-      "lat": 59.28378,
-      "lon": 15.41029,
+      "lat": 59.28804,
+      "lon": 15.40667,
       "stationType": "Holfuy",
       "locationSource": "Holfuy public station page",
       "gustAvailable": true,
@@ -4373,8 +4373,8 @@
       "provider": "viva",
       "id": "23",
       "name": "Oden",
-      "lat": 78.2346,
-      "lon": 15.6062,
+      "lat": 75.1054,
+      "lon": 15.7859,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
