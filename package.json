@@ -16,6 +16,7 @@
     "collect:live": "tsx scripts/collect-live.ts",
     "stations:build": "tsx scripts/build-station-catalogue.ts",
     "collect:forecasts": "tsx scripts/collect-forecasts.ts",
+    "check:forecast": "tsx scripts/check-forecast.ts",
     "copy:maplibre-worker": "tsx scripts/copy-maplibre-worker.ts",
     "worker:dev": "wrangler dev --config editor-worker/wrangler.toml",
     "worker:deploy": "wrangler deploy --config editor-worker/wrangler.toml",

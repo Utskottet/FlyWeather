@@ -1,5 +1,6 @@
 import type { GridPoint } from "../../domain/windGrid.ts";
 import { MODEL_HEIGHTS_M, type SiteForecast, type WindGridPoint } from "../../domain/types.ts";
+import { POINT_FORECAST_HEIGHTS_M } from "../../domain/forecastSource.ts";
 
 /**
  * Consumes FlyWeather-Soaring's real Wind v1 product (§ Simplify DMI Wind
@@ -217,31 +218,47 @@ function nearestDmiHourIndex(dmiHours: string[], targetIso: string): number | nu
 }
 
 /**
- * Re-indexes a DMI-sampled WindGridPoint's per-hour wind onto an existing
- * SiteForecast's own hours array (nearest-match within tolerance, see
- * WIND_TIME_TOLERANCE_MINUTES) - keeps the SiteForecast's existing hours/
- * weatherKind/windGustMs untouched (still Open-Meteo - DMI's product
- * doesn't publish those), replacing only `.heights` with DMI's real wind
- * wherever DMI's own real horizon (~60h from its model run) actually
- * covers that hour. Hours beyond DMI's horizon are left null - an honest
- * reflection of DMI's real (shorter than Open-Meteo's 5-day) horizon,
- * never silently backfilled from Open-Meteo once DMI is the active wind
- * source for a site, per this project's "never silently substitute a
- * different source's data" discipline.
+ * Fills a site forecast's upper-air heights from the regional wind raster,
+ * leaving the point forecast's own surface wind alone.
+ *
+ * This function used to replace `.heights` wholesale - every height, 10 m
+ * included - which quietly substituted a coarse regional sample for the
+ * site-specific forecast that had just been fetched, while `sourceId`,
+ * the gust and the weather symbol all stayed behind from Open-Meteo. The
+ * result was one object whose fields disagreed about where they came
+ * from, and a surface wind that was systematically too low on exactly the
+ * coastal sites this app exists to serve. The full measurement is in
+ * docs/FORECAST_INTEGRITY.md.
+ *
+ * Now the split is explicit: POINT_FORECAST_HEIGHTS_M stay exactly as the
+ * point forecast produced them, and only the heights the point forecast
+ * cannot answer are taken from the raster. Hours the raster does not
+ * reach are left null at those upper heights - an honest reflection of a
+ * shorter horizon, never backfilled from another source. At the surface
+ * there is nothing to leave null, because the point forecast covers its
+ * own full horizon; that alone restored the 50% of hours this function
+ * used to blank out.
+ *
+ * `hours`, `weatherKind` and `windGustMs` are untouched, as before.
  */
 export function mergeDmiWindIntoSiteForecast(forecast: SiteForecast, dmiPoint: WindGridPoint, dmiHours: string[]): SiteForecast {
+  // One lookup per hour rather than one per hour per height per field -
+  // the answer cannot differ between heights, and computing it once makes
+  // it impossible for them to disagree.
+  const indexForHour = forecast.hours.map((hourIso) => nearestDmiHourIndex(dmiHours, hourIso));
+
   const heights = Object.fromEntries(
     MODEL_HEIGHTS_M.map((h) => {
-      const windDirectionDeg = forecast.hours.map((hourIso) => {
-        const idx = nearestDmiHourIndex(dmiHours, hourIso);
-        return idx === null ? null : dmiPoint.heights[h].windDirectionDeg[idx];
-      });
-      const windSpeedMs = forecast.hours.map((hourIso) => {
-        const idx = nearestDmiHourIndex(dmiHours, hourIso);
-        return idx === null ? null : dmiPoint.heights[h].windSpeedMs[idx];
-      });
-      return [h, { windDirectionDeg, windSpeedMs }];
+      if (POINT_FORECAST_HEIGHTS_M.includes(h)) return [h, forecast.heights[h]];
+      return [
+        h,
+        {
+          windDirectionDeg: indexForHour.map((idx) => (idx === null ? null : dmiPoint.heights[h].windDirectionDeg[idx])),
+          windSpeedMs: indexForHour.map((idx) => (idx === null ? null : dmiPoint.heights[h].windSpeedMs[idx])),
+        },
+      ];
     }),
   ) as SiteForecast["heights"];
+
   return { ...forecast, heights };
 }

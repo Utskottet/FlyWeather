@@ -153,6 +153,13 @@ slider (which drives per-site forecasts). Extending it to the slider
 would multiply the request volume by ~73x per grid point for no proven
 need yet - noted as a possible future enhancement, not built now.
 
+**2026-09-21 correction — this grid was never suitable as a site forecast.**
+It was later also sampled at each site's own coordinates and used to
+overwrite the per-site Open-Meteo point forecast, including the 10 m wind
+that decides a site's flyability colour. At ~17 km resolution that reads
+1-3 m/s low on coastal cliffs and flips verdicts in both directions. Full
+investigation, cure and test plan: `docs/FORECAST_INTEGRITY.md`.
+
 ## flyxc data source research (Block 16, research only — no implementation)
 
 Per the user's flyxc.app-inspired feature requests (live pilot tracking,

@@ -265,4 +265,38 @@ describe("SiteSheet - reading it at a glance", () => {
     const { queryByTestId } = renderSheet(locatedSite({ group: null }));
     expect(queryByTestId("site-sheet-group")).toBeNull();
   });
+  /**
+   * The provenance half of docs/FORECAST_INTEGRITY.md. A value the
+   * coarse regional grid produced must never appear under Open-Meteo's
+   * name - that mislabelling is what kept a wrong surface wind
+   * unnoticed for months.
+   */
+  it("names the point forecast at surface and the regional grid above it", () => {
+    const { getByTestId } = render(
+      <SiteSheet
+        site={locatedSite()}
+        sample={baseSample}
+        effectiveHeightM={10}
+        heightSupported={true}
+        isNight={false}
+        onClose={() => {}}
+      />,
+    );
+    expect(getByTestId("site-sheet-source").textContent).toContain("Open-Meteo");
+
+    cleanup();
+    const { getByTestId: aloft } = render(
+      <SiteSheet
+        site={locatedSite()}
+        sample={baseSample}
+        effectiveHeightM={350}
+        heightSupported={true}
+        isNight={false}
+        onClose={() => {}}
+      />,
+    );
+    const label = aloft("site-sheet-source").textContent ?? "";
+    expect(label).toContain("Regional model");
+    expect(label).not.toContain("Open-Meteo");
+  });
 });

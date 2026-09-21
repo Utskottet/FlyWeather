@@ -3,6 +3,7 @@ import { SiteHistorySection } from "./SiteHistorySection.tsx";
 import { evaluateFlyability } from "../../domain/flyability.ts";
 import { degreesToCompass16 } from "../../domain/direction.ts";
 import { providerLabel } from "../../providers/live/resolver.ts";
+import { forecastSourceLabel } from "../../domain/forecastSource.ts";
 import { proximityAdvice } from "../../domain/stations.ts";
 import { navigationUrl } from "../../domain/parking.ts";
 import { stationPageUrl } from "../../domain/stationLinks.ts";
@@ -38,9 +39,6 @@ export interface SiteSheetProps {
   onEdit?: () => void;
 }
 
-/** The height Open-Meteo's own surface series is quoted at. */
-const SURFACE_HEIGHT_M = 10;
-
 /**
  * Where this reading came from, and at what height.
  *
@@ -49,6 +47,13 @@ const SURFACE_HEIGHT_M = 10;
  * to be surface wind. The sheet already receives the height the sample
  * actually reflects - effectiveHeightM, which interpolateWindAtHeight
  * clamps to real data rather than extrapolating - so it says that instead.
+ *
+ * The model is now named the same way, for the same reason. A site
+ * forecast is two sources stitched at 100 m: Open-Meteo's point forecast
+ * for this site's own coordinates below, the coarse regional grid above.
+ * Saying "Open-Meteo forecast" over a value the regional grid produced is
+ * how the error in docs/FORECAST_INTEGRITY.md stayed invisible for
+ * months, so the label asks domain/forecastSource.ts rather than assuming.
  *
  * Worth keeping rather than deleting because the first half is the part
  * that matters: whether you are looking at a measurement or at a model.
@@ -64,9 +69,7 @@ function sourceLabel(sample: SiteSheetSample, effectiveHeightM: number | null): 
     const age = sample.ageMinutes !== null ? `${Math.round(sample.ageMinutes)} min ago` : "age unknown";
     return `${source} (${sample.freshness}, ${age})`;
   }
-  if (effectiveHeightM === null) return "Open-Meteo forecast";
-  const height = effectiveHeightM === SURFACE_HEIGHT_M ? "10 m surface wind" : `${effectiveHeightM} m AGL`;
-  return `Open-Meteo forecast (${height})`;
+  return forecastSourceLabel(effectiveHeightM);
 }
 
 /**

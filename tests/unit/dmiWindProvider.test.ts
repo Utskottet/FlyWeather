@@ -176,23 +176,41 @@ describe("fetchDmiWindGrid", () => {
 });
 
 describe("mergeDmiWindIntoSiteForecast", () => {
+  // The point forecast's own numbers. Deliberately distinct per height so
+  // a test can tell "kept" from "coincidentally equal".
+  const POINT_SPEED = 5.3;
+  const POINT_DIR = 312;
+  const POINT_GUST = 8.1;
+  // What the coarse regional raster says at the same place and time -
+  // clearly different, in both speed and bearing, from the point forecast.
+  const RASTER_SPEED = 2.7;
+  const RASTER_DIR = 200;
+
   function baseForecast(hours: string[]): SiteForecast {
     return {
-      siteId: "hammar",
+      siteId: "hovs-hallar-nv",
       sourceId: "open-meteo",
       hours,
       heights: Object.fromEntries(
-        MODEL_HEIGHTS_M.map((h) => [h, { windDirectionDeg: hours.map(() => 999), windSpeedMs: hours.map(() => 999) }]),
+        MODEL_HEIGHTS_M.map((h) => [
+          h,
+          {
+            // Open-Meteo answers at 10 m and 100 m and null-fills the rest,
+            // which is what makes the raster necessary above 100 m.
+            windDirectionDeg: hours.map(() => (h === 10 || h === 100 ? POINT_DIR : null)),
+            windSpeedMs: hours.map(() => (h === 10 || h === 100 ? POINT_SPEED : null)),
+          },
+        ]),
       ) as SiteForecast["heights"],
-      windGustMs: hours.map(() => 5),
+      windGustMs: hours.map(() => POINT_GUST),
       weatherKind: hours.map(() => "clear"),
     };
   }
 
-  function dmiPoint(dmiHours: string[], speed = 7, dir = 200): WindGridPoint {
+  function dmiPoint(dmiHours: string[], speed = RASTER_SPEED, dir = RASTER_DIR): WindGridPoint {
     return {
-      lat: 55.7,
-      lon: 13.2,
+      lat: 56.4,
+      lon: 12.6,
       heights: Object.fromEntries(
         MODEL_HEIGHTS_M.map((h) => [h, { windDirectionDeg: dmiHours.map(() => dir), windSpeedMs: dmiHours.map(() => speed) }]),
       ) as WindGridPoint["heights"],
@@ -206,40 +224,68 @@ describe("mergeDmiWindIntoSiteForecast", () => {
     expect(merged.hours).toBe(forecast.hours);
     expect(merged.weatherKind).toBe(forecast.weatherKind);
     expect(merged.windGustMs).toBe(forecast.windGustMs);
-    expect(merged.sourceId).toBe("open-meteo");
   });
 
-  it("replaces heights with DMI values for hours DMI covers", () => {
+  /**
+   * The regression test for docs/FORECAST_INTEGRITY.md.
+   *
+   * A coarse regional sample of 2.7 m/s from a different bearing must not
+   * be able to displace a 5.3 m/s point forecast at the height that
+   * decides whether a site shows green. Before this was fixed it did
+   * exactly that, on every site, silently.
+   */
+  it("never lets the raster displace the point forecast at 10 m or 100 m", () => {
     const hours = ["2026-08-23T07:00:00Z", "2026-08-23T08:00:00Z"];
     const forecast = baseForecast(hours);
-    const merged = mergeDmiWindIntoSiteForecast(forecast, dmiPoint(hours, 7, 200), hours);
-    expect(merged.heights[10].windSpeedMs).toEqual([7, 7]);
-    expect(merged.heights[10].windDirectionDeg).toEqual([200, 200]);
+    const merged = mergeDmiWindIntoSiteForecast(forecast, dmiPoint(hours, RASTER_SPEED, RASTER_DIR), hours);
+
+    for (const h of [10, 100] as const) {
+      expect(merged.heights[h].windSpeedMs).toEqual([POINT_SPEED, POINT_SPEED]);
+      expect(merged.heights[h].windDirectionDeg).toEqual([POINT_DIR, POINT_DIR]);
+      expect(merged.heights[h].windSpeedMs).not.toContain(RASTER_SPEED);
+      expect(merged.heights[h].windDirectionDeg).not.toContain(RASTER_DIR);
+    }
+    // The gust travels with the surface wind it belongs to.
+    expect(merged.windGustMs).toEqual([POINT_GUST, POINT_GUST]);
   });
 
-  it("leaves null (never falls back to the old Open-Meteo value) for hours beyond DMI's real horizon", () => {
-    const forecastHours = ["2026-08-23T07:00:00Z", "2026-08-25T20:00:00Z"]; // second hour way past a ~60h DMI horizon
-    const dmiHours = ["2026-08-23T07:00:00Z"]; // DMI only covers the first hour
-    const forecast = baseForecast(forecastHours);
-    const merged = mergeDmiWindIntoSiteForecast(forecast, dmiPoint(dmiHours, 7, 200), dmiHours);
-    expect(merged.heights[10].windSpeedMs[0]).toBe(7); // covered hour: real DMI value
-    expect(merged.heights[10].windSpeedMs[1]).toBeNull(); // uncovered hour: honest null, not the old 999 fixture value
-    expect(merged.heights[10].windDirectionDeg[1]).toBeNull();
+  it("fills the heights the point forecast cannot answer from the raster", () => {
+    const hours = ["2026-08-23T07:00:00Z", "2026-08-23T08:00:00Z"];
+    const merged = mergeDmiWindIntoSiteForecast(baseForecast(hours), dmiPoint(hours), hours);
+    for (const h of MODEL_HEIGHTS_M.filter((x) => x !== 10 && x !== 100)) {
+      expect(merged.heights[h].windSpeedMs).toEqual([RASTER_SPEED, RASTER_SPEED]);
+      expect(merged.heights[h].windDirectionDeg).toEqual([RASTER_DIR, RASTER_DIR]);
+    }
+  });
+
+  it("leaves upper heights null beyond the raster's horizon while the surface stays complete", () => {
+    // The raster's horizon is shorter than the point forecast's. This used
+    // to blank the surface too, deleting half of every site's forecast.
+    const forecastHours = ["2026-08-23T07:00:00Z", "2026-08-25T20:00:00Z"];
+    const dmiHours = ["2026-08-23T07:00:00Z"];
+    const merged = mergeDmiWindIntoSiteForecast(baseForecast(forecastHours), dmiPoint(dmiHours), dmiHours);
+
+    expect(merged.heights[150].windSpeedMs[0]).toBe(RASTER_SPEED);
+    expect(merged.heights[150].windSpeedMs[1]).toBeNull();
+    expect(merged.heights[150].windDirectionDeg[1]).toBeNull();
+
+    expect(merged.heights[10].windSpeedMs).toEqual([POINT_SPEED, POINT_SPEED]);
+    expect(merged.heights[10].windSpeedMs).not.toContain(null);
   });
 
   it("matches within the tolerance window despite a small real timestamp offset", () => {
     const forecastHours = ["2026-08-23T07:00:00Z"];
     const dmiHours = ["2026-08-23T07:10:00Z"]; // 10 minutes off - within WIND_TIME_TOLERANCE_MINUTES
-    const forecast = baseForecast(forecastHours);
-    const merged = mergeDmiWindIntoSiteForecast(forecast, dmiPoint(dmiHours, 9, 100), dmiHours);
-    expect(merged.heights[10].windSpeedMs[0]).toBe(9);
+    const merged = mergeDmiWindIntoSiteForecast(baseForecast(forecastHours), dmiPoint(dmiHours, 9, 100), dmiHours);
+    expect(merged.heights[150].windSpeedMs[0]).toBe(9);
   });
 
   it("does not match an hour far outside the tolerance window", () => {
     const forecastHours = ["2026-08-23T07:00:00Z"];
     const dmiHours = ["2026-08-23T09:00:00Z"]; // 2 hours off - outside tolerance
-    const forecast = baseForecast(forecastHours);
-    const merged = mergeDmiWindIntoSiteForecast(forecast, dmiPoint(dmiHours, 9, 100), dmiHours);
-    expect(merged.heights[10].windSpeedMs[0]).toBeNull();
+    const merged = mergeDmiWindIntoSiteForecast(baseForecast(forecastHours), dmiPoint(dmiHours, 9, 100), dmiHours);
+    expect(merged.heights[150].windSpeedMs[0]).toBeNull();
+    // ...and the surface is still the point forecast's own, not a null.
+    expect(merged.heights[10].windSpeedMs[0]).toBe(POINT_SPEED);
   });
 });

@@ -187,13 +187,21 @@ async function main() {
     }
   }
 
-  // --- DMI wind (primary source; enhances whatever Open-Meteo baseline was already produced above) ---
+  // --- Regional wind raster: the animated field, plus upper-air only ---
   // Sampled at the grid points AND every site's own coordinates in a single
   // batch (one manifest fetch + one set of per-hour file fetches shared
-  // across both consumers), so the animated field and every site rose come
-  // from the exact same DMI run/valid-times/heights (§56 "share HEIGHT/
-  // run/time"). A DMI failure here leaves gridFile/sitesFile exactly as
+  // across both consumers), so the animated field and each site's upper-air
+  // profile come from the same run/valid-times/heights (§56 "share HEIGHT/
+  // run/time"). A failure here leaves gridFile/sitesFile exactly as
   // Open-Meteo already produced them above - never a partial/mixed write.
+  //
+  // It is NOT the source of any site's surface wind. The raster is a
+  // ~17 km grid built to draw a field across a map; it was previously
+  // allowed to overwrite the per-site point forecast at every height,
+  // 10 m included, which read 1-3 m/s low on coastal sites and showed
+  // green on hours the real forecast called red. mergeDmiWindIntoSiteForecast
+  // now fills only the heights Open-Meteo's point API cannot answer.
+  // See docs/FORECAST_INTEGRITY.md.
   try {
     if (!gridBounds) throw new Error("no grid bounds available (no located sites and no DMI manifest)");
     const gridQueryPoints = buildWindGrid(gridBounds, GRID_RESOLUTION);
@@ -216,10 +224,13 @@ async function main() {
     sitesFile = { ...sitesFile, sites: upgradedSites };
 
     console.log(
-      `collect-forecasts: DMI wind v1 active - upgraded grid (${dmiGridPoints.length} points x ${dmiHours.length} hours) and ${sitesWithForecast.length} site forecasts`,
+      `collect-forecasts: wind raster active - grid (${dmiGridPoints.length} points x ${dmiHours.length} hours) ` +
+        `and upper-air profiles for ${sitesWithForecast.length} sites; surface wind stays Open-Meteo point forecast`,
     );
   } catch (err) {
-    console.warn(`collect-forecasts: DMI wind unavailable, staying on Open-Meteo - ${(err as Error).message}`);
+    console.warn(
+      `collect-forecasts: wind raster unavailable - site surface wind is unaffected, upper-air heights stay null - ${(err as Error).message}`,
+    );
   }
 
   mkdirSync(dirname(sitesOutPath), { recursive: true });

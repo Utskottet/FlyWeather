@@ -1,0 +1,792 @@
+{
+  "checkedAt": "2026-09-21T15:57:02.644Z",
+  "generatedAt": "2026-09-21T13:50:52.598Z",
+  "totals": {
+    "sites": 20,
+    "hoursCompared": 1100,
+    "hoursMissing": 340,
+    "verdictSame": 926,
+    "tooOptimistic": 66,
+    "tooOptimisticFlyable": 21,
+    "tooPessimistic": 108,
+    "meanSignedDeltaMs": -0.21880422536701066
+  },
+  "reports": [
+    {
+      "siteId": "dk-dokkedal",
+      "name": "Dokkedal",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 0.9410839861333641,
+      "maxDeltaMs": 2.390406373716366,
+      "meanSignedDeltaMs": 0.6836483823442415,
+      "verdictSame": 54,
+      "tooOptimistic": 0,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 1,
+      "worstOptimistic": []
+    },
+    {
+      "siteId": "dk-lokken",
+      "name": "Løkken",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 1.1276450970488219,
+      "maxDeltaMs": 2.606057533790739,
+      "meanSignedDeltaMs": -1.1224587842999707,
+      "verdictSame": 42,
+      "tooOptimistic": 4,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 9,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-22T02:00",
+          "ours": {
+            "speedMs": 0.48204511897963837,
+            "directionDeg": 280.1417077479963,
+            "gustMs": 2.6
+          },
+          "theirs": {
+            "speedMs": 2.2,
+            "directionDeg": 86,
+            "gustMs": 3.6
+          },
+          "deltaMs": -1.7179548810203618,
+          "ourState": "orange",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-22T01:00",
+          "ours": {
+            "speedMs": 0.7946456830425466,
+            "directionDeg": 288.3324624728162,
+            "gustMs": 2.6
+          },
+          "theirs": {
+            "speedMs": 2.4,
+            "directionDeg": 82,
+            "gustMs": 3.8
+          },
+          "deltaMs": -1.6053543169574533,
+          "ourState": "orange",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-22T00:00",
+          "ours": {
+            "speedMs": 1.3131453020918182,
+            "directionDeg": 298.40431674454913,
+            "gustMs": 3
+          },
+          "theirs": {
+            "speedMs": 2.1,
+            "directionDeg": 59,
+            "gustMs": 3.9
+          },
+          "deltaMs": -0.7868546979081819,
+          "ourState": "orange",
+          "theirState": "red"
+        }
+      ]
+    },
+    {
+      "siteId": "valfjall-ulebergshamn",
+      "name": "Valfjäll Ulebergshamn",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 0.6083154422594238,
+      "maxDeltaMs": 2.1457350210372472,
+      "meanSignedDeltaMs": 0.2514302377471801,
+      "verdictSame": 36,
+      "tooOptimistic": 9,
+      "tooOptimisticFlyable": 5,
+      "tooPessimistic": 10,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-23T16:00",
+          "ours": {
+            "speedMs": 3.4118308201122574,
+            "directionDeg": 214.43506622320376,
+            "gustMs": 7.7
+          },
+          "theirs": {
+            "speedMs": 4.2,
+            "directionDeg": 201,
+            "gustMs": 7.1
+          },
+          "deltaMs": -0.7881691798877428,
+          "ourState": "orange",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-23T15:00",
+          "ours": {
+            "speedMs": 3.9441691165895403,
+            "directionDeg": 222.95960668801678,
+            "gustMs": 6.6
+          },
+          "theirs": {
+            "speedMs": 4.5,
+            "directionDeg": 206,
+            "gustMs": 7.2
+          },
+          "deltaMs": -0.5558308834104597,
+          "ourState": "orange",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-21T20:00",
+          "ours": {
+            "speedMs": 2.960184776502569,
+            "directionDeg": 325.4838664417855,
+            "gustMs": 4.6
+          },
+          "theirs": {
+            "speedMs": 3,
+            "directionDeg": 23,
+            "gustMs": 4.9
+          },
+          "deltaMs": -0.03981522349743116,
+          "ourState": "orange",
+          "theirState": "red"
+        }
+      ]
+    },
+    {
+      "siteId": "kevik",
+      "name": "Kevik",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 0.8303969717110464,
+      "maxDeltaMs": 3.511366154796355,
+      "meanSignedDeltaMs": -0.493179126109626,
+      "verdictSame": 55,
+      "tooOptimistic": 0,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 0,
+      "worstOptimistic": []
+    },
+    {
+      "siteId": "grimeton",
+      "name": "Grimeton",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 0.8260116553454361,
+      "maxDeltaMs": 1.879643618051579,
+      "meanSignedDeltaMs": 0.016562806240204533,
+      "verdictSame": 20,
+      "tooOptimistic": 10,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 25,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-22T09:00",
+          "ours": {
+            "speedMs": 1.2549798142776705,
+            "directionDeg": 23.2068203455014,
+            "gustMs": 4.7
+          },
+          "theirs": {
+            "speedMs": 2.2,
+            "directionDeg": 11,
+            "gustMs": 4.9
+          },
+          "deltaMs": -0.9450201857223297,
+          "ourState": "orange",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-22T10:00",
+          "ours": {
+            "speedMs": 1.4902628210510294,
+            "directionDeg": 32.72476574851038,
+            "gustMs": 5.3
+          },
+          "theirs": {
+            "speedMs": 2.3,
+            "directionDeg": 0,
+            "gustMs": 5.5
+          },
+          "deltaMs": -0.8097371789489705,
+          "ourState": "orange",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-22T11:00",
+          "ours": {
+            "speedMs": 1.1975065080569491,
+            "directionDeg": 29.301455474941292,
+            "gustMs": 5.3
+          },
+          "theirs": {
+            "speedMs": 2,
+            "directionDeg": 3,
+            "gustMs": 5.4
+          },
+          "deltaMs": -0.8024934919430509,
+          "ourState": "orange",
+          "theirState": "red"
+        }
+      ]
+    },
+    {
+      "siteId": "alabodarna",
+      "name": "Ålabodarna",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 0.8519544494067964,
+      "maxDeltaMs": 3.924923637381065,
+      "meanSignedDeltaMs": -0.5092035546463465,
+      "verdictSame": 55,
+      "tooOptimistic": 0,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 0,
+      "worstOptimistic": []
+    },
+    {
+      "siteId": "arild",
+      "name": "Arild",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 1.2210454501460328,
+      "maxDeltaMs": 3.0127623930955894,
+      "meanSignedDeltaMs": 0.5671223403485033,
+      "verdictSame": 52,
+      "tooOptimistic": 2,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 1,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-22T05:00",
+          "ours": {
+            "speedMs": 4.040774058082438,
+            "directionDeg": 359.912971652813,
+            "gustMs": 4
+          },
+          "theirs": {
+            "speedMs": 2.8,
+            "directionDeg": 6,
+            "gustMs": 4.3
+          },
+          "deltaMs": 1.2407740580824385,
+          "ourState": "green",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-22T04:00",
+          "ours": {
+            "speedMs": 4.74792895884837,
+            "directionDeg": 350.734524012558,
+            "gustMs": 3.8
+          },
+          "theirs": {
+            "speedMs": 2.5,
+            "directionDeg": 7,
+            "gustMs": 3.8
+          },
+          "deltaMs": 2.2479289588483704,
+          "ourState": "orange",
+          "theirState": "red"
+        }
+      ]
+    },
+    {
+      "siteId": "barseback",
+      "name": "Barsebäck camping",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 1.263621099416847,
+      "maxDeltaMs": 3.8197938650966625,
+      "meanSignedDeltaMs": -1.210598470318701,
+      "verdictSame": 46,
+      "tooOptimistic": 2,
+      "tooOptimisticFlyable": 2,
+      "tooPessimistic": 7,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-21T16:00",
+          "ours": {
+            "speedMs": 6.375738231020663,
+            "directionDeg": 313.28635904978944,
+            "gustMs": 12.5
+          },
+          "theirs": {
+            "speedMs": 8.7,
+            "directionDeg": 313,
+            "gustMs": 13.5
+          },
+          "deltaMs": -2.324261768979336,
+          "ourState": "green",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-21T17:00",
+          "ours": {
+            "speedMs": 6.162875278693014,
+            "directionDeg": 311.41264101573915,
+            "gustMs": 12.1
+          },
+          "theirs": {
+            "speedMs": 8.1,
+            "directionDeg": 313,
+            "gustMs": 13
+          },
+          "deltaMs": -1.9371247213069855,
+          "ourState": "green",
+          "theirState": "red"
+        }
+      ]
+    },
+    {
+      "siteId": "hammar",
+      "name": "Hammars backar",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 1.1241175976309952,
+      "maxDeltaMs": 3.70516054372076,
+      "meanSignedDeltaMs": -0.2891312422790273,
+      "verdictSame": 52,
+      "tooOptimistic": 0,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 3,
+      "worstOptimistic": []
+    },
+    {
+      "siteId": "hoganas",
+      "name": "Höganäs Strandbaden",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 1.437845388247333,
+      "maxDeltaMs": 4.291262677858837,
+      "meanSignedDeltaMs": 0.6686301905151258,
+      "verdictSame": 49,
+      "tooOptimistic": 2,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 4,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-22T01:00",
+          "ours": {
+            "speedMs": 6.671734906840323,
+            "directionDeg": 323.3345532606196,
+            "gustMs": 4.4
+          },
+          "theirs": {
+            "speedMs": 2.5,
+            "directionDeg": 3,
+            "gustMs": 3.9
+          },
+          "deltaMs": 4.171734906840323,
+          "ourState": "orange",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-22T00:00",
+          "ours": {
+            "speedMs": 6.891262677858837,
+            "directionDeg": 321.06210887364637,
+            "gustMs": 5.6
+          },
+          "theirs": {
+            "speedMs": 2.6,
+            "directionDeg": 359,
+            "gustMs": 4.8
+          },
+          "deltaMs": 4.291262677858837,
+          "ourState": "orange",
+          "theirState": "red"
+        }
+      ]
+    },
+    {
+      "siteId": "hovs-hallar-nv",
+      "name": "Hovs Hallar NV",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 1.1549688743800077,
+      "maxDeltaMs": 3.2123366098512114,
+      "meanSignedDeltaMs": -0.8958054111320802,
+      "verdictSame": 40,
+      "tooOptimistic": 8,
+      "tooOptimisticFlyable": 8,
+      "tooPessimistic": 7,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-21T20:00",
+          "ours": {
+            "speedMs": 6.067210748707681,
+            "directionDeg": 318.68435635868883,
+            "gustMs": 12.7
+          },
+          "theirs": {
+            "speedMs": 7.8,
+            "directionDeg": 338,
+            "gustMs": 11.7
+          },
+          "deltaMs": -1.7327892512923189,
+          "ourState": "green",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-21T21:00",
+          "ours": {
+            "speedMs": 5.630786965598803,
+            "directionDeg": 319.57388673483626,
+            "gustMs": 11.9
+          },
+          "theirs": {
+            "speedMs": 7.2,
+            "directionDeg": 348,
+            "gustMs": 11.2
+          },
+          "deltaMs": -1.569213034401197,
+          "ourState": "green",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-21T19:00",
+          "ours": {
+            "speedMs": 6.71852242599952,
+            "directionDeg": 314.7055819730648,
+            "gustMs": 13
+          },
+          "theirs": {
+            "speedMs": 8.1,
+            "directionDeg": 329,
+            "gustMs": 12
+          },
+          "deltaMs": -1.3814775740004794,
+          "ourState": "green",
+          "theirState": "red"
+        }
+      ]
+    },
+    {
+      "siteId": "kaseberga-s",
+      "name": "Kåseberga Sydhanget",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 1.1926593783163784,
+      "maxDeltaMs": 2.635405280048635,
+      "meanSignedDeltaMs": 0.20065840352928485,
+      "verdictSame": 54,
+      "tooOptimistic": 0,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 1,
+      "worstOptimistic": []
+    },
+    {
+      "siteId": "lenacken",
+      "name": "Lenacken",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 1.3462731130502132,
+      "maxDeltaMs": 2.990299490611002,
+      "meanSignedDeltaMs": -1.3288809771149441,
+      "verdictSame": 55,
+      "tooOptimistic": 0,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 0,
+      "worstOptimistic": []
+    },
+    {
+      "siteId": "molle",
+      "name": "Kullaberg / Mölle",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 1.114320143210403,
+      "maxDeltaMs": 2.9656064707421326,
+      "meanSignedDeltaMs": 0.3998561780651046,
+      "verdictSame": 53,
+      "tooOptimistic": 0,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 2,
+      "worstOptimistic": []
+    },
+    {
+      "siteId": "ravlunda",
+      "name": "Ravlunda / Haväng",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 0.5272115180846387,
+      "maxDeltaMs": 1.732337124802652,
+      "meanSignedDeltaMs": -0.10589031892279742,
+      "verdictSame": 51,
+      "tooOptimistic": 0,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 4,
+      "worstOptimistic": []
+    },
+    {
+      "siteId": "ven",
+      "name": "Ven",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 1.4395834065732793,
+      "maxDeltaMs": 3.5335473596309965,
+      "meanSignedDeltaMs": -1.3081847695521855,
+      "verdictSame": 46,
+      "tooOptimistic": 1,
+      "tooOptimisticFlyable": 1,
+      "tooPessimistic": 8,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-21T19:00",
+          "ours": {
+            "speedMs": 4.809693304674649,
+            "directionDeg": 306.62529797404187,
+            "gustMs": 10.2
+          },
+          "theirs": {
+            "speedMs": 5.4,
+            "directionDeg": 311,
+            "gustMs": 8.8
+          },
+          "deltaMs": -0.5903066953253511,
+          "ourState": "orange",
+          "theirState": "red"
+        }
+      ]
+    },
+    {
+      "siteId": "fagerhult-fedinge-flygfalt",
+      "name": "Fagerhult Fedinge Flygfält ",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 0.4982953232151875,
+      "maxDeltaMs": 1.353903671868756,
+      "meanSignedDeltaMs": 0.23518984086680003,
+      "verdictSame": 39,
+      "tooOptimistic": 11,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 5,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-23T11:00",
+          "ours": {
+            "speedMs": 0.5916357562936186,
+            "directionDeg": 181.07174077949972,
+            "gustMs": 4.1
+          },
+          "theirs": {
+            "speedMs": 1.4,
+            "directionDeg": 274,
+            "gustMs": 4.1
+          },
+          "deltaMs": -0.8083642437063813,
+          "ourState": "green",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-23T09:00",
+          "ours": {
+            "speedMs": 0.39668654110050405,
+            "directionDeg": 134.6979426169779,
+            "gustMs": 1.9
+          },
+          "theirs": {
+            "speedMs": 1.2,
+            "directionDeg": 261,
+            "gustMs": 3.3
+          },
+          "deltaMs": -0.8033134588994959,
+          "ourState": "green",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-23T10:00",
+          "ours": {
+            "speedMs": 0.603305398940486,
+            "directionDeg": 150.71165714212668,
+            "gustMs": 3.3
+          },
+          "theirs": {
+            "speedMs": 1.4,
+            "directionDeg": 282,
+            "gustMs": 4
+          },
+          "deltaMs": -0.796694601059514,
+          "ourState": "green",
+          "theirState": "red"
+        }
+      ]
+    },
+    {
+      "siteId": "klamby",
+      "name": "Klamby",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 0.44326831922101095,
+      "maxDeltaMs": 1.3143166310663819,
+      "meanSignedDeltaMs": -0.20514135149359816,
+      "verdictSame": 36,
+      "tooOptimistic": 6,
+      "tooOptimisticFlyable": 3,
+      "tooPessimistic": 13,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-21T20:00",
+          "ours": {
+            "speedMs": 4.088485668184673,
+            "directionDeg": 311.0322168955729,
+            "gustMs": 7.1
+          },
+          "theirs": {
+            "speedMs": 3.8,
+            "directionDeg": 318,
+            "gustMs": 6.8
+          },
+          "deltaMs": 0.28848566818467347,
+          "ourState": "green",
+          "theirState": "orange"
+        },
+        {
+          "hourIso": "2026-09-21T22:00",
+          "ours": {
+            "speedMs": 3.661799923020029,
+            "directionDeg": 320.9947428831713,
+            "gustMs": 5.4
+          },
+          "theirs": {
+            "speedMs": 3.2,
+            "directionDeg": 332,
+            "gustMs": 6
+          },
+          "deltaMs": 0.4617999230200289,
+          "ourState": "orange",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-21T23:00",
+          "ours": {
+            "speedMs": 3.5539868269147545,
+            "directionDeg": 326.1225735164958,
+            "gustMs": 4.7
+          },
+          "theirs": {
+            "speedMs": 3,
+            "directionDeg": 335,
+            "gustMs": 5.4
+          },
+          "deltaMs": 0.5539868269147545,
+          "ourState": "orange",
+          "theirState": "red"
+        }
+      ]
+    },
+    {
+      "siteId": "test-knackebrodhult",
+      "name": "Test Knäckebrödhult",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 0.497749271209989,
+      "maxDeltaMs": 1.7721478203853804,
+      "meanSignedDeltaMs": 0.16309284455367082,
+      "verdictSame": 50,
+      "tooOptimistic": 1,
+      "tooOptimisticFlyable": 0,
+      "tooPessimistic": 4,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-23T17:00",
+          "ours": {
+            "speedMs": 0.8996905075240469,
+            "directionDeg": 197.0283172099093,
+            "gustMs": 3.6
+          },
+          "theirs": {
+            "speedMs": 0.6,
+            "directionDeg": 169,
+            "gustMs": 2.1
+          },
+          "deltaMs": 0.2996905075240469,
+          "ourState": "orange",
+          "theirState": "red"
+        }
+      ]
+    },
+    {
+      "siteId": "rortangen-n",
+      "name": "Rörtången N",
+      "hoursPublished": 120,
+      "hoursMissing": 17,
+      "hoursCompared": 55,
+      "meanDeltaMs": 0.6438725692959164,
+      "maxDeltaMs": 1.7167778418132738,
+      "meanSignedDeltaMs": -0.09380172568105208,
+      "verdictSame": 41,
+      "tooOptimistic": 10,
+      "tooOptimisticFlyable": 2,
+      "tooPessimistic": 4,
+      "worstOptimistic": [
+        {
+          "hourIso": "2026-09-21T16:00",
+          "ours": {
+            "speedMs": 5.719165253653153,
+            "directionDeg": 322.11172606747857,
+            "gustMs": 9.4
+          },
+          "theirs": {
+            "speedMs": 5.5,
+            "directionDeg": 317,
+            "gustMs": 9.1
+          },
+          "deltaMs": 0.21916525365315298,
+          "ourState": "orange",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-21T17:00",
+          "ours": {
+            "speedMs": 4.961700106179713,
+            "directionDeg": 318.8418584185998,
+            "gustMs": 9.2
+          },
+          "theirs": {
+            "speedMs": 4.3,
+            "directionDeg": 312,
+            "gustMs": 8.9
+          },
+          "deltaMs": 0.6617001061797128,
+          "ourState": "orange",
+          "theirState": "red"
+        },
+        {
+          "hourIso": "2026-09-22T06:00",
+          "ours": {
+            "speedMs": 1.1763884706119159,
+            "directionDeg": 34.64475361208537,
+            "gustMs": 1.5
+          },
+          "theirs": {
+            "speedMs": 0.9,
+            "directionDeg": 95,
+            "gustMs": 1.5
+          },
+          "deltaMs": 0.27638847061191585,
+          "ourState": "orange",
+          "theirState": "red"
+        }
+      ]
+    }
+  ]
+}

@@ -101,6 +101,15 @@ export type ModelHeightM = (typeof MODEL_HEIGHTS_M)[number];
  */
 export interface SiteForecast {
   siteId: string;
+  /**
+   * The source of the SURFACE series - `heights[10]`, the gust and the
+   * weather symbol. It is not a label for the whole object: heights above
+   * POINT_FORECAST_HEIGHTS_M come from the regional grid instead, and
+   * domain/forecastSource.ts is what answers "which model produced the
+   * number at this height". This field claiming to describe everything,
+   * while the regional grid quietly replaced every height beneath it, is
+   * the bug recorded in docs/FORECAST_INTEGRITY.md.
+   */
   sourceId: string;
   hours: string[]; // ISO-8601 UTC, one entry per hourly step
   heights: Record<ModelHeightM, HeightWindSeries>;

@@ -382,7 +382,15 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
     // mode - not merely because the slider happens to be back at index 0.
     const liveSample: WindSample | null =
       altitudeM === SURFACE_ALTITUDE_M && isLiveMode && liveEntry?.status === "ok" ? liveEntry.sample : null;
-    const sample = selectEffectiveSample(isLiveMode, liveSample, point, new Date(), freshMinutes, staleMinutes);
+    const sample = selectEffectiveSample(
+      isLiveMode,
+      liveSample,
+      point,
+      new Date(),
+      freshMinutes,
+      staleMinutes,
+      point.effectiveHeightM,
+    );
     const effectiveHeightM = sample.sourceKind === "observation" ? SURFACE_HEIGHT_M : point.effectiveHeightM;
     return { sample, weatherKind: point.weatherKind, effectiveHeightM, heightSupported: point.heightSupported };
   }

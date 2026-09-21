@@ -6,6 +6,13 @@ whenever something comes up mid-work that's worth remembering but not
 worth stopping for. Prune freely - this is a list to revisit, not a
 commitment log.
 
+- **Forecast source mix (SAFETY, diagnosed 2026-09-21, not yet fixed)**: the
+  regional wind raster overwrites each site's Open-Meteo point forecast at
+  every height, 10 m included, while provenance still claims Open-Meteo.
+  Reads 1-3 m/s low on coastal cliffs and flips flyability verdicts both
+  ways. See `docs/FORECAST_INTEGRITY.md` for evidence, cure and tests.
+  Follow-up recorded there: Open-Meteo pressure levels to remove the
+  100/150 m source seam.
 - **Wind rose weather-icon placement for multi-sector sites**: `weatherAngleFor`
   in `WindRose.tsx` picks the preset farthest from the *nearest* sector's
   midpoint (maximin) - correct for typical cases, but not exhaustively

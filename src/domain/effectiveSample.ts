@@ -1,5 +1,6 @@
 import { classifyFreshness, type Freshness } from "./freshness.ts";
 import type { WindSample } from "./types.ts";
+import { forecastSourceAt } from "./forecastSource.ts";
 
 export interface ForecastPoint {
   windDirectionDeg: number | null;
@@ -38,6 +39,14 @@ export function selectEffectiveSample(
   now: Date,
   freshMinutes: number,
   staleMinutes: number,
+  /**
+   * The height the forecast value reflects, which is what decides
+   * whether it came from the point forecast or the regional grid.
+   * Required rather than optional: this field used to be the constant
+   * "open-meteo" whatever produced the number, and a default here would
+   * let that quietly come back. See domain/forecastSource.ts.
+   */
+  forecastHeightM: number | null,
 ): EffectiveSample {
   if (isNow && liveSample) {
     const freshness = classifyFreshness(liveSample.timestamp, now, freshMinutes, staleMinutes);
@@ -62,7 +71,7 @@ export function selectEffectiveSample(
     windSpeedMs: forecastPoint.windSpeedMs,
     windGustMs: forecastPoint.windGustMs,
     sourceKind: "forecast",
-    sourceId: "open-meteo",
+    sourceId: forecastSourceAt(forecastHeightM),
     freshness: null,
     ageMinutes: null,
   };
