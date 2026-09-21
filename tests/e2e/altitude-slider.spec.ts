@@ -31,7 +31,7 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await expect(startButton).toBeEnabled();
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
     await expect(altitudeLabel).toHaveText("Surface");
-    await expect(page.getByTestId("source-status-sites")).toContainText("CURRENT WIND");
+    await expect(page.getByTestId("source-status-sites")).toContainText("LIVE WIND READING");
     await expect(page.getByTestId("source-status-wind")).toContainText("FORECAST");
 
     await mapSettled(page);
@@ -64,7 +64,7 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await startButton.click();
     await expect(altitudeLabel).toHaveText("Surface");
     await expect(heightFact).toContainText("10 m AGL");
-    await expect(page.getByTestId("source-status-sites")).toContainText("CURRENT WIND");
+    await expect(page.getByTestId("source-status-sites")).toContainText("LIVE WIND READING");
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -116,7 +116,7 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
 
     await startButton.click();
     await expect(page.getByTestId("time-slider-label")).toContainText("NOW");
-    await expect(page.getByTestId("source-status-sites")).toContainText("CURRENT WIND");
+    await expect(page.getByTestId("source-status-sites")).toContainText("LIVE WIND READING");
     await expect(startButton).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -138,7 +138,7 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await page.getByTestId("start-button").click();
 
     await expect(page.getByTestId("time-slider-label")).toContainText("NOW");
-    await expect(page.getByTestId("source-status-sites")).toContainText("CURRENT WIND");
+    await expect(page.getByTestId("source-status-sites")).toContainText("LIVE WIND READING");
     // Map-tool preferences are untouched by START (§ item 14) - only
     // forecast navigation (time/height/site-source) resets.
     await expect(page.getByTestId("rasp-toggle")).toHaveAttribute("aria-pressed", "true");

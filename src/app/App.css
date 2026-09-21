@@ -398,16 +398,25 @@
    way back to live mode. Never disabled (§ FlyWeather Mobile UI
    Correction): unpressed means "tap to return to START", pressed/blue
    (.active) means "you are at START now". */
+/* Two lines, so "Live wind reading" fits without stretching the bottom
+   bar sideways - the phrase has to earn its place next to the timeline,
+   and on a phone there is no horizontal room to spend. */
 .start-button {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1px;
   border: none;
   background: var(--live);
   color: #08240f;
   border-radius: var(--panel-radius-sm);
   min-height: 52px;
-  padding: 0 20px;
+  padding: 0 14px;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 13px;
+  line-height: 1.15;
   flex-shrink: 0;
   box-shadow: 0 0 0 1px rgba(52, 199, 89, 0.5), 0 2px 10px rgba(52, 199, 89, 0.25);
   cursor: pointer;
@@ -1949,6 +1958,16 @@
 
 .station-finder-footer p {
   margin: 0 0 4px;
+}
+
+/* Says what a station is FOR, above the button that finds one. Two
+   people added sites without realising this section is what makes a
+   site's wind real rather than predicted. */
+.station-fields-lead {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
 }
 
 .station-fields-actions {

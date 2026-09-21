@@ -20,11 +20,19 @@ export interface SourceStatusProps {
  * CURRENT WIND/FORECAST are always in the DOM text, the LED is a redundant
  * cue.
  *
- * "SITES CURRENT WIND" rather than the earlier "SITES MEASURED": measured
- * is what the data IS, current wind is what it TELLS you, and the second
- * is what someone opening a wind app is actually asking. Same for dropping
- * "FIELD" from the wind badge - it named the internal product rather than
- * the thing on screen.
+ * "SITES: LIVE WIND READING" rather than "SITES CURRENT WIND", which was
+ * itself a replacement for "SITES MEASURED".
+ *
+ * The middle version was right that measured is what the data IS while
+ * current wind is what it TELLS you - and wrong about the cost. "Current
+ * wind" is a claim about TIME, and a forecast also claims to tell you the
+ * wind right now, so the phrase never distinguished the two things a
+ * pilot needs distinguished. Two people who added sites turned out not to
+ * know that this number comes off a real anemometer. "Reading" is the
+ * word that carries that: a reading is something an instrument did.
+ *
+ * Forecast mode is deliberately untouched - "SITES FORECAST" was never
+ * the confusing half.
  */
 export function SourceStatus({ sitesMeasured, raspOn, windUpdated, raspUpdated }: SourceStatusProps) {
   return (
@@ -34,7 +42,7 @@ export function SourceStatus({ sitesMeasured, raspOn, windUpdated, raspUpdated }
         data-testid="source-status-sites"
       >
         <span className="source-status-led" aria-hidden="true" />
-        SITES {sitesMeasured ? "CURRENT WIND" : "FORECAST"}
+        SITES{sitesMeasured ? ": LIVE WIND READING" : " FORECAST"}
       </span>
       <span className="source-status-item led-forecast" data-testid="source-status-wind">
         <span className="source-status-led" aria-hidden="true" />

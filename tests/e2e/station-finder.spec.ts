@@ -169,3 +169,21 @@ test("parking is authored by pasting whatever Google Maps gave you", async ({ pa
   // Nothing is published by any of this.
   await expect(page.locator('[data-testid="site-editor"]')).toBeVisible();
 });
+
+test("the station finder is reachable without ticking anything first", async ({ page }) => {
+  // Two people added sites without ever discovering it, because it sat
+  // behind a "does this site have a station?" checkbox that suggested
+  // nothing was there.
+  await openKlambyEditor(page);
+  await expect(page.getByTestId("find-station")).toBeVisible();
+  await expect(page.locator('[data-testid="station-enabled"]')).toHaveCount(0);
+  // And it says what a station is for, rather than assuming that is obvious.
+  await expect(page.locator(".station-fields-lead")).toContainText(/verklig|real reading/);
+});
+
+test("the station section sits above parking - it matters more", async ({ page }) => {
+  await openKlambyEditor(page);
+  const station = (await page.getByTestId("find-station").boundingBox())!;
+  const parking = (await page.getByTestId("parking-location").boundingBox())!;
+  expect(station.y).toBeLessThan(parking.y);
+});

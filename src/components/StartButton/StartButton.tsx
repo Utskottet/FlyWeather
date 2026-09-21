@@ -23,9 +23,12 @@ export interface StartButtonProps {
  * button - dimmed, not disabled - since pressing it is exactly how you
  * come back.
  *
- * Labelled "Current Wind" (§ Startvind UX Direction) rather than the
- * earlier "LIVE SITE" - same control, same semantics, the reference
- * image's wording.
+ * Labelled "Live wind reading", over two lines. It has been "LIVE SITE"
+ * and then "Current Wind"; both said WHEN the number is from and neither
+ * said WHERE it came from, and a forecast also claims to be the wind
+ * right now. Two people who added sites did not realise this button
+ * shows a real anemometer's output - "reading" is the word that fixes
+ * that, because a reading is something an instrument did.
  */
 export function StartButton({ isLiveMode, onStart }: StartButtonProps) {
   return (
@@ -36,7 +39,8 @@ export function StartButton({ isLiveMode, onStart }: StartButtonProps) {
       aria-pressed={isLiveMode}
       data-testid="start-button"
     >
-      Current Wind
+      <span>Live wind</span>
+      <span>reading</span>
     </button>
   );
 }

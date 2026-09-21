@@ -84,15 +84,18 @@ export function SiteForm({ value, onChange }: Props) {
 
       <WindFields value={value.wind} onChange={(wind) => onChange({ ...value, wind })} />
 
-      <ParkingFields value={value.parking} onChange={(parking) => onChange({ ...value, parking })} />
-
-      {/* The finder searches from the site's own coordinates, so they
-          are handed down rather than asked for a second time. */}
+      {/* Directly under Wind, and above Parking: a station is what makes
+          a site's wind real, and two people who added sites missed it
+          entirely when it sat further down. The finder searches from the
+          site's own coordinates, so they are handed down rather than
+          asked for a second time. */}
       <StationFields
         value={value.station}
         onChange={(station) => onChange({ ...value, station })}
         point={{ lat: value.coordinates.lat, lon: value.coordinates.lon }}
       />
+
+      <ParkingFields value={value.parking} onChange={(parking) => onChange({ ...value, parking })} />
 
       <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
         <label style={{ flex: 1 }}>

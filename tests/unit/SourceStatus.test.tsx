@@ -5,9 +5,12 @@ import { SourceStatus } from "../../src/components/SourceStatus/SourceStatus.tsx
 afterEach(cleanup);
 
 describe("SourceStatus (§ FlyWeather GUI Reorganization + Coherent Height Wind items 15-18)", () => {
-  it("shows SITES as CURRENT WIND at START, and the wind field as FORECAST even then - the field is always model data", () => {
+  it("shows SITES as a LIVE WIND READING at START, and the wind field as FORECAST even then - the field is always model data", () => {
     const { getByTestId, queryByTestId } = render(<SourceStatus sitesMeasured={true} raspOn={false} />);
-    expect(getByTestId("source-status-sites").textContent).toContain("CURRENT WIND");
+    // "Reading" is the word that says an instrument produced this. The
+    // earlier "CURRENT WIND" was a claim about time, which a forecast
+    // makes too.
+    expect(getByTestId("source-status-sites").textContent).toContain("LIVE WIND READING");
     expect(getByTestId("source-status-wind").textContent).toContain("FORECAST");
     expect(queryByTestId("source-status-rasp")).toBeNull();
   });
@@ -26,7 +29,7 @@ describe("SourceStatus (§ FlyWeather GUI Reorganization + Coherent Height Wind 
   it("never relies on color alone - the words are always present in the DOM text", () => {
     const { getByTestId } = render(<SourceStatus sitesMeasured={true} raspOn={true} />);
     for (const testId of ["source-status-sites", "source-status-wind", "source-status-rasp"]) {
-      expect(getByTestId(testId).textContent).toMatch(/CURRENT WIND|FORECAST/);
+      expect(getByTestId(testId).textContent).toMatch(/LIVE WIND READING|FORECAST/);
     }
   });
 

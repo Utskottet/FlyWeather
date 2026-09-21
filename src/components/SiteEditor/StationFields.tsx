@@ -33,6 +33,13 @@ const EMPTY: Station = { verified: false, provider: "" };
  * What the editor CAN establish is whether the feed answers, so it offers
  * exactly that: a connection check that shows the actual wind, its
  * measured age, and nothing dressed up as more than it is.
+ *
+ * There is no "does this site have a station?" tickbox any more. It hid
+ * the one button that explains the whole feature behind an act of faith:
+ * two people added sites without ever discovering the finder, because
+ * nothing on screen suggested there was anything behind the checkbox.
+ * "Find nearby station" is now simply there, and choosing a station is
+ * what creates one.
  */
 export function StationFields({ value, onChange, point }: Props) {
   const [finderOpen, setFinderOpen] = useState(false);
@@ -54,60 +61,68 @@ export function StationFields({ value, onChange, point }: Props) {
 
   return (
     <fieldset style={{ marginBottom: 16 }}>
-      <legend>
-        <label>
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={(e) => onChange(e.target.checked ? { ...EMPTY } : undefined)}
-            data-testid="station-enabled"
-          />{" "}
-          Live station{" "}
-        </label>
-      </legend>
+      <legend>Live station</legend>
+
+      <p className="station-fields-lead">
+        En vindmätare i närheten gör platsens vind verklig i stället för en prognos.
+        <br />
+        <span className="editor-intro-en">
+          A nearby wind meter makes this site show a real reading instead of a forecast.
+        </span>
+      </p>
+
+      <div className="station-fields-actions">
+        <button
+          type="button"
+          onClick={() => setFinderOpen(true)}
+          className="station-fields-find"
+          data-testid="find-station"
+        >
+          Find nearby station
+        </button>
+        {enabled && (
+          <>
+            <button type="button" onClick={() => void check()} data-testid="check-station">
+              Check connection
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onChange(undefined);
+                setPreview(null);
+              }}
+              data-testid="remove-station"
+            >
+              Remove
+            </button>
+          </>
+        )}
+      </div>
+
+      {finderOpen && (
+        <StationFinder
+          point={point}
+          onClose={() => setFinderOpen(false)}
+          onUse={(selection) => {
+            // Fills the fields and stops. Saving stays a separate,
+            // explicit act - and verified is not among the fields it is
+            // allowed to touch. Choosing a station is also what brings
+            // one into existence; there is no box to tick first.
+            set({
+              name: selection.name,
+              provider: selection.provider,
+              station_id: selection.station_id,
+              url: selection.url,
+              note: selection.note,
+            });
+            setFinderOpen(false);
+            setPreview(null);
+          }}
+        />
+      )}
 
       {enabled && (
         <>
-          <div className="station-fields-actions">
-            <button
-              type="button"
-              onClick={() => setFinderOpen(true)}
-              className="station-fields-find"
-              data-testid="find-station"
-            >
-              Find nearby station
-            </button>
-            <button
-              type="button"
-              onClick={() => void check()}
-              disabled={v.provider.trim() === ""}
-              data-testid="check-station"
-            >
-              Check connection
-            </button>
-          </div>
-
-          {finderOpen && (
-            <StationFinder
-              point={point}
-              onClose={() => setFinderOpen(false)}
-              onUse={(selection) => {
-                // Fills the fields and stops. Saving stays a separate,
-                // explicit act - and verified is not among the fields it
-                // is allowed to touch.
-                set({
-                  name: selection.name,
-                  provider: selection.provider,
-                  station_id: selection.station_id,
-                  url: selection.url,
-                  note: selection.note,
-                });
-                setFinderOpen(false);
-                setPreview(null);
-              }}
-            />
-          )}
-
           {v.provider.trim() !== "" && !providerKnown && (
             <p className="station-fields-warning" data-testid="station-provider-unknown">
               Nothing can read the provider "{v.provider}" - this station will stay silent. Known providers:{" "}
