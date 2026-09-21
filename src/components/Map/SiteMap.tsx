@@ -12,7 +12,6 @@ import { interpolateWindAtHeight } from "../../domain/heightInterpolation.ts";
 import { WindRose } from "../WindRose/index.ts";
 import { AppHeader } from "../AppHeader/AppHeader.tsx";
 import { BottomBar } from "../BottomBar/BottomBar.tsx";
-import { SiteModeToggle, type SiteMode } from "../SiteModeToggle/SiteModeToggle.tsx";
 import { MapLayersPanel } from "../MapLayersPanel/MapLayersPanel.tsx";
 import { ParameterLegend } from "../ParameterLegend/ParameterLegend.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
@@ -211,7 +210,6 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
   // only pressing START does. See handleStart/handleTimeChange/
   // handleAltitudeChange below.
   const [isLiveMode, setIsLiveMode] = useState(true);
-  const [siteMode, setSiteMode] = useState<SiteMode>("soaring");
   const [issuesOpen, setIssuesOpen] = useState(false);
   // The open editor, or null. Only ever set from the admin-gated buttons,
   // so a normal visitor can never reach it - see app/adminMode.ts.
@@ -279,24 +277,21 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
     setAltitudeM(SURFACE_ALTITUDE_M);
   }
 
-  // Bounds/fit are computed from the full located set regardless of
-  // siteMode, same "no map jump" principle as altitude/roads - switching
-  // to Winch never recenters the map just because that set is currently
-  // empty (neither winch-brandstad nor winch-urasa has a usable
-  // coordinate yet - see docs/SITE_DATA_AUDIT.md).
   const bounds = useMemo(() => computeSiteBounds(sites), [sites]);
-  const visibleSites = useMemo(
-    () => sites.filter((s) => (siteMode === "winch" ? s.group === "winch" : s.group !== "winch")),
-    [sites, siteMode],
-  );
+  // Every site, ridge and winch together.
+  //
+  // They used to be two mutually exclusive sets behind a toggle, which
+  // meant a pilot deciding where to fly could only ever see half the
+  // options at once - and had to already know which kind of site they
+  // wanted before the map would show it. That is backwards: the wind
+  // decides, not the pilot. The group is still on every site and is said
+  // plainly in its panel; it is just no longer a filter on the map.
+  const visibleSites = sites;
   // Roads/contours/place-names are no longer offered as a toggle; the map
   // is the relief style it has always shown by default. buildTopoStyle
   // stays in mapStyles.ts so bringing any of it back is a style decision
   // rather than a rewrite.
   const mapStyle = useMemo(() => buildStyleForRoads(false), []);
-  // Scoped to visibleSites, not the full sites list, so a selection from
-  // the other siteMode's marker set doesn't leave a stale sheet open
-  // for a site no longer shown on the map.
   const selectedSite = visibleSites.find((s) => s.id === selectedId) ?? null;
   const { forecastsBySiteId, hours, generatedAt: forecastGeneratedAt } = useSiteForecasts(sites);
   const { data: liveData } = useLiveData();
@@ -421,7 +416,6 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
             selector and one organised map-layer panel, in that order. This
             replaces the old top-left vertical tool stack entirely. */}
         <div className="map-controls" data-testid="map-controls">
-          <SiteModeToggle mode={siteMode} onChange={setSiteMode} />
           <MapLayersPanel
             showAirspace={showAirspace}
             onAirspaceChange={setShowAirspace}
@@ -432,11 +426,6 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
             availableRaspParams={availableRaspParams}
           />
         </div>
-      {visibleSites.length === 0 && (
-        <div className="site-mode-empty-notice">
-          No winch sites with a verified location yet - see docs/SITE_DATA_AUDIT.md.
-        </div>
-      )}
       {isForecastDataStale && (
         // Says how old, rather than "may be stale". By the time this
         // appears something really has stopped, and "4 h" tells you

@@ -211,3 +211,58 @@ describe("SiteSheet - the station line", () => {
     expect(rose.getAttribute("aria-label")).toMatch(/wind direction/);
   });
 });
+
+describe("SiteSheet - reading it at a glance", () => {
+  function renderSheet(site: LocatedSite, sample: React.ComponentProps<typeof SiteSheet>["sample"] = baseSample) {
+    return render(
+      <SiteSheet
+        site={site}
+        sample={sample}
+        effectiveHeightM={10}
+        heightSupported={true}
+        isNight={false}
+        onClose={() => {}}
+      />,
+    );
+  }
+
+  it("marks a measurement green and a model blue", () => {
+    // The same two colours the header's status LEDs use for the same
+    // distinction, so the app says it one way rather than two.
+    const { getByTestId: live } = renderSheet(locatedSite(), {
+      ...baseSample,
+      sourceKind: "observation" as const,
+      sourceId: "holfuy",
+    });
+    expect(live("site-sheet-source").className).toContain("live");
+
+    cleanup();
+    const { getByTestId: forecast } = renderSheet(locatedSite());
+    expect(forecast("site-sheet-source").className).toContain("forecast");
+  });
+
+  it("still says LIVE and FORECAST in words - the colour is a second cue", () => {
+    const { getByTestId } = renderSheet(locatedSite(), {
+      ...baseSample,
+      sourceKind: "observation" as const,
+      sourceId: "holfuy",
+    });
+    expect(getByTestId("site-sheet-source").textContent).toContain("LIVE");
+  });
+
+  it("says whether a site is ridge or winch, beside the rose", () => {
+    // It used to be a filter on the map. Deciding where to fly means
+    // looking at the wind, not picking a category first.
+    const { getByTestId } = renderSheet(locatedSite({ group: "winch" }));
+    expect(getByTestId("site-sheet-group").textContent).toBe("Winch");
+
+    cleanup();
+    const { getByTestId: ridge } = renderSheet(locatedSite({ group: "ridge" }));
+    expect(ridge("site-sheet-group").textContent).toBe("Ridge");
+  });
+
+  it("says nothing for an archived site whose group is unknown", () => {
+    const { queryByTestId } = renderSheet(locatedSite({ group: null }));
+    expect(queryByTestId("site-sheet-group")).toBeNull();
+  });
+});

@@ -15,8 +15,6 @@ async function openKlambyEditor(page: import("@playwright/test").Page) {
   await page.goto("/");
   await page.waitForSelector('[data-testid="site-map"]', { timeout: 60_000 });
   await mapSettled(page);
-  // Klamby is a winch site, so it is not among the markers on load.
-  await page.getByTestId("site-mode-winch").click();
   await page.getByTestId("site-marker-klamby").first().click({ force: true });
   await page.getByTestId("site-sheet-edit").click();
   await page.waitForSelector('[data-testid="site-editor"]');

@@ -109,12 +109,12 @@ test.describe("phone layout", () => {
     await expect(page.locator('[data-testid="rasp-toggle"]')).not.toContainText("▸");
   });
 
-  test("the controls sit in one row, not a column down the corner", async ({ page }) => {
-    const mode = (await page.locator(".site-mode-toggle").first().boundingBox())!;
+  test("the layer switches sit clear of the map's top-left corner", async ({ page }) => {
+    // The Ridge/Winch toggle used to share this row; with it gone the
+    // layer switches are all that is up here, and they must still not
+    // creep down the corner you drag the map from.
     const layers = (await page.locator('[data-testid="map-layers-panel"]').boundingBox())!;
-    // Same row: their vertical centres are close, rather than stacked.
-    expect(Math.abs(mode.y - layers.y)).toBeLessThan(20);
-    expect(layers.x).toBeGreaterThan(mode.x);
+    expect(layers.height).toBeLessThan(60);
   });
 
   test("the stale-data notice does not sit on top of the controls", async ({ page }) => {

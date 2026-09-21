@@ -251,75 +251,20 @@
 /* Ridge/Winch: a segmented control, deliberately not styled like the
    layer switches - it selects which sites exist on the map, which is a
    different kind of decision from turning an overlay on. */
-.map-controls .site-mode-toggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: 100%;
-  border-radius: var(--panel-radius);
-  border: var(--panel-border);
-  box-shadow: var(--panel-shadow);
-  background: var(--panel-bg);
-  padding: 4px;
-  gap: 4px;
-}
 
-.map-controls .site-mode-toggle button {
-  min-height: 36px;
-  border-radius: var(--panel-radius-sm);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-}
 
-.map-controls .site-mode-toggle button.active {
-  background: var(--accent);
-  color: var(--on-accent);
-}
 
 /* ---------------------------------------------------------------------
    Toggles.
    --------------------------------------------------------------------- */
-.site-mode-toggle,
-.rasp-param-selector {
-  display: inline-flex;
-  background: var(--surface-raised);
-  border-radius: 999px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
-}
 
-.site-mode-toggle button,
-.rasp-param-selector button {
-  position: relative;
-  border: none;
-  background: transparent;
-  min-height: 32px;
-  padding: 0 10px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text);
-  cursor: pointer;
-}
 
 /* Hit-area technique (§ FlyWeather Mobile UI Correction item 1): the
    visible pill stays compact, but an invisible pseudo-element pads the
    actual tap target a few px on every side without affecting layout size -
    a plain absolutely-positioned element contributes nothing to flex
    sizing. */
-.site-mode-toggle button::before,
-.rasp-param-selector button::before,
-.press-toggle-pill::before,
-.start-button::before {
-  content: "";
-  position: absolute;
-  inset: -4px;
-}
 
-.site-mode-toggle button.active,
-.rasp-param-selector button.active {
-  background: var(--accent-strong);
-  color: var(--on-accent);
-}
 
 .rasp-param-selector button:disabled {
   color: var(--text-muted);
@@ -572,22 +517,6 @@
   box-shadow: 0 0 0 3px rgba(77, 155, 245, 0.22);
 }
 
-.site-mode-empty-notice {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 500;
-  background: var(--panel-bg-translucent);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  padding: 12px 16px;
-  max-width: 280px;
-  text-align: center;
-  font-size: 14px;
-  color: var(--text);
-  pointer-events: none;
-}
 
 /* Top centre, not top left: the control column owns the left corner now. */
 .data-staleness-notice {
@@ -986,12 +915,43 @@
 .site-sheet-source-badge {
   display: inline-block;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text);
   background: var(--surface-sunken);
   border-radius: 4px;
   padding: 4px 8px;
   margin: 4px 0 8px;
+}
+
+/* Green for a measurement, blue for a model - the same two colours the
+   header's status LEDs use for the same distinction, so the app says it
+   one way rather than two. Tinted background with a full-strength text
+   colour rather than a solid fill: at this size a solid green block
+   beside a green rose would read as part of the rose. */
+.site-sheet-source-badge.live {
+  background: rgba(52, 199, 89, 0.16);
+  color: var(--live-strong);
+}
+
+.site-sheet-source-badge.forecast {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* Ridge or winch, beside the rose. Quiet: it is a fact about the site,
+   not a verdict about the wind, and the rose is what the eye should
+   reach first. */
+.site-sheet-group {
+  align-self: flex-start;
+  margin-top: 8px;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .site-sheet-restrictions {
@@ -1481,10 +1441,6 @@
 
   /* Ridge/Winch is a choice and needs its two labels readable; the layer
      switches are independent toggles and shrink to fit whatever is left. */
-  .map-controls .site-mode-toggle {
-    flex: 0 0 auto;
-    width: 150px;
-  }
 
   /* The layer switches take whatever width is left beside Ridge/Winch. */
   .map-layers-panel {
@@ -1498,10 +1454,6 @@
     font-size: 12px;
   }
 
-  .map-controls .site-mode-toggle button {
-    min-height: 32px;
-    font-size: 13px;
-  }
 
   .press-toggle-switch {
     padding: 8px 0;

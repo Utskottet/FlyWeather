@@ -27,8 +27,8 @@ const located = catalogue.sites.filter(
 );
 
 const WINCH_SITE_COUNT = located.filter((s) => s.group === "winch").length;
-/** The map opens in soaring mode, so the winch strips are not among the markers on load. */
-const LOCATED_SITE_COUNT = located.length - WINCH_SITE_COUNT;
+/** Every located site is shown at once now - there is no mode to filter them. */
+const LOCATED_SITE_COUNT = located.length;
 
 test.describe("Site map", () => {
   test("renders the map with one marker per located enabled site", async ({ page }) => {
@@ -57,41 +57,18 @@ test.describe("Site map", () => {
     await expect(sheet).not.toBeVisible();
   });
 
-  test("Soaring/Winch site-mode toggle switches the displayed set without a map jump", async ({ page }) => {
+  test("one map shows every site, ridge and winch together", async ({ page }) => {
+    // They used to be two mutually exclusive sets behind a Ridge/Winch
+    // toggle, so a pilot deciding where to fly saw half the options and
+    // had to know which kind they wanted before the map would show it.
+    // The wind decides that, not the pilot.
     await page.goto("/");
-    const markers = page.locator(".rose-marker-icon");
-    await expect(markers).toHaveCount(LOCATED_SITE_COUNT);
-    await page.waitForFunction(() => window.__flyweatherMapLoaded === true, { timeout: 10_000 });
+    await expect(page.locator(".rose-marker-icon")).toHaveCount(LOCATED_SITE_COUNT);
+    await expect(page.locator(".site-mode-toggle")).toHaveCount(0);
 
-    const viewBefore = await page.evaluate(() => {
-      const m = window.__flyweatherMap!;
-      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
-    });
-
-    // Winch mode shows only the winch group - one located site (Klamby)
-    // today, the rest still without a verified coordinate (see
-    // docs/SITE_DATA_AUDIT.md), so this checks that the displayed set
-    // really changes rather than that it is empty. The empty-state notice
-    // only appears when the selected group has no located site at all.
-    await page.getByTestId("site-mode-winch").click();
-    await expect(markers).toHaveCount(WINCH_SITE_COUNT);
-    await expect(page.locator(".site-mode-empty-notice")).not.toBeVisible();
-
-    const viewDuringWinch = await page.evaluate(() => {
-      const m = window.__flyweatherMap!;
-      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
-    });
-    expect(viewDuringWinch).toEqual(viewBefore);
-
-    await page.getByTestId("site-mode-soaring").click();
-    await expect(markers).toHaveCount(LOCATED_SITE_COUNT);
-    await expect(page.locator(".site-mode-empty-notice")).not.toBeVisible();
-
-    const viewAfter = await page.evaluate(() => {
-      const m = window.__flyweatherMap!;
-      return { center: m.getCenter(), zoom: m.getZoom(), bearing: m.getBearing() };
-    });
-    expect(viewAfter).toEqual(viewBefore);
+    // Winch sites are among them, not behind a switch.
+    expect(WINCH_SITE_COUNT).toBeGreaterThan(0);
+    await expect(page.getByTestId("site-marker-klamby")).toHaveCount(1);
   });
 
   test("Airspace toggle adds/removes the layer without a map jump, off by default", async ({ page }) => {

@@ -127,9 +127,33 @@ export function SiteSheet({
           isNight={isNight}
           daylight={daylight}
         />
+        {/*
+          What kind of site this is, beside the rose.
+          
+          It used to be a filter on the map - two mutually exclusive sets
+          behind a Ridge/Winch toggle. Deciding where to fly means
+          looking at the wind, not at a category, so the map shows every
+          site and this says which kind you are looking at once you have
+          opened one.
+        */}
+        {site.group && (
+          <span className={`site-sheet-group ${site.group}`} data-testid="site-sheet-group">
+            {site.group === "winch" ? "Winch" : "Ridge"}
+          </span>
+        )}
       </div>
       <h2>{site.name}</h2>
-      <p className="site-sheet-source-badge" data-testid="site-sheet-source">
+      {/*
+        Green for a measurement, blue for a model - the same two colours
+        the header's own status LEDs have always used for the same
+        distinction, so the two agree rather than each inventing a
+        scheme. The words are still there: the colour is a second cue,
+        never the only one.
+      */}
+      <p
+        className={`site-sheet-source-badge ${sample.sourceKind === "observation" ? "live" : "forecast"}`}
+        data-testid="site-sheet-source"
+      >
         {sample.sourceKind === "observation" ? "LIVE" : "FORECAST"} — {sourceLabel(sample, effectiveHeightM)}
       </p>
       {/*
