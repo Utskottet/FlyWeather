@@ -2,7 +2,7 @@
 
 Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a generated view for humans, not authoritative - edit the YAML files under `sites/`, then re-run `npm run sites:index`.
 
-36 sites total, 17 active.
+37 sites total, 18 active.
 
 | Active | Country | Region | Group | Short name | Full name | Sector (deg) | Station | Pilot level | Coords verified | Sector verified |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -13,6 +13,7 @@ Generated from `sites/**/*.yaml` by `scripts/generate-sites-index.ts`. This is a
 | yes | se | halland | ridge | Kevik | Kevik | 191–238 | viva #76 |  | yes | no |
 | yes | se | halland | winch | Grimeton | Grimeton | 219–295, 39–107 | Subbeberget | easy | yes | no |
 | yes | se | skane | ridge | Ålabodarna | Ålabodarna | 215–265 | holfuy #216 |  | no | no |
+| yes | se | skane | ridge | Skäret | Arild | 351–49 | holfuy #215 | difficult | yes | no |
 | yes | se | skane | ridge | Barsebäck | Barsebäck camping | 292.5–337.5 | viva #25 |  | yes | no |
 | yes | se | skane | ridge | Hammar | Hammars backar | 190–255 | holfuy #214 |  | yes | no |
 | yes | se | skane | ridge | Höganäs | Höganäs Strandbaden | 275.25–315 | holfuy #128 |  | no | yes |

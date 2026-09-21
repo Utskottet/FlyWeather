@@ -27,11 +27,6 @@ commitment log.
   worth revisiting `weatherAngleFor` and rose layout if more multi-sector
   sites get added and the maximin placement starts looking wrong in
   practice.
-- **`sjoboflyg` live-data provider not implemented**: Klamby's station
-  config (`provider: sjoboflyg`, WeeWX/Ecowitt at vader.sjoboflyg.se) is
-  wired in but inert - `providers/live/resolver.ts` only recognizes
-  `holfuy`/`viva`. Needs a real provider implementation once the actual
-  API/data format at that URL is inspected.
 - **Site wind-verification backlog**: only Hovs Hallar N/NV have
   `wind.verified: true` so far. Every other site in the catalogue still
   shows `speedFit: "unknown"` (never green) until its real min/max safe
@@ -56,12 +51,7 @@ commitment log.
   - **19 of 32 sites are unreachable from the map** (archived or
     unlocated), so the editor cannot open them - a list view is still
     missing;
-  - `admin-experiment/` is superseded by `src/components/SiteEditor/` and
-    can be deleted whenever.
-- **Add site is now visible to every visitor** wherever a publish target is
-  configured (§ Startvind UX Direction chunk 1). Publishing is still gated
-  by the Worker's sign-in, but the editor UI itself is now public - worth a
-  deliberate yes/no at the chunk 1 visual review.
+  - (`admin-experiment/` has since been deleted.)
 
 - **RASP data is stale at source (FlyWeather-Soaring, not this repo)**:
   as of 2026-09-18 the published manifest is still model run
@@ -72,39 +62,54 @@ commitment log.
   now states the real horizon and publish time in its unavailable notice
   so the failure is legible rather than looking like a broken map.
 
-- **Open the editor to pilots, gated by a club name rather than an account**
-  (designed 2026-09-18, not built). The deliberate position: no accounts,
-  no email, no Google sign-in, no BankID. Wikipedia's openness does not
-  come from gatekeeping, it comes from attribution, visible history and
-  cheap reversal - all of which already exist here (`last_edited_by`, git,
-  `git revert`, and schema validation before anything can land).
+## Opened by the contribution work (2026-09-19 to 21)
 
-  The flow: click **Add site** -> a screen asking for your name and which
-  club you fly with -> naming a real Swedish club lets you in. See
-  `docs/CLUBS.md` for the list and the matching rules. It is a shibboleth,
-  not a password: not secret, never distributed, never rotated, and
-  impossible to leak. It stops bots, not people, and is not meant to.
+Everything below came out of building open editing, the station finder
+and the live-wind fix. None of it blocks the club release; all of it is
+known rather than discovered later.
 
-  Still to decide, and the most important of the three:
-  - **adding vs editing.** Adding a site is additive - a fake one is
-    reverted and nothing was lost. Editing an existing site overwrites
-    safety data people already rely on, and a plausible-looking wrong wind
-    band is far worse than an obvious fake site. Options: (a) a club name
-    unlocks both; (b) a club name unlocks *adding* while editing an
-    existing site still needs the owner's password; (c) club-name edits
-    land as a proposal to approve. (b) matches the actual risk.
-  - **cooldown length** - one publish per IP per hour? per day?
-  - an affirmation ("I am a real person improving Swedish paragliding
-    sites") enforces nothing, which is the point: it states an intent, and
-    it is honest about not verifying anything.
-
-  Needs somewhere to count for the rate limit - a Cloudflare KV namespace
-  (`wrangler kv namespace create`), or a WAF rate-limit rule in the
-  dashboard for a blunter 429 with no code.
-
-  What bounds the risk, and what makes "I don't mind a fake site" a
-  reasonable position rather than a reckless one: the Worker can only ever
-  write to `sites/<country>/<region>/<group>/<id>.yaml`. Path shape is
-  validated before GitHub is touched and the merged file must pass
-  `siteFileSchema`, so nobody can reach workflows, source or secrets. The
-  worst case is bad site data, revertible in one command.
+- **The admin layer does not exist.** The password still works and still
+  issues a session, and an admin session is recorded in the edit log -
+  but nothing uses it. Revert, hide and block are all "use git" today,
+  which is fine for one operator and will not be for long. `SignInForm`
+  and `/api/verify` are both live code with no caller, waiting for it.
+- **A suggestion can never be marked done.** `data/issues.jsonl` only
+  grows, so the Log page's list becomes less useful the more it is used.
+  The open question is who may close one - anyone, attributed, the way
+  edits work; or only an admin once that layer exists.
+- **The stale-forecast banner is still tuned wrong.** It fires at 180
+  minutes, and measured gaps between publish runs reach 318 - so it will
+  occasionally cry wolf about a pipeline that is behaving normally for
+  GitHub's scheduler. Now that live wind no longer depends on that
+  pipeline, the threshold should be something like six hours.
+- **`skyBand.ts` throws above the Arctic Circle.** `sunriseSunsetForDay`
+  deliberately refuses to guess when suncalc reports no sunrise or
+  sunset, which is correct - but the caller has no handler, so a site
+  north of ~66.5° in summer would crash its marker rather than render
+  oddly. Nobody has hit it because the catalogue is all southern.
+- **The timeline's day/night band is drawn for one fixed point**
+  (`SOUTH_SWEDEN_REPRESENTATIVE_LOCATION`, central Skåne). Correct within
+  a few minutes for everything in the catalogue today; an hour out for a
+  site as far north as Sundsvall in June. The site markers and panel
+  already use each site's own coordinates - only the band does not, and
+  `classifySkyBand` already takes a location, so this is a call-site
+  change.
+- **19 of 37 sites are still unreachable from the map** (archived or
+  unlocated), so the editor cannot open them. A list view is still
+  missing. This number went up, not down, as sites were added.
+- **`SITES_INDEX.md` / `sites-index.csv` drift** whenever a site is added
+  through the editor - they are generated from `sites/` by
+  `npm run sites:index`, which nothing runs automatically. Worth folding
+  into the deploy build.
+- **No visitor counter.** `src/app/analytics.ts` supports Cloudflare Web
+  Analytics and GoatCounter and has never been switched on; it needs two
+  repository variables and no code. A *public* counter is a different
+  thing and deliberately not built - it needs somewhere to store a
+  number, which is the one thing this design has avoided throughout.
+- **Station identity is not deduplicated.** Some ViVa stations are also
+  SMHI stations, and airport locations overlap SMHI ones. The finder
+  lists source records, not distinct physical instruments, and says so -
+  but two entries for one anemometer will eventually confuse somebody.
+- **Trafikverket and Windy are not implemented.** Both appeared in the
+  station-finder prototype as "setup needed"; neither reader exists, and
+  neither is offered anywhere in the app.

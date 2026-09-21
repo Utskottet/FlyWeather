@@ -1667,3 +1667,75 @@ Still open for the rest of chunk 2: the header's wording ("Forecast
 updated 15:30" etc.), whether the RASP chip should show while the overlay
 is off, the Wind switch, and Add site's visibility.
 
+
+## Opening the app to pilots (2026-09-19 to 21)
+
+Sixty-five commits, ending with the app ready to hand to the clubs. The
+theme throughout: the catalogue is only worth what the pilots who fly
+these sites can put into it, so every barrier between them and a
+correction had to justify itself.
+
+**Editing is open.** The password prompt is gone from the ordinary path.
+A save now carries a name, a club and one affirmation, and lands in
+`data/edit-log.jsonl` in the same commit as the site file - so an edit
+and its record are indivisible, every clone is a backup, and a revert
+undoes both halves at once. No database was added. The club is the only
+real gate: typed, not chosen from a list, matched forgivingly against
+`data/clubs.json`, and enforced in the Worker as well as the browser.
+The password did not disappear - it moved to an admin layer that does
+not exist yet (see `BACKLOG.md`).
+
+**The station finder shipped.** Five readers - SMHI, ViVa, Holfuy,
+airport METAR and club WeeWX feeds - behind one resolver, with a
+directory of 415 stations built daily and committed. From a site's
+editor you can find what is nearby, see what it is reporting right now,
+and save it. Verified end to end against Sjobo ESMI, 9.9 km from
+Klamby, which is the case the work was specified around.
+
+**Live wind stopped being a build artefact**, the most serious thing
+found in this stretch. It was only ever as fresh as the last deploy:
+measured at about seven publishes a day, because GitHub honours a
+five-minute cron at two-to-five-hour intervals. A live reading goes
+stale in thirty minutes, so for roughly 85% of the day every site was
+quietly falling back to forecast - zero of thirteen sites were showing
+LIVE when it was checked. Nothing looked broken, because falling back
+is exactly what a stale observation should do. The Worker now reads the
+stations on demand and the page refreshes every two minutes;
+`live.json` remains as the fallback, so the worst case of the new path
+is the old behaviour.
+
+**Smaller things, in rough order of how much they change the app:**
+parking with a navigate button, authored by pasting whatever Google Maps
+gave you; an "Issues and improvements" list anybody can read and post
+to; a Log page counting everything from the log itself rather than from
+a stored total; one map for ridge and winch together instead of a
+toggle; roses sized by zoom (26 px to 96 px) instead of one size
+everywhere; an instruction screen before the editor; the site panel
+naming its station, how far away it is, and linking to it.
+
+**Three bugs worth remembering**, all the same shape - a field existing
+in one layer and enumerated by hand in the next:
+
+- `station.url` was dropped between the saved file and the collector, so
+  a club station could be saved, look complete, and never produce a
+  reading.
+- ViVa required a gust, so a station that does not report gusts produced
+  no wind at all.
+- `parking` never reached `sites.json`, because the catalogue builder
+  lists the fields it copies one by one. The data was written correctly
+  and was simply invisible.
+
+The third now has a test asserting the whole class: a synthetic site
+authoring every field in the schema goes through the builder and each
+key is checked on the way out.
+
+**One fix that only failed in production**: `redirect: "error"` works in
+Node and throws in Cloudflare Workers, so every reader except Holfuy
+returned nothing once deployed - invisible locally, invisible to the
+test suite, and only visible by asking the deployed Worker for a
+reading.
+
+Checks at the end of the stretch: typecheck, lint, 794 unit tests, 106
+e2e passed (4 skipped - the live-publish acceptance test needs a
+password), production build, and the deployed site measured directly
+rather than assumed.

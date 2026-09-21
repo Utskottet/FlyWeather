@@ -1869,3 +1869,95 @@ map's lifecycle, rather than by guessing. The same instance-disposal guard
 was added while diagnosing and kept - queued style events after
 `remove()` are the other way this throw can happen.
 
+
+## Opening the app to pilots (2026-09-19 to 21)
+
+- **Attribution instead of authentication.** Editing needs no account. A
+  save carries a name, a club and an affirmation; nothing verifies that
+  anybody is who they say. This is honest about its own limit - it
+  records who *says* they made a change - and that is enough for the
+  real failure mode, which is a well-meaning pilot getting a number
+  wrong and somebody needing to ask them about it. It is no use against
+  somebody determined to lie, and the answer to that is the admin layer
+  and git history, not a stronger form.
+
+- **The club name is a shibboleth, not a password.** Not secret, never
+  distributed, never rotated, impossible to leak. Any Swedish pilot
+  names their club without thinking; a script cannot. It is typed rather
+  than chosen from a dropdown, because a dropdown asks nothing of
+  anybody - the first version shipped as a `select` and was worth
+  precisely nothing. Matching is deliberately forgiving: a false
+  positive costs nothing, since every edit is attributed and revertable,
+  while a pilot turned away over a hyphen costs a contribution that
+  never comes back.
+
+- **The edit log is a file in the repository, not a database.** A log in
+  a database is a second source of truth that can disagree with the
+  repo, needs its own backups and access control, and makes reverting an
+  edit a two-place operation. A log in the repo is backed up by every
+  clone, readable by anyone, atomic with the data it describes because
+  the same commit carries both, and a revert already undoes both halves.
+  The cost is a commit and a deploy per entry, which at a handful of
+  edits a week is nothing. A Cloudflare D1 database was the alternative
+  and was rejected on every axis that mattered.
+
+- **Live wind is served on demand; forecast and RASP are not.** The
+  three are different products with different needs, and were treated as
+  one for too long. A forecast at seven updates a day is fine - the
+  model behind it runs a few times a day - and RASP was always fetched
+  in the browser at runtime. Only live wind needed real-time delivery,
+  so only live wind moved to the Worker. The build-time file stays as
+  the fallback, which is what makes the change safe: if the new path
+  fails in any way, the page shows exactly what it showed before.
+
+- **Parking is stored as coordinates, not as a pasted Google Maps URL.**
+  Two numbers open in any nav app, cannot rot or redirect, and are data
+  the map can use later. Authoring is still a paste - the field reads
+  coordinates, Swedish decimal commas and full maps URLs - it simply
+  keeps the useful half. Short links are refused rather than resolved,
+  because resolving one means fetching a contributor-supplied URL from
+  our own servers, which is exactly what the station allowlist prevents.
+
+- **Every contributor-supplied URL goes through a host allowlist**, and
+  redirects are never followed - a redirect is how an allowlisted host
+  hands the request to one that is not. The same list is used by the
+  collector and the Worker so the two cannot drift.
+
+- **Counts are recounted, never stored.** The Log page derives every
+  number from the log lines themselves. A running total kept somewhere
+  is a second source of truth that drifts from what it counts, and the
+  only honest repair is to recount anyway. A test asserts the site count
+  matches the markers actually on the map, because a number that can
+  disagree with what you can see is worse than no number.
+
+- **No public visitor counter.** It would need somewhere to keep a
+  number, which is the one thing this design has avoided throughout, and
+  a public counter anybody can inflate by refreshing is worth less than
+  the honesty it costs. The private, cookieless dashboard is two
+  repository variables away and needs no code.
+
+- **A conflict means somebody changed this site, not that the branch
+  moved.** Comparing head shas invalidated every open editor whenever
+  anything at all was committed - a deploy, the nightly station
+  catalogue, another pilot editing a different hill. It now compares the
+  file's own content; a true race is still caught by the
+  compare-and-swap on the ref at commit time.
+
+- **No accounts means no remembered identity.** The editor used to
+  pre-fill a name and club from localStorage. On a borrowed phone the
+  next person opens the form already signed as somebody else, and a box
+  that is already filled in is one nobody reads. The tick guards against
+  posting by accident; it cannot guard against posting as somebody else.
+
+- **One map for ridge and winch.** The toggle made a pilot choose a
+  category before the map would show them anything, which is backwards -
+  the wind decides that. The distinction moved to the site panel, where
+  it answers a question somebody is actually asking.
+
+- **Roses are sized by zoom, and never collapse to dots.** Sizes come
+  from the catalogue: the closest pair is 4.9 km, so 54 px sits clear at
+  z10 and nothing overlaps from there in. Guaranteeing no overlap at z6
+  would need a 3.6 px marker - not a small rose but a speck - so the low
+  end stops at something readable and lets the closest pair touch.
+  Clustering was rejected: a badge saying "5" replaces the one thing a
+  rose is for.
