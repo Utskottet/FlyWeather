@@ -1,0 +1,32 @@
+schema_version: 2
+id: vik-2
+name: Vik
+short_name: Vik
+coordinates:
+  lat: 55.612866181640165
+  lon: 14.296006517379364
+  verified: true
+sector:
+  ranges:
+    - from_deg: 49
+      to_deg: 91
+      margin_under_deg: 11
+      margin_over_deg: 11
+  verified: false
+wind:
+  verified: true
+  min_ms: 5
+  max_ms: 7
+  margin_under_ms: 1
+  margin_over_ms: 1
+station:
+  verified: false
+  provider: holfuy
+  name: Vik O
+  station_id: "596"
+  note: Holfuy. 0.8 km from the site. Chosen with the station finder; suitability for this site not verified.
+pilot_level: difficult
+ridge_height_m: 15
+description: "CPS säger att detta är ett mycket mycket avancerat hang. håller du med ? skriv en bättre förklaring.  "
+last_edited_by: edvin buregren
+last_edited_at: 2026-09-21T14:03:02.803Z
