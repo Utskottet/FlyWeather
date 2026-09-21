@@ -12,7 +12,6 @@ import {
   type SiteDraft,
 } from "../../domain/siteEditor.ts";
 import { hasOverlappingBands } from "../../domain/bandOverlap.ts";
-import { readRememberedEditor, rememberEditor } from "../../app/editorIdentity.ts";
 import { EMPTY_CONTRIBUTOR, validateContributor, type Contributor } from "../../domain/contributor.ts";
 import { PUBLISH_TARGET, deploymentStatus, publish, repoHead, type DeploymentState } from "../../app/editorApi.ts";
 
@@ -186,7 +185,6 @@ export function SiteEditorPanel({
       return;
     }
 
-    rememberEditor({ name: contributor.name, club: contributor.club });
     clearStoredDraft();
 
     if (outcome.kind === "local") {
@@ -323,30 +321,36 @@ function restoreDraft(initial: SiteDraft): SiteDraft {
 }
 
 /**
- * Brings back the contributor, from this tab's interrupted edit if there
- * is one and otherwise from whoever last published on this machine.
+ * Brings back the contributor of an edit this tab was interrupted
+ * mid-way through - and nothing else.
  *
- * The name and club are remembered; the tickbox deliberately is not. It
- * is an affirmation about THIS edit, and one that arrives pre-ticked from
- * six months ago is not an affirmation.
+ * Your name is not remembered between visits, deliberately. It used to
+ * be, saved to localStorage after a publish so it could be typed once
+ * rather than once per save. The convenience is real and the cost is
+ * worse: on a borrowed phone or a club laptop the next person opens the
+ * form already wearing somebody else's name, and a box that is already
+ * filled in is one nobody reads. The tick guards against posting by
+ * accident; it cannot guard against posting as somebody else.
+ *
+ * What survives is only this tab's own unfinished edit, in sessionStorage
+ * - the same edit, moments later, after a reload or a phone switching
+ * apps. It dies with the tab.
  */
 function restoreContributor(): Contributor {
-  const remembered = readRememberedEditor();
-  const base: Contributor = { ...EMPTY_CONTRIBUTOR, name: remembered.name, club: remembered.club };
   try {
     const raw = window.sessionStorage.getItem(CONTRIBUTOR_KEY);
-    if (!raw) return base;
+    if (!raw) return EMPTY_CONTRIBUTOR;
     const stored = JSON.parse(raw) as Partial<Contributor>;
     return {
-      ...base,
-      name: typeof stored.name === "string" && stored.name !== "" ? stored.name : base.name,
-      club: typeof stored.club === "string" ? stored.club : base.club,
+      ...EMPTY_CONTRIBUTOR,
+      name: typeof stored.name === "string" ? stored.name : "",
+      club: typeof stored.club === "string" ? stored.club : "",
       // Within the same tab a lost draft is the same edit, so the tick
       // survives a reload - but never a new visit.
       affirmed: stored.affirmed === true,
     };
   } catch {
-    return base;
+    return EMPTY_CONTRIBUTOR;
   }
 }
 

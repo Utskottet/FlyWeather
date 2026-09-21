@@ -4,7 +4,7 @@ import { EMPTY_CONTRIBUTOR, validateContributor, type Contributor } from "../../
 import { MAX_ISSUE_LENGTH, issueByline, validateIssueText } from "../../domain/issues.ts";
 import { ISSUES, postIssue } from "../../app/issuesApi.ts";
 import { formatLogDate } from "../../domain/siteHistory.ts";
-import { readRememberedEditor, rememberEditor } from "../../app/editorIdentity.ts";
+
 
 export interface IssuesPanelProps {
   onClose: () => void;
@@ -29,10 +29,13 @@ type Phase = { kind: "writing" } | { kind: "sending" } | { kind: "sent" } | { ki
  */
 export function IssuesPanel({ onClose }: IssuesPanelProps) {
   const [text, setText] = useState("");
-  const [contributor, setContributor] = useState<Contributor>(() => {
-    const remembered = readRememberedEditor();
-    return { ...EMPTY_CONTRIBUTOR, name: remembered.name, club: remembered.club };
-  });
+  // Deliberately NOT pre-filled from the remembered identity, unlike the
+  // site editor. Posting a suggestion is a one-off, so the five seconds
+  // of typing a name buys nothing - while a name already sitting in the
+  // box when somebody borrows the phone is easy not to notice, and the
+  // tick only protects against posting by accident, not against posting
+  // as somebody else.
+  const [contributor, setContributor] = useState<Contributor>(EMPTY_CONTRIBUTOR);
   const [attempted, setAttempted] = useState(false);
   const [phase, setPhase] = useState<Phase>({ kind: "writing" });
 
@@ -49,7 +52,6 @@ export function IssuesPanel({ onClose }: IssuesPanelProps) {
       setPhase({ kind: "failed", message: result.message });
       return;
     }
-    rememberEditor({ name: contributor.name, club: contributor.club });
     setPhase({ kind: "sent" });
   }
 

@@ -49,9 +49,8 @@ export interface SiteDraft {
   description: string;
   /**
    * Who is making THIS edit - never carried over from the file being
-   * edited. Prefilled from the last name typed on this machine (see
-   * app/editorIdentity.ts) so it is typed once, not once per save, but it
-   * always describes the person saving now.
+   * edited, and never remembered between visits. It always describes the
+   * person saving now, which is the whole point of it.
    */
   lastEditedBy: string;
   warnings: string[];

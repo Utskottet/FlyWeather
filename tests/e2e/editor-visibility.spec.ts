@@ -235,3 +235,42 @@ test("the editing controls do not depend on the admin flag any more", async ({ p
   await page.locator('[data-testid="header-menu-toggle"]').click();
   await expect(page.locator('[data-testid="add-site-button"]')).toBeVisible();
 });
+
+test("the editor never arrives wearing somebody else's name", async ({ page }) => {
+  // It used to: a publish saved the name and club to localStorage so the
+  // next edit could be pre-filled. On a borrowed phone or a club laptop
+  // that means the next person opens the form already signed as you, and
+  // a box that is already filled in is one nobody reads. The tick guards
+  // against posting by accident; it cannot guard against posting as
+  // somebody else.
+  await page.evaluate(() => {
+    window.localStorage.setItem("startvind-editor-name", "Somebody Else");
+    window.localStorage.setItem("startvind-editor-club", "Club Parapente Syd");
+  });
+  await page.reload();
+  await page.waitForSelector('[data-testid="site-map"]', { timeout: 60_000 });
+
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+  await page.getByTestId("editor-intro-ok").click();
+
+  await expect(page.getByTestId("contributor-name")).toHaveValue("");
+  await expect(page.getByTestId("contributor-club")).toHaveValue("");
+
+  // And the leftover values are cleared out of the browser, not merely
+  // ignored - they are somebody's name left in a drawer.
+  const leftovers = await page.evaluate(() => [
+    window.localStorage.getItem("startvind-editor-name"),
+    window.localStorage.getItem("startvind-editor-club"),
+  ]);
+  expect(leftovers).toEqual([null, null]);
+});
+
+test("the placeholder hints stay - they are hints, not somebody's name", async ({ page }) => {
+  await page.locator('[data-testid="header-menu-toggle"]').click();
+  await page.locator('[data-testid="add-site-button"]').click();
+  await page.getByTestId("editor-intro-ok").click();
+
+  await expect(page.getByTestId("contributor-name")).toHaveAttribute("placeholder", /För- och efternamn/);
+  await expect(page.getByTestId("contributor-club")).toHaveAttribute("placeholder", /CPS/);
+});
