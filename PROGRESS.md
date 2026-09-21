@@ -1739,3 +1739,76 @@ Checks at the end of the stretch: typecheck, lint, 794 unit tests, 106
 e2e passed (4 skipped - the live-publish acceptance test needs a
 password), production build, and the deployed site measured directly
 rather than assumed.
+
+## Forecast data integrity — 2026-09-21
+
+Started as one pilot's observation: Startvind said 2.8 m/s for Hovs Hallar
+where YR, Windy and Open-Meteo all said about 6. It turned out to be **two
+independent bugs stacked on top of each other**, both live for months, both
+invisible from inside the app.
+
+**Bug 1 — the regional raster overwrote every site's surface forecast.**
+`mergeDmiWindIntoSiteForecast` replaced the whole heights object, 10 m
+included, with samples from a ~17 km grid, while the gust, weather symbol and
+`sourceId` stayed behind from Open-Meteo. One object, two sources, one name.
+It read 1-3 m/s low on coastal cliffs, showed green on hours the real
+forecast called red, and blanked half of every site's horizon because the
+raster is shorter than the point forecast.
+
+**Bug 2 — forecast hours were read two hours early.** Open-Meteo answers a
+`timezone=UTC` request with `2026-09-22T17:00` and no `Z`; JavaScript parses
+that as local time. Under the label 17:00 the app showed the row valid at
+19:00. Across sources it was worse: the wind grid *does* stamp its timestamps,
+so the matcher paired rows two hours apart while believing they matched,
+inside its own 30-minute tolerance, never reporting a miss.
+
+**Why neither was caught.** Both were self-consistent. The first showed a
+plausible wind, the second a plausible clock, and nothing on screen
+contradicted anything else on screen. The existing `findNowIndex` test
+compared a bare `"11:30"` against hours in the same bare form - two wrongs
+that agreed with each other, and therefore passed. Only somebody with a
+second forecast open could see either one.
+
+**What was built, in order:**
+
+- `npm run check:forecast` - the ruler, built *before* touching the bug, so
+  "it looks better" was never the evidence. Before: 340 hours published with
+  no wind, 926/1100 verdicts matching met.no, at least 6 hours showing green
+  on wind over a site's own limit. After: **0, 1144/1160, 0**.
+- `src/domain/forecastSource.ts` - which model produced the wind at a given
+  height, so the label can stop asserting one source for an object with two.
+- `src/domain/forecastTime.ts` - a bare timestamp is UTC; every consumer goes
+  through it. Hours are stamped on the way in now, and the defensive parse
+  stays because published files predate it.
+
+**The ruler corrected itself twice, which is the point of having one.** Its
+first run counted 66 dangerous hours; most were near-calm direction noise at
+sites whose mean error was 0.02 m/s. Filtering to launchable wind left 21.
+Then two of those turned out to be met.no calling a site red for being *too
+light* - so a further split gave the number that actually measures risk:
+optimistic hours where met.no exceeds the site's own maximum. That went from
+at least 6 to zero.
+
+**Three limits worth remembering, all now written down:**
+
+- `check:forecast` compares against met.no, and Open-Meteo's `best_match`
+  *is* met.no across this region (verified: identical to the decimal and the
+  degree at Hovs Hallar and at Lokken). So it measures pipeline correctness,
+  not forecast accuracy. It is comparing the model against itself.
+- It normalises timestamps before comparing, deliberately - which made it
+  structurally blind to bug 2. It measures the data, not how the data is
+  displayed.
+- The timezone tests only mean anything outside UTC, so they would have
+  passed on CI while the bug shipped. `tests/unit-setup.ts` now pins every
+  run to Europe/Stockholm, verified by reintroducing the bug with `TZ=UTC`.
+
+Every fix was mutation-tested: reintroducing each bug fails named tests
+(3, 4 and 8 respectively). Both commits deployed and verified against the
+live site rather than assumed - `f30b9e9`, `854139d`.
+
+**What came out of it:** `docs/FORECAST_INTEGRITY.md` (the full measurement,
+both bugs, the open 100/150 m seam) and `docs/FORECAST_VERIFICATION.md` with
+`BLOCKS.md` Phase 4 - scoring forecasts against the seventeen anemometers we
+already read and currently throw away every five minutes. Chunk A is
+time-critical: nothing can be analysed until rows exist.
+

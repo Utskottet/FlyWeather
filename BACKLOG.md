@@ -6,6 +6,14 @@ whenever something comes up mid-work that's worth remembering but not
 worth stopping for. Prune freely - this is a list to revisit, not a
 commitment log.
 
+- **Forecast verification against live anemometers (designed, not started)**:
+  seventeen sites have wind meters whose readings are overwritten every five
+  minutes. Keeping them gives per-site bias split by wind band ("above 6 m/s
+  Hovs Hallar reads 40% higher than forecast"), skill by lead time, and an
+  automatic check that would have caught both 2026-09-21 bugs without a
+  person noticing. See `docs/FORECAST_VERIFICATION.md`; chunks in
+  `BLOCKS.md` Phase 4. Chunk A is time-critical - every day without the
+  recorder is a day of measurements gone.
 - **Forecast source mix (SAFETY, diagnosed 2026-09-21, not yet fixed)**: the
   regional wind raster overwrites each site's Open-Meteo point forecast at
   every height, 10 m included, while provenance still claims Open-Meteo.

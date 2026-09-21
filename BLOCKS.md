@@ -573,6 +573,89 @@ clean browser.
 
 ---
 
+# Phase 4 — Forecast verification
+
+Design and rationale: `docs/FORECAST_VERIFICATION.md`. Adopted 2026-09-21
+after two forecast bugs shipped undetected for months and were found by a
+pilot comparing against YR, not by anything in this repository
+(`docs/FORECAST_INTEGRITY.md`).
+
+The point of the phase: seventeen sites already have live anemometers, the
+collector already reads them every five minutes, and every reading is
+overwritten on the next run. Keeping them turns "is the code correct" into
+"is the number true".
+
+**Chunk A is time-critical and the rest are not.** Nothing can be analysed
+until rows exist, and every day without the recorder is a day of
+measurements permanently gone. Do A first even if the rest waits months.
+
+## Chunk A — Record observations and forward forecasts
+
+Deliverables:
+- One appended row per site per hour: the anemometer reading, plus the
+  forecasts issued now for +1/+6/+24/+48 h (see the document for the shape
+  and why forecasts are stored at issue time).
+- Decide and document where rows live between writes - the recommendation
+  is the current day in the published artifact, one commit per day, to
+  avoid ~4,400 commits a year.
+- Dedupe: the cron runs every five minutes, the record is hourly.
+- Sites with no station record nothing, rather than a null that later reads
+  as a measurement.
+
+Definition of done:
+- `npm run typecheck`, `npm run lint`, `npm test`, production build pass.
+- The file visibly grows across two real cron runs on the deployed site.
+- A malformed or missing reading is skipped without taking the run down.
+- No change to anything a visitor sees.
+
+## Chunk B — Join, and prove the join
+
+Deliverables:
+- A pure function pairing each observation hour with the forecasts that
+  were issued for it, by lead time.
+- Tests over synthetic rows, including gaps, duplicate hours, a station
+  that went silent for a day, and DST boundaries - this is timestamp code
+  in a repo that has already shipped one timezone bug, so it gets the
+  scrutiny that deserves.
+
+Definition of done: as chunk A, plus the join tested against a hand-built
+week of rows whose correct answer is known by construction.
+
+## Chunk C — The numbers
+
+Deliverables:
+- `npm run check:skill`: per site, mean bias and mean absolute error,
+  **split by observed wind band** (the whole point - see the document) and
+  by lead time. Sample counts beside every figure.
+- Refuses to report a figure below a stated minimum sample size rather than
+  printing a confident number from nine hours of data.
+
+Definition of done: as chunk A, plus the output read against the raw rows
+for one site by hand.
+
+## Chunk D — Show it, without changing any forecast
+
+Deliverables:
+- Per-site disclosure in the site panel, in both languages, naming the
+  sample size and the wind band it applies to.
+- A page for the whole picture, in the spirit of the Log page: every number
+  counted from the rows, nothing stored as a running total.
+
+Definition of done: as chunk A, plus a pilot who has not seen the feature
+can say what the number means.
+
+## Chunk E — Applying a correction (NOT approved)
+
+Deliberately last, and not to be started as a continuation of D.
+
+Changing a displayed wind because of a measured bias is a different act from
+reporting that bias: a site-corrected number that is wrong is more dangerous
+than a raw model number that is honestly labelled. It needs its own decision,
+its own argument about what happens when the station is broken or the wind is
+outside every observed band, and its own place in `docs/DECISIONS.md`.
+
+---
+
 ## Notes for whoever (human or agent) revises this list
 
 - Blocks are ordered for dependency reasons (schema before data, rose before
