@@ -11,6 +11,8 @@ export interface AppHeaderProps {
   onAddSite?: () => void;
   /** Same rule: no publish target means nowhere to post a suggestion, so no menu item. */
   onOpenIssues?: () => void;
+  /** Always available - the log is read from data the page already has, and needs no server. */
+  onOpenLog: () => void;
 }
 
 /**
@@ -39,6 +41,7 @@ export function AppHeader({
   raspUpdated,
   onAddSite,
   onOpenIssues,
+  onOpenLog,
 }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -125,6 +128,18 @@ export function AppHeader({
                 Issues and improvements
               </button>
             )}
+            <button
+              type="button"
+              role="menuitem"
+              className="app-header-menu-item"
+              onClick={() => {
+                setMenuOpen(false);
+                onOpenLog();
+              }}
+              data-testid="log-button"
+            >
+              Log
+            </button>
           </div>
         )}
       </div>

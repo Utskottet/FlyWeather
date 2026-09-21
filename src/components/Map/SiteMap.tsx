@@ -17,6 +17,7 @@ import { ParameterLegend } from "../ParameterLegend/ParameterLegend.tsx";
 import { SiteSheet } from "../SiteSheet/SiteSheet.tsx";
 import { SiteEditorPanel } from "../SiteEditor/SiteEditorPanel.tsx";
 import { IssuesPanel } from "../Issues/IssuesPanel.tsx";
+import { LogPanel } from "../Log/LogPanel.tsx";
 import { emptyDraft, siteToDraft, sitePathFor, type SiteDraft } from "../../domain/siteEditor.ts";
 import { CAN_EDIT } from "../../app/adminMode.ts";
 import { useIsCompact } from "../../app/useIsCompact.ts";
@@ -211,6 +212,7 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
   // handleAltitudeChange below.
   const [isLiveMode, setIsLiveMode] = useState(true);
   const [issuesOpen, setIssuesOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
   // The open editor, or null. Only ever set from the admin-gated buttons,
   // so a normal visitor can never reach it - see app/adminMode.ts.
   const [editor, setEditor] = useState<
@@ -405,8 +407,16 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
         // rather than as a button competing with the map.
         onAddSite={CAN_EDIT ? openCreateEditor : undefined}
         onOpenIssues={CAN_EDIT ? () => setIssuesOpen(true) : undefined}
+        onOpenLog={() => setLogOpen(true)}
       />
       {issuesOpen && <IssuesPanel onClose={() => setIssuesOpen(false)} />}
+      {logOpen && (
+        <LogPanel
+          sites={visibleSites}
+          liveGeneratedAt={liveData?.generatedAt ?? null}
+          onClose={() => setLogOpen(false)}
+        />
+      )}
       <div
         className="site-map-container"
         data-testid="site-map"
