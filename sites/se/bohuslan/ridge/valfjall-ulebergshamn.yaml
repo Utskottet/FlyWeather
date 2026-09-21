@@ -1,0 +1,26 @@
+schema_version: 2
+id: valfjall-ulebergshamn
+name: Valfjäll Ulebergshamn
+short_name: Valfjäll
+coordinates:
+  lat: 58.46116
+  lon: 11.30852
+  verified: true
+sector:
+  ranges:
+    - from_deg: 240
+      to_deg: 300
+      margin_under_deg: 30
+      margin_over_deg: 30
+  verified: false
+wind:
+  verified: true
+  min_ms: 4
+  max_ms: 9
+  margin_under_ms: 4
+  margin_over_ms: 9
+pilot_level: medium
+ridge_height_m: 60
+description: Långt utsträckt hang med stor landning nedanför.
+last_edited_by: Klaes Alpsten
+last_edited_at: 2026-09-21T12:54:50.944Z
