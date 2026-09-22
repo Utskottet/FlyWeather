@@ -25,15 +25,32 @@ const TILE_WORLD_PIXELS = 512;
 const MAX_EFFECTIVE_SPEED_MS = 10;
 const ADVECT_DEGREES_PER_SEC_PER_MS = 0.006; // tuned visually - see DECISIONS.md
 
-// Doubled on request. Density is purely a rendering choice: every
-// particle is interpolated from the same 961-point grid by
-// sampleWindField, so more of them costs nothing in bandwidth and adds
-// no information - it makes the flow legible, it does not make it finer.
-// The cost is CPU, per particle per frame, on the main thread; the
-// vertex buffer below is reused rather than reallocated to pay for it.
-const PARTICLES_PER_CANVAS_PIXEL_AREA = 700;
-const MIN_PARTICLES = 1000;
-const MAX_PARTICLES = 4400;
+// Four times the original density, in two steps, both on request.
+//
+// Density is purely a rendering choice: every particle is interpolated
+// from the same 961-point grid by sampleWindField, so more of them costs
+// nothing in bandwidth and adds no information - it makes the flow
+// legible, it does not make it finer.
+//
+// Measured before going this far, on a phone-sized viewport at DPR 3
+// (2.79 M canvas pixels, so ~8000 particles - the ceiling case) with the
+// real GPU: 5.6 ms per frame, indistinguishable from the same page with
+// the layer effectively off, and unchanged under 4x CPU throttling. Only
+// the worst frame in 240 moved, 6.8 ms to 11.6 ms, still inside a 60 fps
+// budget. 8000 particles is 48k vertices a frame, which is nothing for
+// any GPU made this decade.
+//
+// A first attempt to measure this in headless Chromium reported 20 fps
+// and nearly caused a needless climbdown. Headless has no GPU and
+// software-rasterises every pixel; the same page with ten particles
+// measured 50 ms there too. If this is ever re-measured, measure the
+// floor first - a number with nothing to compare against is not evidence.
+//
+// The vertex buffer below is still reused rather than reallocated, which
+// matters more at this count than it did at the old one.
+const PARTICLES_PER_CANVAS_PIXEL_AREA = 350;
+const MIN_PARTICLES = 2000;
+const MAX_PARTICLES = 8800;
 const PARTICLE_MAX_AGE_SEC = 6 + Math.random(); // jittered per-instance so respawns aren't synchronized
 
 // Streak size is a fixed pixel size (scaled by speed), deliberately NOT
