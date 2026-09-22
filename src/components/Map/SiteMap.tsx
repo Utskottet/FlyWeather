@@ -449,11 +449,19 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
           />
         </div>
       {isForecastDataStale && (
-        // Says how old, rather than "may be stale". By the time this
-        // appears something really has stopped, and "4 h" tells you
+        // Says how old, rather than "may be stale" - "6 h" tells you
         // whether to care in a way that a hedge never does.
+        //
+        // It does NOT say why any more. It used to claim "the update job
+        // has stopped", and on 2026-09-22 that was simply false: the job
+        // was running every 1.7 hours and deploying fine, while
+        // Open-Meteo answered 429 to one of its two fetches, so the
+        // collector republished the last good forecast with its original
+        // timestamp - exactly as designed. The page cannot tell a dead
+        // scheduler from a rate-limited provider, and guessing wrong
+        // sends somebody looking in the wrong place.
         <div className="data-staleness-notice" data-testid="data-staleness-notice">
-          Forecast data is {forecastAgeLabel} old - the update job has stopped.
+          Forecast data is {forecastAgeLabel} old - no newer forecast has arrived.
         </div>
       )}
       {isRaspUnavailable && (

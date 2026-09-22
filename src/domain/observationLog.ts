@@ -52,6 +52,22 @@ export interface ObservationRow {
     ms: number;
     deg: number | null;
     gust: number | null;
+    /**
+     * When the forecast being compared was generated.
+     *
+     * Not decoration: `hour` minus this is the lead time, and without it
+     * the file silently mixes forecasts issued minutes before the hour
+     * with forecasts issued six hours before it. A bias figure computed
+     * over that mixture measures two different things at once.
+     *
+     * It is not hypothetical. The first rows recorded on 2026-09-22 were
+     * compared against a forecast that was already 6.5 hours old,
+     * because Open-Meteo was rate-limiting the refresh job and the
+     * collector was correctly republishing the last good file. Rows
+     * written before this field existed simply lack it and are readable
+     * as unknown lead.
+     */
+    issued?: string;
   };
 }
 
@@ -78,6 +94,8 @@ export function buildObservationRow(input: {
   fcMs: number | null;
   fcDeg: number | null;
   fcGust: number | null;
+  /** The forecast file's generatedAt, so lead time is recoverable. */
+  fcIssued?: string;
 }): ObservationRow | null {
   if (input.obsMs === null || input.fcMs === null) return null;
 
@@ -99,7 +117,12 @@ export function buildObservationRow(input: {
       src: input.source,
       ageConfirmed: input.ageConfirmed,
     },
-    fc: { ms: input.fcMs, deg: input.fcDeg, gust: input.fcGust },
+    fc: {
+      ms: input.fcMs,
+      deg: input.fcDeg,
+      gust: input.fcGust,
+      ...(input.fcIssued ? { issued: input.fcIssued } : {}),
+    },
   };
 }
 
@@ -120,6 +143,7 @@ export function serialiseObservation(row: ObservationRow): string {
       ms: round2(row.fc.ms),
       deg: row.fc.deg === null ? null : round2(row.fc.deg),
       gust: row.fc.gust === null ? null : round2(row.fc.gust),
+      ...(row.fc.issued ? { issued: row.fc.issued } : {}),
     },
   });
 }
@@ -188,4 +212,19 @@ export function monthFileName(at: string): string {
   const y = d.getUTCFullYear();
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
   return `${y}-${m}.jsonl`;
+}
+
+/**
+ * How far ahead this forecast was predicting, in hours.
+ *
+ * Null when the row predates the `issued` field, which is the honest
+ * answer rather than assuming zero - a stale forecast compared against a
+ * fresh observation is a long-lead forecast, and calling that a nowcast
+ * would flatter it.
+ */
+export function leadHours(row: ObservationRow): number | null {
+  if (!row.fc.issued) return null;
+  const issued = Date.parse(row.fc.issued);
+  if (!Number.isFinite(issued)) return null;
+  return (forecastHourMs(row.hour) - issued) / 3_600_000;
 }

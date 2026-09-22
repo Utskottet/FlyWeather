@@ -50,14 +50,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # The forecast half of each pair. collect:forecasts falls back to
-      # the last published file if Open-Meteo rate-limits, so a 429 costs
-      # freshness rather than the whole run.
-      - name: Collect current forecast
-        run: npm run collect:forecasts
-        env:
-          VITE_SOARING_BASE_URL: https://utskottet.github.io/FlyWeather-Soaring
-
+      # No collect:forecasts step, deliberately. The forecast half of each
+      # pair is read from the deployed site, because that is what pilots
+      # were actually shown - and because calling Open-Meteo from here
+      # doubled the site-batch request rate from the GitHub Actions IP
+      # pool and got the real refresh job rate-limited within a day. See
+      # the comment in scripts/record-observations.ts.
       - name: Read the stations and record the pairs
         run: npm run record:observations
 

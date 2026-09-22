@@ -41,6 +41,44 @@ const repoRoot = resolve(__dirname, "..");
 const forecastPath = resolve(repoRoot, "public/generated/forecast-sites.json");
 const observationsDir = resolve(repoRoot, "data/observations");
 
+/**
+ * The forecast is read from the deployed site, not generated here.
+ *
+ * Two reasons, and the second is the one that matters.
+ *
+ * It is more correct: this file exists to check whether what pilots were
+ * shown matched what the wind did. The published file is what they were
+ * shown. Generating a fresh forecast would verify a number nobody ever
+ * saw.
+ *
+ * And it is considerate. Open-Meteo rate-limits per IP, and this job
+ * runs from the same GitHub Actions pool as weather-refresh.yml. When
+ * this script called collect:forecasts itself it roughly doubled the
+ * site-batch request rate from that pool, and within a day Open-Meteo
+ * was answering 429 - which the collector handles by republishing the
+ * last good file with its ORIGINAL generatedAt, so the site quietly
+ * froze at a six-hour-old forecast while still deploying every two
+ * hours. A verification tool must not degrade the thing it verifies.
+ */
+const PUBLISHED_FORECAST_URL = "https://startvind.se/generated/forecast-sites.json";
+
+async function loadForecast(): Promise<GeneratedForecastSitesFile | null> {
+  try {
+    const res = await fetch(PUBLISHED_FORECAST_URL);
+    if (res.ok) return (await res.json()) as GeneratedForecastSitesFile;
+    console.warn(`record-observations: published forecast returned HTTP ${res.status}`);
+  } catch (err) {
+    console.warn(`record-observations: could not read the published forecast - ${(err as Error).message}`);
+  }
+  // Local fallback, for running this on a dev machine against whatever
+  // the last local build produced.
+  if (existsSync(forecastPath)) {
+    console.warn("record-observations: falling back to the local generated forecast");
+    return JSON.parse(readFileSync(forecastPath, "utf-8")) as GeneratedForecastSitesFile;
+  }
+  return null;
+}
+
 /** The height a site's flyability verdict is decided at, and the only one a surface anemometer can speak to. */
 const SURFACE_HEIGHT_M = 10;
 
@@ -69,13 +107,14 @@ function nearestForecastHour(forecastHours: string[], observedAt: string): strin
 async function main() {
   const at = new Date().toISOString();
 
-  if (!existsSync(forecastPath)) {
-    // Without a forecast there is nothing to compare against, and a row
-    // holding only an observation cannot verify anything.
-    console.warn("record-observations: no forecast-sites.json - run collect:forecasts first. Nothing recorded.");
+  // Without a forecast there is nothing to compare against, and a row
+  // holding only an observation cannot verify anything.
+  const forecast = await loadForecast();
+  if (forecast === null) {
+    console.warn("record-observations: no forecast available from the site or locally. Nothing recorded.");
     return;
   }
-  const forecast = JSON.parse(readFileSync(forecastPath, "utf-8")) as GeneratedForecastSitesFile;
+  console.log(`record-observations: comparing against the forecast published at ${forecast.generatedAt}`);
 
   const catalogue = buildCatalogue();
   const live = await collectLiveSamples(catalogue.sites, {
@@ -121,6 +160,11 @@ async function main() {
       fcMs: f.heights[SURFACE_HEIGHT_M].windSpeedMs[i] ?? null,
       fcDeg: f.heights[SURFACE_HEIGHT_M].windDirectionDeg[i] ?? null,
       fcGust: f.windGustMs[i] ?? null,
+      // How old the forecast was when compared. The published file can
+      // be hours stale when Open-Meteo rate-limits the refresh job, and
+      // a bias figure that mixes fresh and stale forecasts measures two
+      // things at once.
+      fcIssued: forecast.generatedAt,
     });
 
     if (row === null) {

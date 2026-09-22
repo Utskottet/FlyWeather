@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   appendObservations,
   buildObservationRow,
+  leadHours,
   monthFileName,
   observationKey,
   parseObservations,
@@ -24,6 +25,7 @@ function input(over: Partial<Parameters<typeof buildObservationRow>[0]> = {}) {
     fcMs: 6.1,
     fcDeg: 316,
     fcGust: 8.4,
+    fcIssued: "2026-09-21T16:58:33Z",
     ...over,
   };
 }
@@ -159,6 +161,32 @@ describe("the row shape a month of these has to support", () => {
     const row: ObservationRow = buildObservationRow(input())!;
     expect(Object.keys(row).sort()).toEqual(["at", "fc", "hour", "obs", "site"]);
     expect(Object.keys(row.obs).sort()).toEqual(["ageConfirmed", "deg", "gust", "ms", "src"]);
-    expect(Object.keys(row.fc).sort()).toEqual(["deg", "gust", "ms"]);
+    expect(Object.keys(row.fc).sort()).toEqual(["deg", "gust", "issued", "ms"]);
+  });
+});
+
+describe("leadHours", () => {
+  /**
+   * Without this the file silently mixes forecasts issued minutes before
+   * the hour with forecasts issued six hours before it, and a bias
+   * figure over that mixture measures two different things at once. It
+   * is not hypothetical: the first rows on 2026-09-22 were compared
+   * against a 6.5-hour-old forecast, because Open-Meteo was rate-limiting
+   * the refresh job.
+   */
+  it("recovers how far ahead the forecast was predicting", () => {
+    const row = buildObservationRow(input())!;
+    expect(leadHours(row)).toBeCloseTo(0.02, 2);
+  });
+
+  it("reports a stale forecast as the long-lead prediction it actually was", () => {
+    const row = buildObservationRow(input({ fcIssued: "2026-09-21T11:00:00Z" }))!;
+    expect(leadHours(row)).toBeCloseTo(6, 5);
+  });
+
+  it("says unknown rather than zero for a row written before the field existed", () => {
+    const row = buildObservationRow(input({ fcIssued: undefined }))!;
+    expect(row.fc.issued).toBeUndefined();
+    expect(leadHours(row)).toBeNull();
   });
 });
