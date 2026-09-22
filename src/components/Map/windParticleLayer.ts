@@ -25,8 +25,15 @@ const TILE_WORLD_PIXELS = 512;
 const MAX_EFFECTIVE_SPEED_MS = 10;
 const ADVECT_DEGREES_PER_SEC_PER_MS = 0.006; // tuned visually - see DECISIONS.md
 
-const MIN_PARTICLES = 500;
-const MAX_PARTICLES = 2200;
+// Doubled on request. Density is purely a rendering choice: every
+// particle is interpolated from the same 961-point grid by
+// sampleWindField, so more of them costs nothing in bandwidth and adds
+// no information - it makes the flow legible, it does not make it finer.
+// The cost is CPU, per particle per frame, on the main thread; the
+// vertex buffer below is reused rather than reallocated to pay for it.
+const PARTICLES_PER_CANVAS_PIXEL_AREA = 700;
+const MIN_PARTICLES = 1000;
+const MAX_PARTICLES = 4400;
 const PARTICLE_MAX_AGE_SEC = 6 + Math.random(); // jittered per-instance so respawns aren't synchronized
 
 // Streak size is a fixed pixel size (scaled by speed), deliberately NOT
@@ -35,8 +42,16 @@ const PARTICLE_MAX_AGE_SEC = 6 + Math.random(); // jittered per-instance so resp
 // debug run: ~1px/frame at 60fps), which rendered as near-invisible
 // specks rather than readable streaks. Longer streak = faster wind is a
 // second, free way (besides color) to read speed at a glance.
+/** 6 vertices (2 triangles) per particle: vec2 pos + vec4 rgba each. */
+const FLOATS_PER_VERTEX = 6;
+
 const STREAK_HEAD_WIDTH_PX = 4.2;
-const STREAK_MIN_LENGTH_PX = 10;
+// Raised from 10. At low wind the length formula sits on this floor, so
+// a calm streak was both the shortest and the faintest thing on the map
+// - two small effects that multiply into invisibility. A longer floor
+// puts more ink on screen exactly where it was missing, and costs
+// nothing above about 2.5 m/s where the speed term already dominates.
+const STREAK_MIN_LENGTH_PX = 16;
 const STREAK_MAX_LENGTH_PX = 34;
 const STREAK_LENGTH_PER_MS = 2.4;
 
@@ -147,6 +162,8 @@ export class WindParticleLayer implements CustomLayerInterface {
   private grid: WindFieldGrid | null = null;
   private particles: ParticleState | null = null;
   private particleCount = MIN_PARTICLES;
+  /** Reused every frame - see where it is allocated. */
+  private vertexData: Float32Array | null = null;
   private lastFrameMs: number | null = null;
   private paused = false;
   private removed = false;
@@ -178,8 +195,16 @@ export class WindParticleLayer implements CustomLayerInterface {
     this.uMatrixLoc = gl.getUniformLocation(program, "u_matrix");
 
     const canvasArea = gl.canvas.width * gl.canvas.height;
-    this.particleCount = Math.round(Math.min(MAX_PARTICLES, Math.max(MIN_PARTICLES, canvasArea / 1400)));
+    this.particleCount = Math.round(
+      Math.min(MAX_PARTICLES, Math.max(MIN_PARTICLES, canvasArea / PARTICLES_PER_CANVAS_PIXEL_AREA)),
+    );
     this.particles = allocateParticles(this.particleCount, this.grid);
+    // Allocated once, not per frame. This used to be a fresh
+    // Float32Array on every single frame - at 4400 particles and 60 fps
+    // that is 60 MB a second handed to the garbage collector for no
+    // reason, and the cost scales with exactly the number we just
+    // doubled.
+    this.vertexData = new Float32Array(this.particleCount * 6 * FLOATS_PER_VERTEX);
 
     this.vao = gl.createVertexArray();
     this.vertexBuffer = gl.createBuffer();
@@ -220,9 +245,8 @@ export class WindParticleLayer implements CustomLayerInterface {
     if (!grid || !particles) return null;
 
     const count = this.particleCount;
-    // 6 vertices (2 triangles) per particle: vec2 pos + vec4 rgba each.
-    const floatsPerVertex = 6;
-    const vertexData = new Float32Array(count * 6 * floatsPerVertex);
+    const floatsPerVertex = FLOATS_PER_VERTEX;
+    const vertexData = this.vertexData ?? new Float32Array(count * 6 * floatsPerVertex);
     const scale = mercatorUnitsPerPixel(this.map?.getZoom() ?? 8);
 
     for (let i = 0; i < count; i++) {

@@ -169,12 +169,29 @@ export function sampleWindField(
  * better for continuously-flowing particles than discrete steps do.
  */
 export const WIND_SPEED_COLOR_STOPS: { speedMs: number; rgb: [number, number, number] }[] = [
-  { speedMs: 0, rgb: [0x90, 0xca, 0xf9] },
-  { speedMs: 2, rgb: [0x42, 0xa5, 0xf5] },
-  { speedMs: 5, rgb: [0x66, 0xbb, 0x6a] },
+  { speedMs: 0, rgb: [0x15, 0x65, 0xc0] },
+  { speedMs: 2, rgb: [0x1e, 0x88, 0xe5] },
+  { speedMs: 5, rgb: [0x43, 0xa0, 0x47] },
   { speedMs: 8, rgb: [0xff, 0xa7, 0x26] },
   { speedMs: 12, rgb: [0xef, 0x53, 0x50] },
 ];
+
+/**
+ * Why the cool end is darker than a wind map usually draws it.
+ *
+ * This basemap is grey by deliberate choice - sea #8c94a1, land #c1d3da.
+ * The old stops were pale: calm was #90caf9, whose perceived brightness
+ * is about 190 against land at 206. Over land it was nearly invisible,
+ * and over the sea it was weak. Reported from a phone: "in low wind it's
+ * really hard to see against the grey sea."
+ *
+ * Brightness is what carries a 4 px streak, not hue, so the cool stops
+ * now sit well below both backgrounds (roughly 88, 115 and 122 against
+ * 147 and 206) while keeping the same blue-green-orange-red progression.
+ * The warm stops are left alone: orange and red read against a cool grey
+ * on hue alone, and darkening them would make a gale look muddy rather
+ * than urgent.
+ */
 
 /** Linearly interpolated RGB (0-1 range, for WebGL vertex colors) for a given speed, clamped to the ramp's endpoints. */
 export function speedToColor(speedMs: number): [number, number, number] {

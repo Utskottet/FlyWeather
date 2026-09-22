@@ -1,4 +1,5 @@
 import { polarToCartesian } from "../../domain/direction.ts";
+import { WIND_SPEED_COLOR_STOPS } from "../../domain/windField.ts";
 
 export interface WindArrowProps {
   windDirectionDeg: number;
@@ -10,15 +11,27 @@ const SIZE_DEFAULT = 28;
 
 /**
  * Speed color bands, roughly Beaufort-like - not an official scale, just
- * visually distinct steps matching typical wind-map conventions (calm
- * blue through strong red).
+ * visually distinct steps matching typical wind-map conventions.
+ *
+ * Derived from WIND_SPEED_COLOR_STOPS rather than written out again. The
+ * two used to be separate lists of the same five hex values, with a
+ * comment in windField.ts insisting they matched "exactly" - which is
+ * precisely the arrangement that lets them stop matching without anyone
+ * noticing. This file is the reduced-motion fallback for the animated
+ * field, so the one thing it must never do is disagree with it.
+ *
+ * Still stepped rather than interpolated: discrete arrows read better as
+ * bands, while continuously-flowing particles read better as a gradient.
+ * Same colors, different sampling of them.
  */
 function speedColor(speedMs: number): string {
-  if (speedMs < 2) return "#90caf9";
-  if (speedMs < 5) return "#42a5f5";
-  if (speedMs < 8) return "#66bb6a";
-  if (speedMs < 12) return "#ffa726";
-  return "#ef5350";
+  const stops = WIND_SPEED_COLOR_STOPS;
+  let chosen = stops[0];
+  for (const stop of stops) {
+    if (speedMs >= stop.speedMs) chosen = stop;
+  }
+  const [r, g, b] = chosen.rgb;
+  return `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 }
 
 /** A point offset both along `axisAngle` and sideways along `axisAngle +/- 90deg`, built from two polarToCartesian calls (one for position, one for a pure lateral delta from the origin) rather than hand-rolled trig, to stay consistent with the rest of the codebase's angle convention. */
