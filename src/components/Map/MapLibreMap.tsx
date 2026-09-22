@@ -189,6 +189,26 @@ export function MapLibreMap({
     // across RELIEF/TOPO/MAP per Block 18's "no toggle" requirement.
     instance.on("zoom", () => onZoomChangeRef.current?.(instance.getZoom()));
 
+    // Report the STARTING zoom too, not only changes to it.
+    //
+    // "zoom" fires on change, so before the first pinch nothing had ever
+    // told the parent what zoom the map opened at, and it was left
+    // guessing - marker sizes were seeded from a hardcoded zoom 10 while
+    // the map actually opens fitted to every site, around z6-7. The roses
+    // rendered at roughly double their correct size and snapped down the
+    // instant anybody touched zoom.
+    //
+    // `bounds` + `fitBoundsOptions` are constructor options, so the fit is
+    // already applied here and getZoom() is the real fitted value. The
+    // "load" emit is belt and braces for any style/size settling that
+    // moves it afterwards; the parent compares against what it already has,
+    // so a repeated identical value costs nothing.
+    onZoomChangeRef.current?.(instance.getZoom());
+    instance.once("load", () => {
+      if (disposed) return;
+      onZoomChangeRef.current?.(instance.getZoom());
+    });
+
     instance.on("style.load", () => {
       if (disposed) return;
       // RASP added first so it paints as the bottom-most overlay, directly

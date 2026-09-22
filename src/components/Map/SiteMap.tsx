@@ -20,7 +20,7 @@ import { IssuesPanel } from "../Issues/IssuesPanel.tsx";
 import { LogPanel } from "../Log/LogPanel.tsx";
 import { emptyDraft, siteToDraft, sitePathFor, type SiteDraft } from "../../domain/siteEditor.ts";
 import { CAN_EDIT } from "../../app/adminMode.ts";
-import { SELECTED_MARKER_SCALE, markerSizeForZoom } from "../../domain/markerSize.ts";
+import { INITIAL_MAP_ZOOM_ESTIMATE, SELECTED_MARKER_SCALE, markerSizeForZoom } from "../../domain/markerSize.ts";
 import { useIsCompact } from "../../app/useIsCompact.ts";
 import { WindArrow } from "../WindArrowField/index.ts";
 import { computeSiteBounds } from "./mapBounds.ts";
@@ -216,7 +216,15 @@ export function SiteMap({ sites, allSiteIds = [], freshMinutes, staleMinutes }: 
   // Quantised to the whole pixels a rose is actually drawn at, so a slow
   // pinch re-renders the markers only when their size really changes -
   // the zoom event itself fires continuously.
-  const [markerSize, setMarkerSize] = useState(() => markerSizeForZoom(10));
+  //
+  // Seeded from the zoom the map actually opens at rather than a guess.
+  // This used to say markerSizeForZoom(10), which is 54 px, while the map
+  // opens fitted to every site at about z6-7, which is 26 px: the roses
+  // rendered at double size and snapped down the moment anybody touched
+  // zoom. MapLibreMap now reports its starting zoom, so this initial value
+  // is only what is drawn for the single frame before that arrives - and
+  // it matches the fitted end of the scale rather than the middle.
+  const [markerSize, setMarkerSize] = useState(() => markerSizeForZoom(INITIAL_MAP_ZOOM_ESTIMATE));
   // The open editor, or null. Only ever set from the admin-gated buttons,
   // so a normal visitor can never reach it - see app/adminMode.ts.
   const [editor, setEditor] = useState<

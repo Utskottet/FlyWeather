@@ -44,3 +44,19 @@ export function markerSizeForZoom(zoom: number): number {
   }
   return lastSize;
 }
+
+/**
+ * Roughly the zoom the map opens at, fitted to every site in the
+ * catalogue - southern Sweden and Denmark in one view.
+ *
+ * Only ever used to size the roses for the frame or two before MapLibre
+ * reports its real fitted zoom. It exists so that first frame is drawn at
+ * about the right size instead of a guess from the middle of the scale,
+ * which is what made the roses visibly jump the first time anybody
+ * touched zoom.
+ *
+ * Not a source of truth and never fed back into the map: if the catalogue
+ * grows to change the fitted zoom, the worst this can cause is one frame
+ * at a slightly wrong size.
+ */
+export const INITIAL_MAP_ZOOM_ESTIMATE = 7;
