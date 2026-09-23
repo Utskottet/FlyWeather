@@ -1833,8 +1833,10 @@ time-critical: nothing can be analysed until rows exist.
   test, correctly skipped because the data is fresh)
   [x] `wrangler deploy --dry-run` bundles the Worker with the new
   `[triggers]` cron and exits 0
-  [ ] live cron observed firing on its own - cannot be seen from here (see
-  Deferred)
+  [x] live cron observed firing on its own: `repository_dispatch` runs at
+  17:00:22Z and 17:30:22Z (both success), exactly on the Worker's `:00`
+  and `:30` marks, and the live `forecast-sites.json` `generatedAt` moved
+  to 17:30:50Z - 8.8 minutes old, from 4.09 hours
 - Change 1 - stop the false alarm: `FORECAST_STALE_MINUTES` 180 -> 360
   (`src/components/Map/SiteMap.tsx`), the value `BACKLOG.md` asked for.
   Measured gaps reach 318 minutes, so 180 flagged normal operation.
@@ -1862,15 +1864,15 @@ time-critical: nothing can be analysed until rows exist.
   `editor-worker/src/index.ts`, `src/components/Map/SiteMap.tsx`,
   `tests/unit/workerDispatch.test.ts` (new), `docs/PUBLISHING.md`,
   `BACKLOG.md` (item closed).
-- Deferred / unresolved: the live path cannot be fully verified from a
-  local checkout - it needs the Worker redeployed (Cloudflare Builds) and
-  a cron window. Confirmation to watch: GitHub Actions -> Weather Refresh
-  should start showing runs whose event is `repository_dispatch` within
-  ~35 minutes of deploy. If none appear, the Worker's `GITHUB_TOKEN` is
-  missing `Contents: write` (or the Worker did not redeploy); the
-  admin-only `/api/refresh-weather` returns GitHub's exact error if so.
-  Until confirmed, the workflow's own `schedule` remains as the fallback,
-  so the worst case is the old behaviour.
+- Deferred / unresolved: none. The live path was confirmed after deploy:
+  GitHub Actions now shows `repository_dispatch` runs exactly on the
+  Worker's `:00` and `:30` marks (17:00:22Z and 17:30:22Z, both success),
+  and the published `forecast-sites.json` / `forecast-wind-grid.json` both
+  carry a `generatedAt` ~9 minutes old instead of 4 hours. The token
+  permission question was settled from GitHub's own fine-grained
+  permissions table: `POST /repos/{owner}/{repo}/dispatches` requires
+  Contents:write, which the publishing token already has, so no second
+  credential or user setup was needed.
 - Commit: 6d71c22 "Fix forecast staleness: reliable 30-min refresh trigger
   + honest banner threshold" (PROGRESS recorded in the follow-up commit).
 - Next: confirm the live `repository_dispatch` runs, then resume the UX2
