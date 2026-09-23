@@ -1812,3 +1812,67 @@ both bugs, the open 100/150 m seam) and `docs/FORECAST_VERIFICATION.md` with
 already read and currently throw away every five minutes. Chunk A is
 time-critical: nothing can be analysed until rows exist.
 
+## Forecast refresh made reliable + stale banner corrected (2026-09-23)
+
+- Status: done (code and local verification). One deployment-side step
+  remains unverifiable from this machine - see Deferred.
+- Trigger: user report "forecast data is 4 h old". Root-caused against the
+  live site, not guessed: `forecast-sites.json`'s `generatedAt` was
+  4.09 h behind `Date.now()`, and equalled the last weather-refresh run's
+  own start time (run created 12:19:20Z, file written 12:19:41Z). A
+  fallback (429) preserves the *old* `generatedAt`, so the timestamp
+  proved the last run fetched cleanly - the only fault was that no run had
+  happened in four hours. GitHub ran the `*/5` cron at 2-5 hour gaps
+  (runs list: 12:19, 06:47, 01:47, 23:37, 21:14...). Live wind had already
+  escaped this dependency via the Worker's `/api/live`; the forecast had
+  not.
+- Definition of Done:
+  [x] `npm run typecheck` clean  [x] `npm run lint` clean
+  [x] 852 unit tests green (849 + 3 new)  [x] `npm run build` green
+  [x] e2e: 20 passed / 1 skipped (the skip is the stale-notice collision
+  test, correctly skipped because the data is fresh)
+  [x] `wrangler deploy --dry-run` bundles the Worker with the new
+  `[triggers]` cron and exits 0
+  [ ] live cron observed firing on its own - cannot be seen from here (see
+  Deferred)
+- Change 1 - stop the false alarm: `FORECAST_STALE_MINUTES` 180 -> 360
+  (`src/components/Map/SiteMap.tsx`), the value `BACKLOG.md` asked for.
+  Measured gaps reach 318 minutes, so 180 flagged normal operation.
+- Change 2 - make the refresh actually happen: the Cloudflare Worker gains
+  a free fallback-safe external trigger. `editor-worker/wrangler.toml`
+  adds `[triggers] crons = ["*/30 * * * *"]`; `editor-worker/src/index.ts`
+  adds a `scheduled` handler that calls the new
+  `editor-worker/src/dispatch.ts` -> GitHub `repository_dispatch`
+  (event `refresh-weather`), which `weather-refresh.yml` now listens for
+  alongside its own `schedule`. Reuses the existing `GITHUB_TOKEN`
+  (`repository_dispatch` needs the same `Contents: write` publishing
+  already requires), so no second credential. An admin-only
+  `/api/refresh-weather` was added so the trigger can be forced and
+  GitHub's real answer read; it is deliberately not open, since a dispatch
+  starts a full build and deploy.
+- Open-Meteo headroom, checked because the user raised it: the collector
+  makes ~4 Open-Meteo calls per run (1 batched request for all 21 sites +
+  3 grid batches for 961 points; the DMI raster comes from
+  FlyWeather-Soaring, not Open-Meteo). At every 30 minutes that is
+  ~192 calls/day against the 10,000/day free limit - about 2%. The
+  2026-09 production 429 was per-visitor fetching, not server-side
+  cadence, so this cannot reintroduce it.
+- Files: `.github/workflows/weather-refresh.yml`,
+  `editor-worker/wrangler.toml`, `editor-worker/src/dispatch.ts` (new),
+  `editor-worker/src/index.ts`, `src/components/Map/SiteMap.tsx`,
+  `tests/unit/workerDispatch.test.ts` (new), `docs/PUBLISHING.md`,
+  `BACKLOG.md` (item closed).
+- Deferred / unresolved: the live path cannot be fully verified from a
+  local checkout - it needs the Worker redeployed (Cloudflare Builds) and
+  a cron window. Confirmation to watch: GitHub Actions -> Weather Refresh
+  should start showing runs whose event is `repository_dispatch` within
+  ~35 minutes of deploy. If none appear, the Worker's `GITHUB_TOKEN` is
+  missing `Contents: write` (or the Worker did not redeploy); the
+  admin-only `/api/refresh-weather` returns GitHub's exact error if so.
+  Until confirmed, the workflow's own `schedule` remains as the fallback,
+  so the worst case is the old behaviour.
+- Commit: 6d71c22 "Fix forecast staleness: reliable 30-min refresh trigger
+  + honest banner threshold" (PROGRESS recorded in the follow-up commit).
+- Next: confirm the live `repository_dispatch` runs, then resume the UX2
+  block (chunk 2: header wording, RASP chip, Add-site visibility).
+
