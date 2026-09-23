@@ -3,13 +3,26 @@
 #
 # Secrets are set once with `wrangler secret put <NAME>` and never live in
 # this file, in the repository, or in the browser:
-#   GITHUB_TOKEN     fine-grained PAT, contents:write on this repo only
+#   GITHUB_TOKEN     fine-grained PAT, contents:write on this repo only.
+#                    Also used to dispatch the weather refresh - a
+#                    repository_dispatch needs the same Contents:write,
+#                    so there is no second credential to drift or expire.
 #   ADMIN_PASSWORD   the admin password (revert/hide only - editing is open)
 #   SESSION_SECRET   random string; rotating it signs everyone out
 name = "startvind-editor"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 workers_dev = true
+
+# A reliable clock for the weather refresh. GitHub's own scheduled
+# workflows are throttled hard - a "*/5" cron measured firing every 2-5
+# hours (docs/PUBLISHING.md) - which left the published forecast hours old
+# and lit a staleness banner during entirely normal operation. This cron
+# dispatches the weather-refresh workflow via repository_dispatch every 30
+# minutes instead; Cloudflare fires to the minute. The workflow keeps its
+# own `schedule` as a free fallback, and the two never conflict.
+[triggers]
+crons = ["*/30 * * * *"]
 
 [vars]
 GITHUB_OWNER = "Utskottet"

@@ -92,11 +92,6 @@ known rather than discovered later.
   grows, so the Log page's list becomes less useful the more it is used.
   The open question is who may close one - anyone, attributed, the way
   edits work; or only an admin once that layer exists.
-- **The stale-forecast banner is still tuned wrong.** It fires at 180
-  minutes, and measured gaps between publish runs reach 318 - so it will
-  occasionally cry wolf about a pipeline that is behaving normally for
-  GitHub's scheduler. Now that live wind no longer depends on that
-  pipeline, the threshold should be something like six hours.
 - **`skyBand.ts` throws above the Arctic Circle.** `sunriseSunsetForDay`
   deliberately refuses to guess when suncalc reports no sunrise or
   sunset, which is correct - but the caller has no handler, so a site

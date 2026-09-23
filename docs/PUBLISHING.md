@@ -44,6 +44,23 @@ schedule when it feels like it. That is why **live station wind no
 longer comes from the build at all**: the Worker reads the stations on
 demand (`/api/live`), and the built `live.json` is only a fallback.
 
+That applies to the forecast too, and it is now fixed the same way in
+spirit. The Worker has its own cron (`wrangler.toml`'s `[triggers]`,
+every 30 minutes) that dispatches `weather-refresh.yml` through a
+`repository_dispatch`. A Cloudflare cron fires to the minute where
+GitHub's does not, so the published forecast no longer waits hours for
+GitHub to feel like rebuilding. The workflow keeps its own `schedule` as
+a free fallback: a paused Worker or a token without permission degrades
+to exactly the old behaviour, not to no refresh at all. The dispatch
+reuses the same `GITHUB_TOKEN` the publisher commits with, because a
+repository dispatch needs the same `Contents: write` that publishing
+already requires.
+
+This is also why the app's staleness banner threshold is six hours, not
+three: it exists to catch a genuinely stopped pipeline, not the
+scheduler's ordinary jitter, and a warning shown when nothing is wrong is
+one people learn to ignore.
+
 ## Why a Worker rather than a token in the browser
 
 A GitHub token that can write to the repository must never reach a
@@ -70,6 +87,7 @@ Safari and therefore on the iPhone this has to work from.
 | `/api/verify` | signed edit | A log line saying a site is still accurate. No caller today |
 | `/api/issue` | signed edit | Appends to `data/issues.jsonl` |
 | `/api/live` | none | Reads every site's station on demand, edge-cached 2 min |
+| `/api/refresh-weather` | admin session | Forces one weather-refresh run now. Admin-only: a dispatch starts a full build and deploy |
 | `/api/station-observation` | none | One station's current reading, for the finder's preview |
 | `/api/deployment` | none | Where a published commit has got to |
 | `/api/login`, `/api/session` | password | The admin session. Nothing on the ordinary path uses it |

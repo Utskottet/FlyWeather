@@ -10,9 +10,21 @@ name: Weather Refresh
 # since per-visitor fetching tripped Open-Meteo's real rate limit under
 # live traffic (see docs/DECISIONS.md's "production regression" entry).
 on:
+  # GitHub's own scheduler is unreliable at this frequency: measured over
+  # 48 hours this "*/5" cron produced 15 runs, at gaps of 117 to 318
+  # minutes (docs/PUBLISHING.md). It is kept because it is free and it does
+  # fire, but it is no longer the only trigger.
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
+  # The reliable path: the Cloudflare Worker's own cron dispatches this
+  # event every 30 minutes (editor-worker/wrangler.toml's [triggers]), so
+  # the published forecast stops going hours stale whenever GitHub feels
+  # like skipping a schedule. The event name is shared with
+  # editor-worker/src/dispatch.ts (REFRESH_EVENT_TYPE) - renaming it in one
+  # place and not the other silently turns the refresh off.
+  repository_dispatch:
+    types: [refresh-weather]
 
 permissions:
   contents: read

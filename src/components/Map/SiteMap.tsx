@@ -39,27 +39,30 @@ const SURFACE_HEIGHT_M = 10;
 const SURFACE_ALTITUDE_M = 0;
 const ARROW_SIZE = 39; // 1.5x the original 26px, per user feedback
 
-// Forecast/wind-grid data is published every ~5 minutes by
-// scripts/collect-forecasts.ts (server-side), not fetched live per
-// visitor - these thresholds flag when the publish job itself seems to
-// have STOPPED, not every visitor's page-load timing relative to the last
-// run.
+// Forecast/wind-grid data is published by scripts/collect-forecasts.ts
+// (server-side), not fetched live per visitor - these thresholds flag when
+// the publish job itself seems to have STOPPED, not every visitor's
+// page-load timing relative to the last run.
 //
-// Three hours, not one. At a five-minute cadence an hour is twelve missed
-// runs, which sounds decisive until you remember what actually produces
-// it: GitHub Actions' scheduler routinely delays or drops cron runs under
-// load, and this repository is not entitled to better. So an hour caught
-// ordinary scheduler weather and put a brown banner over the map for it -
-// and a warning shown when nothing is wrong is a warning people learn to
-// scroll past, which costs us the one time it matters.
+// Six hours, not one. The refresh is now nudged every 30 minutes by an
+// external trigger (the Cloudflare Worker's cron dispatching
+// weather-refresh.yml - see docs/PUBLISHING.md), so a normal gap should be
+// well under an hour. But GitHub's own `schedule` trigger still runs too,
+// and it is unreliable: measured over 48 hours it fired at gaps of 117 to
+// 318 minutes, every run successful. A lower threshold therefore caught
+// ordinary scheduler weather and put a banner over the map for it - and a
+// warning shown when nothing is wrong is a warning people learn to scroll
+// past, which costs us the one time it matters. 360 minutes clears the
+// worst measured gap (318) with margin; this is the value BACKLOG.md asked
+// for after that measurement.
 //
-// Three hours cannot be jitter. It is ~36 consecutive missed runs, and
-// the forecast underneath is still a forecast - hourly model data running
-// 60 hours ahead, so a three-hour-old download is not three hours of
-// missing weather, it is a slightly older run of the same weather. That
-// is the honest reason this can afford to wait.
+// The forecast underneath is still a forecast - hourly model data running
+// 60 hours ahead - so a six-hour-old download is not six hours of missing
+// weather, it is a slightly older run of the same weather. That is the
+// honest reason this can afford to wait, and why the banner is only worth
+// raising when the pipeline has genuinely stopped.
 const FORECAST_FRESH_MINUTES = 15;
-const FORECAST_STALE_MINUTES = 180;
+const FORECAST_STALE_MINUTES = 360;
 
 /** "4 h" / "2 days" - coarse on purpose, since this only ever describes something broken. */
 function formatAge(ms: number): string {

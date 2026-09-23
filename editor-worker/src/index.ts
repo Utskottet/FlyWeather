@@ -1,4 +1,5 @@
 import { bearerFrom, issueToken, passwordMatches, verifyToken } from "./auth.ts";
+import { dispatchWeatherRefresh, REFRESH_EVENT_TYPE } from "./dispatch.ts";
 import { createGitHubGateway, deploymentStatus, type GitHubConfig } from "./github.ts";
 import { postIssue, publishSite, verifySite, type IssueRequest, type PublishRequest, type VerifyRequest } from "./publish.ts";
 import { resolveLiveSample } from "../../src/providers/live/resolver.ts";
@@ -40,6 +41,20 @@ import { collectLiveSamples, type SiteWithStation } from "../../src/providers/li
 interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
+}
+
+/**
+ * The two fields this Worker reads from a Cloudflare cron event. Declared
+ * for the same reason ExecutionContext is: the Worker is type-checked by
+ * the repo's own tsconfig, which has no @cloudflare/workers-types, and
+ * adding them globally would redefine fetch/Request/Response for the whole
+ * app to no benefit.
+ */
+interface ScheduledEvent {
+  /** The cron expression that fired, from wrangler.toml's `[triggers]`. */
+  cron: string;
+  /** Epoch milliseconds the trigger was scheduled for - not when it ran. */
+  scheduledTime: number;
 }
 
 export interface Env {
@@ -150,6 +165,30 @@ export default {
         corsHeaders(request, env),
       );
     }
+  },
+
+  /**
+   * The reliable clock for the weather refresh (wrangler.toml's
+   * `[triggers]`, every 30 minutes).
+   *
+   * GitHub's own scheduled workflows are throttled to the point of being
+   * useless at short intervals - a five-minute cron measured
+   * 117-to-318-minute gaps (docs/PUBLISHING.md) - so the forecast it
+   * publishes went hours stale while everything still reported success.
+   * Cloudflare fires a cron to the minute, so this nudges the workflow via
+   * repository_dispatch and the forecast actually stays current.
+   *
+   * Nothing is stored and nothing is returned: a dispatch either starts the
+   * workflow or it logs why it could not. The workflow itself keeps its own
+   * `schedule` as a free fallback, so a broken token or a paused Worker
+   * degrades to exactly the old behaviour rather than to no refresh at all.
+   */
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(
+      dispatchWeatherRefresh(githubConfig(env)).catch((err: unknown) => {
+        console.error("scheduled weather-refresh dispatch failed", err);
+      }),
+    );
   },
 };
 
@@ -417,6 +456,28 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
       if (!sha) return json({ ok: false, error: "sha is required." }, 400, cors);
       const status = await deploymentStatus(githubConfig(env), sha);
       return json({ ok: true, ...status }, 200, cors);
+    }
+
+    if (url.pathname === "/api/refresh-weather" && request.method === "POST") {
+      // Admin-only, unlike publishing. The scheduled cron is the normal
+      // path; this exists so an operator can force one refresh and read
+      // GitHub's real answer while confirming the trigger works - the
+      // scheduled handler can only log. It is deliberately NOT open: a
+      // dispatch starts a full build and deploy, so an unauthenticated
+      // endpoint would let any visitor burn Actions minutes and Pages
+      // builds in a loop.
+      if (!(await requireSession(request, env))) {
+        return json({ ok: false, error: "Not signed in." }, 401, cors);
+      }
+      try {
+        await dispatchWeatherRefresh(githubConfig(env));
+        return json({ ok: true, dispatched: REFRESH_EVENT_TYPE }, 200, cors);
+      } catch (err) {
+        // The real GitHub message, verbatim: if the token is missing
+        // "Contents: write" this is where that finally becomes visible,
+        // instead of a cron that fails silently every 30 minutes.
+        return json({ ok: false, error: (err as Error).message }, 502, cors);
+      }
     }
 
     return json({ ok: false, error: "Not found." }, 404, cors);
