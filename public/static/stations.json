@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T08:39:07.089Z",
+  "generatedAt": "2026-09-24T08:31:39.051Z",
   "providers": [
     {
       "id": "smhi",
@@ -12,7 +12,7 @@
       "id": "viva",
       "name": "ViVa (Sjöfartsverket)",
       "status": "ok",
-      "stationCount": 114,
+      "stationCount": 113,
       "note": "Listed with both wind speed and direction. Some may currently be offline."
     },
     {
@@ -186,7 +186,7 @@
       "key": "holfuy:1409",
       "provider": "holfuy",
       "id": "1409",
-      "name": "Motala Tower",
+      "name": "Norrköping",
       "lat": 58.5423,
       "lon": 14.969,
       "stationType": "Holfuy",
@@ -342,9 +342,9 @@
       "key": "holfuy:1844",
       "provider": "holfuy",
       "id": "1844",
-      "name": "1844 Linkan",
-      "lat": 58.37348,
-      "lon": 15.68978,
+      "name": "Motala Tower",
+      "lat": 58.54232,
+      "lon": 14.969,
       "stationType": "Holfuy",
       "locationSource": "Holfuy public station page",
       "gustAvailable": true,
@@ -4373,8 +4373,8 @@
       "provider": "viva",
       "id": "23",
       "name": "Oden",
-      "lat": 67.2145,
-      "lon": 14.1218,
+      "lat": 63.3624,
+      "lon": 8.3758,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
@@ -4405,16 +4405,6 @@
       "name": "Brandalsund",
       "lat": 59.0998,
       "lon": 17.67833,
-      "stationType": "Sjöfartsverket ViVa",
-      "locationSource": "ViVa station catalogue"
-    },
-    {
-      "key": "viva:3",
-      "provider": "viva",
-      "id": "3",
-      "name": "Södertälje Saltsjön",
-      "lat": 59.192,
-      "lon": 17.632333,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
