@@ -1878,3 +1878,46 @@ time-critical: nothing can be analysed until rows exist.
 - Next: confirm the live `repository_dispatch` runs, then resume the UX2
   block (chunk 2: header wording, RASP chip, Add-site visibility).
 
+## Forecast accuracy lab (prototype) — 2026-09-28
+
+- Status: done (local lab shipped; deliberately nothing on the site)
+- Context: Phase 4 chunk A (the recorder) has been keeping
+  forecast-versus-measurement rows since 2026-09-21
+  (`docs/FORECAST_VERIFICATION.md`). This is the reading half - see
+  `TODO_ACCURACY_REPORT.md`.
+- Shipped: `src/domain/accuracy.ts` (pure scoring, 10 tests),
+  `scripts/analyze-accuracy.ts` (writes
+  `tools/accuracy-lab/out/accuracy.json`), `scripts/lab-serve.ts` +
+  `tools/accuracy-lab/index.html` (local dashboard), and
+  `scripts/lab-collect.ts` (optional local recorder). New `lab:*` npm
+  scripts.
+- **Nothing is shown on the site.** No badge, no accuracy card, no
+  per-site figure - deliberately, until the data has earned it. Verified
+  the module is unused by the app and absent from the production bundle
+  (grep of `dist` = 0 matches).
+- Catalogue growth needs no new code: the recorder iterates every enabled
+  site with a station, and the analyzer rebuilds its site list from
+  `sites/**/*.yaml` each run, so a newly added site appears immediately
+  (`n=0`, "collecting"). Rows for a renamed/archived id are surfaced as
+  `unknownSites` rather than dropped. A new site needs **both** a station
+  and coordinates to ever be scored.
+- Definition of Done: [x] `npm run typecheck` clean  [x] `npm run lint`
+  clean  [x] 862 unit tests green (852 + 10 new)  [x] `npm run build`
+  green  [x] accuracy code absent from the production bundle
+  [x] local server + JSON verified over HTTP (index 200, data 200,
+  traversal 403)  [x] CI + Pages deploy green on the pushed commit
+  (runs 36462570297, 36462570306).
+- Commit: 97ff332 "Forecast accuracy lab: score the forecast against the
+  anemometers"
+- Deferred / unresolved: on-site beta badge and drill-down; observation
+  QC flags (range, gust>=mean, stuck, buddy check); persistence baseline
+  so a figure means skill rather than raw agreement; effective-sample
+  (per-day) counting and per-band uncertainty; a liveness alarm on the
+  recorder. The `verdict` metric is currently near-meaningless because
+  most sites have unverified wind limits (both sides read "orange").
+- Next: let the recorder run for about a week, then `git pull` and
+  `npm run lab:analyze && npm run lab:serve`, and judge whether the
+  per-site numbers are believable **before** adding any badge to the
+  site. (Note: the local clone can lag `origin/main` by many observation
+  commits - always pull before analysing.)
+
