@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Forecast accuracy — lab</title>
+    <style>
+      :root {
+        --bg: #0f1216;
+        --panel: #171c22;
+        --panel-2: #1e252d;
+        --line: #2a333d;
+        --text: #e8edf2;
+        --muted: #93a1b0;
+        --green: #2fbf71;
+        --amber: #e0a326;
+        --red: #e05b5b;
+        --blue: #4aa3ff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      header {
+        position: sticky; top: 0; z-index: 5;
+        display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline;
+        padding: 14px 18px; background: var(--panel); border-bottom: 1px solid var(--line);
+      }
+      header h1 { font-size: 16px; margin: 0; }
+      header .meta { color: var(--muted); font-size: 12px; }
+      header .grow { flex: 1; }
+      button {
+        background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+        border-radius: 6px; padding: 5px 10px; cursor: pointer; font: inherit;
+      }
+      button:hover { border-color: var(--blue); }
+      main { padding: 18px; max-width: 1200px; margin: 0 auto; }
+      .banner {
+        padding: 9px 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;
+        border: 1px solid var(--line); background: var(--panel);
+      }
+      .banner.warn { border-color: var(--amber); color: #ffd98a; }
+      .banner.info { color: var(--muted); }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { text-align: right; padding: 7px 9px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+      th:first-child, td:first-child { text-align: left; }
+      thead th { color: var(--muted); font-weight: 500; cursor: pointer; user-select: none; }
+      thead th:hover { color: var(--text); }
+      tbody tr { cursor: pointer; }
+      tbody tr:hover { background: var(--panel); }
+      tbody tr.selected { background: #22303d; }
+      .pill { padding: 1px 7px; border-radius: 10px; font-size: 11px; border: 1px solid var(--line); color: var(--muted); }
+      .pill.ok { border-color: var(--green); color: var(--green); }
+      .pill.collect { border-color: var(--amber); color: var(--amber); }
+      .pill.none { border-color: var(--line); color: var(--muted); }
+      .num { font-variant-numeric: tabular-nums; }
+      .acc-good { color: var(--green); } .acc-mid { color: var(--amber); } .acc-bad { color: var(--red); }
+      .muted { color: var(--muted); }
+      #detail { margin-top: 22px; }
+      #detail h2 { font-size: 15px; margin: 0 0 4px; }
+      .cards { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 18px; }
+      .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 13px; min-width: 118px; }
+      .card .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+      .card .v { font-size: 20px; font-variant-numeric: tabular-nums; margin-top: 3px; }
+      .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+      .chart { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+      .chart h3 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 0 0 10px; }
+      .barrow { display: grid; grid-template-columns: 92px 1fr 62px; gap: 8px; align-items: center; margin: 5px 0; font-size: 12px; }
+      .barrow .label { color: var(--muted); }
+      .track { background: var(--panel-2); border-radius: 4px; height: 16px; overflow: hidden; }
+      .fill { height: 100%; border-radius: 4px; }
+      .barrow .val { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+      small.caveat { color: var(--muted); display: block; margin-top: 6px; }
+      footer { max-width: 1200px; margin: 8px auto 40px; padding: 0 18px; color: var(--muted); font-size: 12px; }
+      footer ul { margin: 6px 0; padding-left: 18px; }
+      .empty { color: var(--muted); padding: 24px 0; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Forecast accuracy — lab</h1>
+      <span class="meta" id="meta"></span>
+      <span class="grow"></span>
+      <label class="meta"><input type="checkbox" id="auto" checked /> auto-refresh 30s</label>
+      <button id="reload">Reload data</button>
+    </header>
+    <main>
+      <div id="banner"></div>
+      <div id="table-wrap"><div class="empty">Loading…</div></div>
+      <div id="detail"></div>
+    </main>
+    <footer>
+      <strong>How to read this.</strong>
+      <ul>
+        <li><b>Hit%</b> = share of measured hours where the forecast was within the stated speed and direction tolerance.</li>
+        <li><b>Confident</b> requires enough hours; below that a figure is shown as <i>collecting</i> and must not be trusted.</li>
+        <li>A score describes <b>forecast versus that site's anemometer</b>, not versus the launch — the meter may sit a kilometre away on a different aspect.</li>
+        <li><b>falseGreen</b> counts hours we showed flyable while the meter read over the site's own limit. It should be zero.</li>
+        <li>Raw rows: <code>data/observations/*.jsonl</code>. This page is a generated view, never the source of truth.</li>
+      </ul>
+    </footer>
+
+    <script>
+      const state = { report: null, selected: null, sortKey: "accuracyPct", sortDir: -1 };
+      const fmt = (n, d = 1, suffix = "") => (n === null || n === undefined ? "–" : n.toFixed(d) + suffix);
+      const accClass = (p) => (p === null ? "muted" : p >= 80 ? "acc-good" : p >= 60 ? "acc-mid" : "acc-bad");
+      const fillColor = (p) =>
+        p === null ? "var(--line)" : p >= 80 ? "var(--green)" : p >= 60 ? "var(--amber)" : "var(--red)";
+
+      async function load() {
+        try {
+          const res = await fetch("./out/accuracy.json", { cache: "no-store" });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          state.report = await res.json();
+          render();
+        } catch (err) {
+          document.getElementById("table-wrap").innerHTML =
+            '<div class="empty">No accuracy.json yet. Run <code>npm run lab:analyze</code> then reload.<br><span class="muted">' +
+            String(err) + "</span></div>";
+        }
+      }
+
+      function sortedSites() {
+        const sites = state.report.sites.slice();
+        const key = state.sortKey;
+        sites.sort((a, b) => {
+          const av = key === "siteId" || key === "name" ? a[key] : a.overall[key];
+          const bv = key === "siteId" || key === "name" ? b[key] : b.overall[key];
+          if (typeof av === "string") return av.localeCompare(bv) * state.sortDir;
+          const an = av === null || av === undefined ? -Infinity : av;
+          const bn = bv === null || bv === undefined ? -Infinity : bv;
+          return (an - bn) * state.sortDir;
+        });
+        return sites;
+      }
+
+      function render() {
+        const r = state.report;
+        document.getElementById("meta").textContent =
+          `${r.rowCount} paired hours · hit = ±${r.options.speedToleranceMs} m/s & ±${r.options.directionToleranceDeg}° · min n = ${r.options.minSample} · generated ${r.generatedAt}`;
+
+        const withData = r.sites.filter((s) => s.overall.n > 0);
+        const confident = r.sites.filter((s) => s.overall.confident).length;
+        const noStation = r.sites.filter((s) => !s.hasStation).length;
+        document.getElementById("banner").innerHTML =
+          `<div class="banner ${confident === 0 ? "warn" : "info"}">` +
+          `${withData.length} of ${r.sites.length} sites have data; ${confident} are confident; ${noStation} have no station (never scorable).` +
+          (confident === 0 ? " <b>Everything here is still collecting — treat no figure as real yet.</b>" : "") +
+          `</div>` +
+          (r.unknownSites && r.unknownSites.length
+            ? `<div class="banner warn">Rows exist for ${r.unknownSites.length} site id(s) the catalogue no longer knows: ` +
+              `<b>${r.unknownSites.join(", ")}</b> — renamed, archived or moved? Their history is real and should be re-attached, not lost.</div>`
+            : "");
+
+        const head = [
+          ["siteId", "Site"],
+          ["accuracyPct", "Hit%"],
+          ["n", "n"],
+        ];
+        const cols = ["±spd%", "±dir%", "bias", "mae", "verdict", "falseGreen", "lastHour"];
+        let html = "<table><thead><tr>";
+        for (const [k, label] of head) html += `<th data-key="${k}">${label}</th>`;
+        html += `<th>conf</th>`;
+        for (const c of cols) html += `<th>${c}</th>`;
+        html += "</tr></thead><tbody>";
+
+        for (const s of sortedSites()) {
+          const o = s.overall;
+          const conf = !s.hasStation
+            ? '<span class="pill none">no station</span>'
+            : o.n === 0
+              ? '<span class="pill none">collecting</span>'
+              : o.confident
+                ? '<span class="pill ok">yes</span>'
+                : '<span class="pill collect">collecting</span>';
+          html +=
+            `<tr data-site="${s.siteId}" class="${state.selected === s.siteId ? "selected" : ""}">` +
+            `<td>${s.name} <span class="muted">${s.siteId}</span></td>` +
+            `<td class="num ${o.n === 0 ? "muted" : accClass(o.accuracyPct)}">${o.n === 0 ? "–" : fmt(o.accuracyPct, 1, "%")}</td>` +
+            `<td class="num">${o.n || "–"}</td>` +
+            `<td>${conf}</td>` +
+            `<td class="num muted">${fmt(o.withinSpeedPct, 0, "%")}</td>` +
+            `<td class="num muted">${fmt(o.withinDirPct, 0, "%")}</td>` +
+            `<td class="num">${fmt(o.biasMs, 1)}</td>` +
+            `<td class="num">${fmt(o.maeMs, 1)}</td>` +
+            `<td class="num muted">${fmt(o.verdictAgreementPct, 0, "%")}</td>` +
+            `<td class="num ${o.falseGreenOverLimitHours > 0 ? "acc-bad" : "muted"}">${o.falseGreenOverLimitHours}</td>` +
+            `<td class="muted">${s.lastHour ? s.lastHour.slice(0, 13).replace("T", " ") : "–"}</td>` +
+            `</tr>`;
+        }
+        html += "</tbody></table>";
+        document.getElementById("table-wrap").innerHTML = html;
+
+        for (const th of document.querySelectorAll("thead th[data-key]")) {
+          th.onclick = () => {
+            const k = th.dataset.key;
+            if (state.sortKey === k) state.sortDir *= -1;
+            else {
+              state.sortKey = k;
+              state.sortDir = k === "siteId" ? 1 : -1;
+            }
+            render();
+          };
+        }
+        for (const tr of document.querySelectorAll("tbody tr")) {
+          tr.onclick = () => {
+            state.selected = tr.dataset.site;
+            render();
+            document.getElementById("detail").scrollIntoView({ behavior: "smooth", block: "start" });
+          };
+        }
+
+        if (!state.selected && sortedSites()[0]) state.selected = sortedSites()[0].siteId;
+        renderDetail();
+      }
+
+      function chart(title, strata) {
+        const rows = strata
+          .filter((s) => s.stats.n > 0)
+          .map((s) => {
+            const p = s.stats.accuracyPct;
+            return (
+              `<div class="barrow"><span class="label">${s.label}</span>` +
+              `<span class="track"><span class="fill" style="width:${p === null ? 0 : Math.max(1, p)}%;background:${fillColor(p)}"></span></span>` +
+              `<span class="val">${p === null ? "–" : p.toFixed(0) + "%"} · n=${s.stats.n}</span></div>`
+            );
+          })
+          .join("");
+        return `<div class="chart"><h3>${title}</h3>${rows || '<div class="muted">no data</div>'}</div>`;
+      }
+
+      function renderDetail() {
+        const s = state.report.sites.find((x) => x.siteId === state.selected);
+        const el = document.getElementById("detail");
+        if (!s) { el.innerHTML = ""; return; }
+        const o = s.overall;
+
+        const cards = [
+          ["Hit%", o.n === 0 ? "–" : fmt(o.accuracyPct, 1, "%")],
+          ["Hours", String(o.n)],
+          ["Bias m/s", fmt(o.biasMs, 1)],
+          ["MAE m/s", fmt(o.maeMs, 1)],
+          ["Dir MAE°", fmt(o.dirMaeDeg, 0)],
+          ["Verdict", fmt(o.verdictAgreementPct, 0, "%")],
+          ["falseGreen", String(o.falseGreenOverLimitHours)],
+        ]
+          .map(([k, v]) => `<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`)
+          .join("");
+
+        el.innerHTML =
+          `<h2>${s.name} <span class="muted">${s.siteId}</span></h2>` +
+          `<div class="muted">${s.firstHour ? s.firstHour.slice(0, 13).replace("T", " ") + " → " + s.lastHour.slice(0, 13).replace("T", " ") : ""}` +
+          `${s.ageUnconfirmedPct !== null ? ` · ${s.ageUnconfirmedPct}% of readings could not confirm their own measurement time` : ""}</div>` +
+          (s.note ? `<div class="banner warn" style="margin-top:10px">${s.note}</div>` : "") +
+          `<div class="cards">${cards}</div>` +
+          `<div class="charts">` +
+          chart("Accuracy by wind strength (m/s)", s.byBand) +
+          chart("Accuracy by month", s.byMonth) +
+          chart("Accuracy by forecast lead time", s.byLead) +
+          `</div>` +
+          `<small class="caveat">Bias negative = forecast reads lower than the meter. A "hit" needs both speed and direction within tolerance; near-calm hours are counted and can dominate the total at low wind.</small>`;
+      }
+
+      document.getElementById("reload").onclick = load;
+      setInterval(() => {
+        if (document.getElementById("auto").checked) load();
+      }, 30000);
+      load();
+    </script>
+  </body>
+</html>

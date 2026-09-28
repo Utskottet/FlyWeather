@@ -1,0 +1,144 @@
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { dirname, extname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { buildCatalogue } from "./build-sites-catalogue.ts";
+import { parseObservations, type ObservationRow } from "../src/domain/observationLog.ts";
+import {
+  DEFAULT_ACCURACY_OPTIONS,
+  summariseAccuracy,
+  type AccuracyOptions,
+  type AccuracySite,
+} from "../src/domain/accuracy.ts";
+import type { Site } from "../src/domain/sites.ts";
+
+/**
+ * The accuracy table: what the recorder measured, turned into numbers.
+ *
+ * Reads data/observations/*.jsonl (all months) plus any lab-only rows,
+ * scores every site against its own anemometer, and writes one JSON file
+ * the local lab dashboard reads. This is a lab tool - nothing here runs
+ * in the build, and the output is not part of the deployed site.
+ *
+ * Usage:
+ *   npm run lab:analyze
+ *   npm run lab:analyze -- --dir data/observations
+ *   npm run lab:analyze -- --extra tools/accuracy-lab/out/lab-observations.jsonl
+ *   npm run lab:analyze -- --min 25 --out tools/accuracy-lab/out/accuracy.json
+ */
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(__dirname, "..");
+const DEFAULT_OUT = resolve(repoRoot, "tools/accuracy-lab/out/accuracy.json");
+const DEFAULT_OBS_DIR = resolve(repoRoot, "data/observations");
+
+interface Args {
+  out: string;
+  dir: string;
+  extra: string | null;
+  options: AccuracyOptions;
+}
+
+function parseArgs(argv: string[]): Args {
+  const args: Args = { out: DEFAULT_OUT, dir: DEFAULT_OBS_DIR, extra: null, options: { ...DEFAULT_ACCURACY_OPTIONS } };
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === "--out") args.out = resolve(repoRoot, argv[++i]);
+    else if (a === "--dir") args.dir = resolve(repoRoot, argv[++i]);
+    else if (a === "--extra") args.extra = resolve(repoRoot, argv[++i]);
+    else if (a === "--min") args.options.minSample = Number(argv[++i]);
+    else if (a === "--speed-tol") args.options.speedToleranceMs = Number(argv[++i]);
+    else if (a === "--dir-tol") args.options.directionToleranceDeg = Number(argv[++i]);
+  }
+  return args;
+}
+
+/** Every *.jsonl under a directory, sorted so month order is stable. */
+function jsonlFiles(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((name) => extname(name) === ".jsonl")
+    .sort()
+    .map((name) => join(dir, name));
+}
+
+function readRows(files: string[]): ObservationRow[] {
+  const rows: ObservationRow[] = [];
+  for (const file of files) {
+    try {
+      rows.push(...parseObservations(readFileSync(file, "utf-8")));
+    } catch (err) {
+      console.warn(`analyze-accuracy: skipping ${file} - ${(err as Error).message}`);
+    }
+  }
+  return rows;
+}
+
+function toAccuracySite(site: Site): AccuracySite {
+  return {
+    id: site.id,
+    name: site.name,
+    sector: site.sector ?? null,
+    wind: site.wind,
+    hasStation: site.station !== null && site.station !== undefined,
+  };
+}
+
+function fmt(n: number | null, digits = 1): string {
+  return n === null ? "  –  " : n.toFixed(digits).padStart(5);
+}
+
+function main(): void {
+  const args = parseArgs(process.argv.slice(2));
+
+  const files = jsonlFiles(args.dir);
+  if (args.extra && existsSync(args.extra)) files.push(args.extra);
+  const rows = readRows(files);
+
+  const catalogue = buildCatalogue();
+  // Enabled sites only - archived entries have no station and no data, and
+  // listing them would bury the sites that actually matter.
+  const sites = catalogue.sites.filter((s) => s.enabled).map(toAccuracySite);
+  const report = summariseAccuracy(rows, sites, args.options, {
+    generatedAt: new Date().toISOString(),
+    sourceFiles: files.map((f) => f.replace(repoRoot + "\\", "").replace(repoRoot + "/", "")),
+  });
+
+  // Sites come and go: an id in the rows that the catalogue no longer has
+  // (renamed, archived, moved) must stay visible rather than vanish from
+  // the total. Adding a site needs nothing here - it is picked up from the
+  // catalogue on the next run; this only guards the opposite direction.
+  const known = new Set(sites.map((s) => s.id));
+  const unknownSites = [...new Set(rows.map((r) => r.site))].filter((id) => !known.has(id)).sort();
+  if (unknownSites.length > 0) {
+    report.unknownSites = unknownSites;
+    console.warn(`analyze-accuracy: rows exist for ${unknownSites.length} site(s) not in the catalogue: ${unknownSites.join(", ")}`);
+  }
+
+  mkdirSync(dirname(args.out), { recursive: true });
+  writeFileSync(args.out, JSON.stringify(report, null, 2) + "\n", "utf-8");
+
+  const scored = report.sites.filter((s) => s.overall.n > 0).sort((a, b) => (b.overall.accuracyPct ?? -1) - (a.overall.accuracyPct ?? -1));
+  const confident = report.sites.filter((s) => s.overall.confident).length;
+  const withStation = sites.filter((s) => s.hasStation).length;
+
+  console.log(`\naccuracy lab — ${rows.length} paired hours across ${scored.length} sites`);
+  console.log(`sites: ${sites.length} catalogued, ${withStation} with a station, ${confident} with enough data to be confident`);
+  console.log(`hit = within ±${args.options.speedToleranceMs} m/s AND ±${args.options.directionToleranceDeg}°\n`);
+  console.log("site                          n  hit%  n_conf  ±spd%  ±dir%   bias    mae  verdict  falseGreen");
+  console.log("-".repeat(92));
+  for (const s of scored) {
+    const o = s.overall;
+    console.log(
+      `${s.siteId.padEnd(26)} ${String(o.n).padStart(4)} ${fmt(o.accuracyPct)} ` +
+        `${o.confident ? "   yes" : "    no"} ${fmt(o.withinSpeedPct)} ${fmt(o.withinDirPct)} ` +
+        `${fmt(o.biasMs, 2)} ${fmt(o.maeMs, 2)} ${fmt(o.verdictAgreementPct)} ${String(o.falseGreenOverLimitHours).padStart(10)}`,
+    );
+  }
+  const noData = report.sites.filter((s) => s.overall.n === 0);
+  if (noData.length > 0) {
+    console.log(`\nno data yet (${noData.length}): ${noData.map((s) => s.siteId).join(", ")}`);
+  }
+  console.log(`\nwrote ${args.out}`);
+}
+
+main();
