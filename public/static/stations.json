@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-28T09:52:58.035Z",
+  "generatedAt": "2026-09-29T09:54:40.854Z",
   "providers": [
     {
       "id": "smhi",
@@ -12,7 +12,7 @@
       "id": "viva",
       "name": "ViVa (Sjöfartsverket)",
       "status": "ok",
-      "stationCount": 113,
+      "stationCount": 114,
       "note": "Listed with both wind speed and direction. Some may currently be offline."
     },
     {
@@ -4405,6 +4405,16 @@
       "name": "Brandalsund",
       "lat": 59.0998,
       "lon": 17.67833,
+      "stationType": "Sjöfartsverket ViVa",
+      "locationSource": "ViVa station catalogue"
+    },
+    {
+      "key": "viva:3",
+      "provider": "viva",
+      "id": "3",
+      "name": "Södertälje Saltsjön",
+      "lat": 59.192,
+      "lon": 17.632333,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
