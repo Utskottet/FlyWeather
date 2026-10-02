@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-10-01T10:13:29.771Z",
+  "generatedAt": "2026-10-02T09:51:04.357Z",
   "providers": [
     {
       "id": "smhi",
       "name": "SMHI",
       "status": "ok",
-      "stationCount": 183,
+      "stationCount": 181,
       "note": "Active stations publishing both wind speed and direction."
     },
     {
@@ -1767,18 +1767,6 @@
       "locationSource": "SMHI station catalogue"
     },
     {
-      "key": "smhi:128390",
-      "provider": "smhi",
-      "id": "128390",
-      "name": "Lungö A",
-      "lat": 62.6417,
-      "lon": 18.0899,
-      "stationType": "SMHI, one-minute mean",
-      "intervalMinutes": 1,
-      "gustAvailable": true,
-      "locationSource": "SMHI station catalogue"
-    },
-    {
       "key": "smhi:132030",
       "provider": "smhi",
       "id": "132030",
@@ -3083,7 +3071,7 @@
       "lon": 18.9839,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": true,
+      "gustAvailable": false,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3453,18 +3441,6 @@
       "name": "Kloten A",
       "lat": 59.8703,
       "lon": 15.2522,
-      "stationType": "SMHI, one-minute mean",
-      "intervalMinutes": 1,
-      "gustAvailable": true,
-      "locationSource": "SMHI station catalogue"
-    },
-    {
-      "key": "smhi:96040",
-      "provider": "smhi",
-      "id": "96040",
-      "name": "Floda A",
-      "lat": 59.0558,
-      "lon": 16.3944,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
       "gustAvailable": true,
