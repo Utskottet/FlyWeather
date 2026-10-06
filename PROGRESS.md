@@ -1921,6 +1921,49 @@ time-critical: nothing can be analysed until rows exist.
   site. (Note: the local clone can lag `origin/main` by many observation
   commits - always pull before analysing.)
 
+## Accuracy review + method v1 (2026-10-06)
+
+- Status: done (method rewritten; still nothing on the site)
+- One-week review of 1,062 paired hours across 18 sites (16 independent
+  days each). Read honestly, the first pass was misleading in two ways
+  and under-specified in a third:
+  - **Direction was scored at every wind speed.** Below ~3 m/s direction
+    is physically meaningless, so e.g. Barsebäck's headline was 62% while
+    its launchable-wind figure is ~79%. Direction agreement measured by
+    band: 42% (0–1 m/s), 63% (1–2), 71% (2–3), 81% (3–4), 90%+ above 4.
+  - **A headline could come from a handful of hours.** Arild showed 100%
+    from **two** launchable hours.
+  - **The reference station was not part of the verdict.** Grimeton's
+    scary `falseGreen = 20` is a station 11.8 km away that often reports a
+    different direction; Ven was using **Ålabodarna's** station (both
+    Holfuy 216); Fagerhult (28 km) and Test-Knäckebrödhult (37 km) are too
+    far to be evidence.
+- Method v1 (fixed; full text in `TODO_ACCURACY_REPORT.md` §14):
+  - speed scored at every wind; direction only at/above
+    `max(3 m/s, verified site min_ms)`;
+  - headline = launchable hours within **both** ±2 m/s and ±30°;
+  - no headline below **10** launchable hours;
+  - per-site **reference quality** (good ≤5 km & verified / provisional /
+    unusable >15 km or no station), including **duplicate-station**
+    detection;
+  - confidence needs ≥100 hours **and** ≥10 launchable; **stability**
+    compares first vs second half; signed circular direction bias and a
+    robust median error added.
+- Files: `src/domain/accuracy.ts` (rewritten, 17 tests),
+  `tests/unit/accuracy.test.ts`, `scripts/analyze-accuracy.ts`,
+  `tools/accuracy-lab/index.html` (reference/launchable/stability columns
+  + a "How this is calculated" box), `TODO_ACCURACY_REPORT.md` §14.
+- Definition of Done: [x] typecheck/lint clean  [x] 17 accuracy tests
+  green  [x] `npm run lab:analyze` runs on the real 1,062 rows
+  [x] accuracy code still absent from the production bundle.
+- Deferred / unresolved: `ageConfirmed: false` policy (Holfuy cannot prove
+  its measurement time, so the recorder's 30-min guard cannot validate it);
+  effective-sample per-day counting for significance; the badge itself.
+- Next: revisit in 2–3 days on fresh data. If the good-reference sites
+  (Barsebäck, Höganäs, Kevik, Ravlunda, Hammar, …) hold steady, add the
+  beta badge with the transparency info box; do **not** show it for the
+  `unusable`-reference sites.
+
 ## Time slider research (mobile resolution) — 2026-10-06
 
 - Status: done (research only, no app code changed)

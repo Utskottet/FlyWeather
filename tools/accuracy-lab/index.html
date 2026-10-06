@@ -44,6 +44,11 @@
       }
       .banner.warn { border-color: var(--amber); color: #ffd98a; }
       .banner.info { color: var(--muted); }
+      details.method { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
+      details.method summary { cursor: pointer; }
+      details.method p { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+      details.method ul { color: var(--muted); font-size: 13px; margin: 8px 0 0; padding-left: 20px; }
+      .ref-good { color: var(--green); } .ref-provisional { color: var(--amber); } .ref-unusable { color: var(--red); }
       table { width: 100%; border-collapse: collapse; }
       th, td { text-align: right; padding: 7px 9px; border-bottom: 1px solid var(--line); white-space: nowrap; }
       th:first-child, td:first-child { text-align: left; }
@@ -89,6 +94,18 @@
     </header>
     <main>
       <div id="banner"></div>
+      <details class="method">
+        <summary>How this is calculated (v1 method)</summary>
+        <ul>
+          <li><b>Speed</b> is scored at every wind speed: was the forecast within ±2 m/s of the meter?</li>
+          <li><b>Direction</b> is scored only above a cutoff (default 3 m/s, on the meter), because below that direction is physically meaningless — a cup anemometer barely turns and the model is guessing. A site with a verified higher minimum wind raises its cutoff.</li>
+          <li><b>The headline %</b> is the share of <i>launchable</i> hours (at or above the cutoff) within <b>both</b> tolerances. Light-wind hours are still recorded, still counted for speed, and still shown as their own band — they are simply not in the headline denominator.</li>
+          <li><b>Reference quality:</b> a score is only as good as the station it is measured against. "good" = verified and ≤5 km; "provisional" = unverified, unknown distance, or 5–15 km; "unusable" = no station, >15 km, or the same station attached to two sites.</li>
+          <li><b>Stability</b> compares the first half of the period with the second — big swings mean the figure is not yet settled.</li>
+          <li>Sample size (<b>n</b>, and distinct <b>days</b>) is shown beside every figure. Below the minimum, a site says "collecting".</li>
+          <li>A score describes <b>forecast versus that site's anemometer</b>, never versus the launch. The meter may sit a kilometre away on a different aspect.</li>
+        </ul>
+      </details>
       <div id="table-wrap"><div class="empty">Loading…</div></div>
       <div id="detail"></div>
     </main>
@@ -109,6 +126,7 @@
       const accClass = (p) => (p === null ? "muted" : p >= 80 ? "acc-good" : p >= 60 ? "acc-mid" : "acc-bad");
       const fillColor = (p) =>
         p === null ? "var(--line)" : p >= 80 ? "var(--green)" : p >= 60 ? "var(--amber)" : "var(--red)";
+      const refClass = (q) => (q === "good" ? "ref-good" : q === "provisional" ? "ref-provisional" : "ref-unusable");
 
       async function load() {
         try {
@@ -140,14 +158,17 @@
       function render() {
         const r = state.report;
         document.getElementById("meta").textContent =
-          `${r.rowCount} paired hours · hit = ±${r.options.speedToleranceMs} m/s & ±${r.options.directionToleranceDeg}° · min n = ${r.options.minSample} · generated ${r.generatedAt}`;
+          `${r.rowCount} paired hours · headline = launchable (≥${r.options.directionMinObsMs} m/s) within ±${r.options.speedToleranceMs} m/s & ±${r.options.directionToleranceDeg}° · min n = ${r.options.minSample} · generated ${r.generatedAt}`;
 
         const withData = r.sites.filter((s) => s.overall.n > 0);
         const confident = r.sites.filter((s) => s.overall.confident).length;
-        const noStation = r.sites.filter((s) => !s.hasStation).length;
+        const usableRef = r.sites.filter((s) => s.referenceQuality !== "unusable").length;
+        const badRef = r.sites.length - usableRef;
         document.getElementById("banner").innerHTML =
           `<div class="banner ${confident === 0 ? "warn" : "info"}">` +
-          `${withData.length} of ${r.sites.length} sites have data; ${confident} are confident; ${noStation} have no station (never scorable).` +
+          `${withData.length} of ${r.sites.length} sites have data; ${confident} are confident; ${usableRef} have a usable reference` +
+          (badRef > 0 ? ` (${badRef} unusable — flagged below)` : "") +
+          `.` +
           (confident === 0 ? " <b>Everything here is still collecting — treat no figure as real yet.</b>" : "") +
           `</div>` +
           (r.unknownSites && r.unknownSites.length
@@ -159,9 +180,12 @@
           ["siteId", "Site"],
           ["accuracyPct", "Hit%"],
           ["n", "n"],
+          ["days", "days"],
+          ["directionN", "launch"],
         ];
-        const cols = ["±spd%", "±dir%", "bias", "mae", "verdict", "falseGreen", "lastHour"];
+        const cols = ["±spd%", "±dir%", "bias", "median", "verdict", "falseGreen", "lastHour"];
         let html = "<table><thead><tr>";
+        html += `<th>ref</th>`;
         for (const [k, label] of head) html += `<th data-key="${k}">${label}</th>`;
         html += `<th>conf</th>`;
         for (const c of cols) html += `<th>${c}</th>`;
@@ -169,23 +193,27 @@
 
         for (const s of sortedSites()) {
           const o = s.overall;
-          const conf = !s.hasStation
-            ? '<span class="pill none">no station</span>'
+          const conf = s.referenceQuality === "unusable"
+            ? '<span class="pill none">unscorable</span>'
             : o.n === 0
               ? '<span class="pill none">collecting</span>'
               : o.confident
                 ? '<span class="pill ok">yes</span>'
                 : '<span class="pill collect">collecting</span>';
+          const ref = `<span class="pill ${s.referenceQuality === "good" ? "ok" : s.referenceQuality === "unusable" ? "none" : "collect"}">${s.referenceQuality}</span>`;
           html +=
             `<tr data-site="${s.siteId}" class="${state.selected === s.siteId ? "selected" : ""}">` +
             `<td>${s.name} <span class="muted">${s.siteId}</span></td>` +
-            `<td class="num ${o.n === 0 ? "muted" : accClass(o.accuracyPct)}">${o.n === 0 ? "–" : fmt(o.accuracyPct, 1, "%")}</td>` +
+            `<td>${ref}</td>` +
+            `<td class="num ${!o.launchableConfident ? "muted" : accClass(o.accuracyPct)}">${!o.launchableConfident ? "–" : fmt(o.accuracyPct, 1, "%")}</td>` +
             `<td class="num">${o.n || "–"}</td>` +
+            `<td class="num">${o.days || "–"}</td>` +
+            `<td class="num">${o.directionN || "–"}</td>` +
             `<td>${conf}</td>` +
             `<td class="num muted">${fmt(o.withinSpeedPct, 0, "%")}</td>` +
             `<td class="num muted">${fmt(o.withinDirPct, 0, "%")}</td>` +
             `<td class="num">${fmt(o.biasMs, 1)}</td>` +
-            `<td class="num">${fmt(o.maeMs, 1)}</td>` +
+            `<td class="num">${fmt(o.medianAbsErrMs, 1)}</td>` +
             `<td class="num muted">${fmt(o.verdictAgreementPct, 0, "%")}</td>` +
             `<td class="num ${o.falseGreenOverLimitHours > 0 ? "acc-bad" : "muted"}">${o.falseGreenOverLimitHours}</td>` +
             `<td class="muted">${s.lastHour ? s.lastHour.slice(0, 13).replace("T", " ") : "–"}</td>` +
@@ -221,11 +249,15 @@
         const rows = strata
           .filter((s) => s.stats.n > 0)
           .map((s) => {
-            const p = s.stats.accuracyPct;
+            // Below the direction cutoff there is no direction score, so the
+            // band falls back to speed-only rather than showing nothing.
+            const speedOnly = s.stats.directionN === 0;
+            const p = speedOnly ? s.stats.withinSpeedPct : s.stats.accuracyPct;
+            const tag = speedOnly ? " speed-only" : "";
             return (
               `<div class="barrow"><span class="label">${s.label}</span>` +
               `<span class="track"><span class="fill" style="width:${p === null ? 0 : Math.max(1, p)}%;background:${fillColor(p)}"></span></span>` +
-              `<span class="val">${p === null ? "–" : p.toFixed(0) + "%"} · n=${s.stats.n}</span></div>`
+              `<span class="val">${p === null ? "–" : p.toFixed(0) + "%"} · n=${s.stats.n}${tag}</span></div>`
             );
           })
           .join("");
@@ -238,30 +270,43 @@
         if (!s) { el.innerHTML = ""; return; }
         const o = s.overall;
 
+        const st = s.stability;
         const cards = [
-          ["Hit%", o.n === 0 ? "–" : fmt(o.accuracyPct, 1, "%")],
-          ["Hours", String(o.n)],
+          ["Hit% (launchable)", !o.launchableConfident ? "–" : fmt(o.accuracyPct, 1, "%")],
+          ["Launch h", String(o.directionN)],
+          ["All h", String(o.n)],
+          ["Days", String(o.days)],
           ["Bias m/s", fmt(o.biasMs, 1)],
-          ["MAE m/s", fmt(o.maeMs, 1)],
+          ["Median m/s", fmt(o.medianAbsErrMs, 1)],
+          ["Dir bias°", fmt(o.dirBiasDeg, 0)],
           ["Dir MAE°", fmt(o.dirMaeDeg, 0)],
           ["Verdict", fmt(o.verdictAgreementPct, 0, "%")],
           ["falseGreen", String(o.falseGreenOverLimitHours)],
+          ["Stability Δ", fmt(st.deltaPct, 0, " pp")],
         ]
           .map(([k, v]) => `<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`)
           .join("");
 
+        const refLine = s.station
+          ? `${s.station.provider} ${s.station.stationId ?? ""} · ${s.station.distanceKm === null ? "distance unknown" : s.station.distanceKm + " km"} · ${s.station.verified ? "verified" : "unverified"}`
+          : "no station";
+
         el.innerHTML =
-          `<h2>${s.name} <span class="muted">${s.siteId}</span></h2>` +
+          `<h2>${s.name} <span class="muted">${s.siteId}</span> ` +
+          `<span class="pill ${s.referenceQuality === "good" ? "ok" : s.referenceQuality === "unusable" ? "none" : "collect"}">ref: ${s.referenceQuality}</span></h2>` +
+          `<div class="muted">${refLine} · direction cutoff ${s.directionCutoffMs} m/s</div>` +
           `<div class="muted">${s.firstHour ? s.firstHour.slice(0, 13).replace("T", " ") + " → " + s.lastHour.slice(0, 13).replace("T", " ") : ""}` +
-          `${s.ageUnconfirmedPct !== null ? ` · ${s.ageUnconfirmedPct}% of readings could not confirm their own measurement time` : ""}</div>` +
-          (s.note ? `<div class="banner warn" style="margin-top:10px">${s.note}</div>` : "") +
+          `${st.firstHalfAccuracyPct !== null ? ` · first half ${st.firstHalfAccuracyPct}% vs second ${st.secondHalfAccuracyPct}%` : ""}` +
+          `${s.ageUnconfirmedPct ? ` · ${s.ageUnconfirmedPct}% of readings could not confirm their own measurement time` : ""}</div>` +
+          (s.referenceNote ? `<div class="banner ${s.referenceQuality === "unusable" ? "warn" : "info"}" style="margin-top:10px">${s.referenceNote}</div>` : "") +
+          (s.note && s.note !== s.referenceNote ? `<div class="banner warn" style="margin-top:10px">${s.note}</div>` : "") +
           `<div class="cards">${cards}</div>` +
           `<div class="charts">` +
           chart("Accuracy by wind strength (m/s)", s.byBand) +
           chart("Accuracy by month", s.byMonth) +
           chart("Accuracy by forecast lead time", s.byLead) +
           `</div>` +
-          `<small class="caveat">Bias negative = forecast reads lower than the meter. A "hit" needs both speed and direction within tolerance; near-calm hours are counted and can dominate the total at low wind.</small>`;
+          `<small class="caveat">Bias negative = forecast reads lower than the meter. The headline needs both speed and direction within tolerance, above the direction cutoff; bands below the cutoff show speed-only. "Stability Δ" near 0 means the first and second halves agree.</small>`;
       }
 
       document.getElementById("reload").onclick = load;

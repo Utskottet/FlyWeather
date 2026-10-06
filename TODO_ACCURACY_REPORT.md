@@ -1,6 +1,6 @@
 # TODO — Forecast accuracy (forecast vs. real measured wind)
 
-**Prepared:** 2026-09-23 · **updated:** 2026-09-28
+**Prepared:** 2026-09-23 · **updated:** 2026-10-06 (method fixed v1, §14)
 **Type:** analysis and advice, plus an isolated local lab (built 2026-09-28).
 The lab is committed but deliberately **not wired into the site** — no badge or
 accuracy card is shown to visitors until the data has earned it. See §13 for the
@@ -639,6 +639,68 @@ Nothing is shown on the site yet, deliberately. After roughly a week of rows:
    band**, how many `falseGreen`, and whether the bias is consistent enough to
    be a site property rather than weather noise.
 4. Only then decide whether a beta badge on the site is justified.
+
+---
+
+## 14. The scoring method, fixed v1 (2026-10-06)
+
+The first pass scored every site the same way and produced two kinds of
+misleading number: a site dragged down by hours nobody flies, and a site
+("Arild") showing **100% from two windy hours**. This section is the method
+that replaces it. It is deliberately spelled out in full, because the badge
+that eventually reaches a pilot must be explainable in the same words.
+
+### The rules
+
+1. **Speed is scored at every wind speed.** The model's light-wind over-read
+   (+0.8 m/s observed) is a real finding and is kept.
+2. **Direction is scored only at or above a cutoff.**
+   `cutoff = max(3 m/s, the site's own verified min_ms)`. Below ~3 m/s a cup
+   anemometer barely turns and the model is guessing, so a direction "miss"
+   there is noise, not a forecast failure. Measured: direction agreement runs
+   42% (0–1 m/s), 63% (1–2), 71% (2–3), then jumps to 81% at 3–4 and flattens
+   at 90%+ above 4.
+3. **The headline is accuracy in launchable wind** — the share of hours at or
+   above the cutoff within **both** ±2 m/s and ±30°. Light-wind hours are still
+   recorded, still counted for speed, and still shown as their own band; they
+   are simply not in the headline denominator.
+4. **A headline is not shown at all with fewer than 10 launchable hours** — a
+   percentage from two windy hours is worse than none, because it looks like a
+   result.
+5. **Reference quality is reported per site.** `good` = verified and ≤5 km;
+   `provisional` = unverified, unknown distance, 5–15 km, or the same station
+   attached to two sites; `unusable` = no station or >15 km. Unusable sites are
+   flagged, not silently scored.
+6. **Confidence** requires ≥100 paired hours *and* ≥10 launchable hours; below
+   that a site says "collecting".
+7. **Stability** compares the first half of the period with the second. A large
+   swing means the figure is not yet settled.
+8. Reported per site: n, distinct days, launchable n, bias, MAE, **median**
+   absolute error (robust to one bad pairing), RMSE, **signed** circular
+   direction bias, direction MAE, speed-within %, direction-within %, verdict
+   agreement, optimistic hours, and **falseGreen** (we showed flyable while the
+   meter was over the site's own limit — must be zero).
+9. Rows for a site id the catalogue no longer knows are surfaced as
+   `unknownSites`, never dropped.
+
+### The transparency info box (text for the badge)
+
+To be shown whenever the badge is: a short, plain explanation, in the same
+spirit as the rest of the app.
+
+> **How this is measured.** We compare what the forecast said for this site
+> against the nearest wind meter, hour by hour. The percentage is the share of
+> those hours the forecast got within 2 m/s and 30°, counting only hours windy
+> enough to fly (below about 3 m/s, wind direction is meaningless). It is
+> forecast-versus-that-meter, not versus the launch — the meter can be up to a
+> few kilometres away on a different slope. We show how many hours the number
+> is based on, and say "collecting" until there are enough.
+
+### Status
+
+Fixed and implemented 2026-10-06 in `src/domain/accuracy.ts` (17 tests). To be
+re-read in 2–3 days on fresh data, and only then considered for a badge on the
+site. The method belongs in `docs/DECISIONS.md` at the moment the badge ships.
 
 ---
 

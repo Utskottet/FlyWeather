@@ -79,6 +79,14 @@ function toAccuracySite(site: Site): AccuracySite {
     name: site.name,
     sector: site.sector ?? null,
     wind: site.wind,
+    station: site.station
+      ? {
+          provider: site.station.provider,
+          stationId: site.station.station_id ?? null,
+          verified: site.station.verified,
+          distanceKm: site.station_distance_km ?? null,
+        }
+      : null,
     hasStation: site.station !== null && site.station !== undefined,
   };
 }
@@ -117,22 +125,51 @@ function main(): void {
   mkdirSync(dirname(args.out), { recursive: true });
   writeFileSync(args.out, JSON.stringify(report, null, 2) + "\n", "utf-8");
 
-  const scored = report.sites.filter((s) => s.overall.n > 0).sort((a, b) => (b.overall.accuracyPct ?? -1) - (a.overall.accuracyPct ?? -1));
+  // Every site with rows is listed. A site is ranked by its headline only
+  // when it has enough launchable hours; otherwise it sorts to the bottom
+  // and its headline is shown as blank rather than a number from noise.
+  const scored = report.sites
+    .filter((s) => s.overall.n > 0)
+    .sort((a, b) => headlineValue(b) - headlineValue(a));
+  function headlineValue(s: (typeof report.sites)[number]): number {
+    return s.overall.launchableConfident ? (s.overall.accuracyPct ?? -1) : -1;
+  }
   const confident = report.sites.filter((s) => s.overall.confident).length;
   const withStation = sites.filter((s) => s.hasStation).length;
+  const usableRef = report.sites.filter((s) => s.referenceQuality !== "unusable").length;
 
-  console.log(`\naccuracy lab — ${rows.length} paired hours across ${scored.length} sites`);
-  console.log(`sites: ${sites.length} catalogued, ${withStation} with a station, ${confident} with enough data to be confident`);
-  console.log(`hit = within ±${args.options.speedToleranceMs} m/s AND ±${args.options.directionToleranceDeg}°\n`);
-  console.log("site                          n  hit%  n_conf  ±spd%  ±dir%   bias    mae  verdict  falseGreen");
-  console.log("-".repeat(92));
+  console.log(`\naccuracy lab — ${rows.length} paired hours across ${report.sites.filter((s) => s.overall.n > 0).length} sites`);
+  console.log(
+    `sites: ${sites.length} catalogued, ${withStation} with a station, ${usableRef} with a usable reference, ${confident} with enough data to be confident`,
+  );
+  console.log(
+    `headline = launchable wind (observed ≥ the site's cutoff, default ${args.options.directionMinObsMs} m/s) within ±${args.options.speedToleranceMs} m/s AND ±${args.options.directionToleranceDeg}°`,
+  );
+  console.log(`speed is scored at every wind; direction only above the cutoff.\n`);
+  console.log("site                        ref          n dirN  hit%  ±spd%  ±dir%   bias  median  dirB± verdict  falseGreen");
+  console.log("-".repeat(104));
   for (const s of scored) {
     const o = s.overall;
+    const headline = o.launchableConfident ? fmt(o.accuracyPct) : "  –  ";
     console.log(
-      `${s.siteId.padEnd(26)} ${String(o.n).padStart(4)} ${fmt(o.accuracyPct)} ` +
-        `${o.confident ? "   yes" : "    no"} ${fmt(o.withinSpeedPct)} ${fmt(o.withinDirPct)} ` +
-        `${fmt(o.biasMs, 2)} ${fmt(o.maeMs, 2)} ${fmt(o.verdictAgreementPct)} ${String(o.falseGreenOverLimitHours).padStart(10)}`,
+      `${s.siteId.padEnd(24)} ${s.referenceQuality.padEnd(11).slice(0, 11)} ${String(o.n).padStart(3)} ${String(o.directionN).padStart(4)} ` +
+        `${headline} ${fmt(o.withinSpeedPct)} ${fmt(o.withinDirPct)} ${fmt(o.biasMs, 2)} ${fmt(o.medianAbsErrMs, 2)} ` +
+        `${fmt(o.dirBiasDeg, 0)} ${fmt(o.verdictAgreementPct)} ${String(o.falseGreenOverLimitHours).padStart(10)}`,
     );
+  }
+  const thin = report.sites.filter((s) => s.overall.n > 0 && !s.overall.launchableConfident);
+  if (thin.length > 0) {
+    console.log(
+      `\ntoo few launchable hours (headline blank) - need ≥${args.options.minLaunchableSample}: ` +
+        thin.map((s) => `${s.siteId} (${s.overall.directionN})`).join(", "),
+    );
+  }
+  const flagged = report.sites.filter((s) => s.referenceQuality !== "good" && s.overall.n > 0);
+  if (flagged.length > 0) {
+    console.log(`\nreference not good (${flagged.length}):`);
+    for (const s of flagged) {
+      console.log(`  ${s.siteId.padEnd(24)} [${s.referenceQuality}] ${s.referenceNote ?? ""}`);
+    }
   }
   const noData = report.sites.filter((s) => s.overall.n === 0);
   if (noData.length > 0) {
