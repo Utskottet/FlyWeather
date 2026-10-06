@@ -2073,3 +2073,30 @@ time-critical: nothing can be analysed until rows exist.
 - Next: visual review on a real phone; decide whether to widen the
   slider further (and re-budget chrome) or fill the past-hours gap.
 
+## Phone timeline visual polish (2026-10-06, same day)
+
+- Status: done. User: ergonomically right but "looks really bad".
+  Iterated against real 2x device-scale screenshots of the bar, not the DOM.
+- Definition of Done: [x] `npm run typecheck` clean  [x] `npm run lint`
+  clean  [x] 887 unit tests green  [x] `npm run build` green  [x] full e2e
+  113 passed / 4 skipped  [x] 390px close-up + full-page screenshots
+  reviewed before and after
+- What changed: today's already-elapsed hours render as dimmed,
+  non-selectable "past" cells so the current day is continuous (Windy does
+  this); a pinned day badge replaces the day label that clipped at a
+  scrolling boundary; faint 3-hour gridlines + larger hour labels fill the
+  tall strip; the bar is opaque so map attribution no longer bleeds
+  through; the live button is a centred 72 px block rather than a
+  full-height slab; the altitude row gained a "HEIGHT" label.
+- Commit: d6b8473 "Phone timeline polish: continuous day, pinned day badge,
+  ruler gridlines"
+- Files changed: `src/components/TimeSlider/MobileTimeSlider.tsx`,
+  `src/app/App.css`, `src/components/BottomBar/BottomBar.tsx`,
+  `src/domain/timeAxis.ts`, `tests/unit/MobileTimeSlider.test.tsx`,
+  `tests/unit/timeAxis.test.ts`, `tests/e2e/time-slider.spec.ts`,
+  `docs/DECISIONS.md`
+- Deferred / unresolved: slider still ~1.8x not a literal 2x (chrome
+  budget); no "today/tomorrow" quick-jump; the empty area above the bottom
+  ticks is only lightly structured.
+- Next: user's next visual verdict.
+

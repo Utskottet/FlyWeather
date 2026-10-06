@@ -2044,3 +2044,32 @@ as the slider, so it can be large.
   future option is to render today's earlier hours as non-selectable cells;
   logged as a follow-up rather than grown here.
 
+## Phone timeline visual polish (2026-10-06, same day)
+
+First render of the taller bar "does the job but looks bad" - correct
+critique. Fixed by screenshotting the real bar at deviceScaleFactor 2 and
+iterating against the image rather than trusting the DOM:
+
+- **The empty left half is gone.** Today now starts at local midnight: the
+  hours before NOW render as non-selectable `--past` cells (dimmed, never
+  snap targets, no pointer), so the current day reads as one continuous
+  column. `scrollLeftForIndex`/`indexFromScrollLeft` gained a `leadCells`
+  offset, and the first day's divider/badge spans the past + today cells.
+- **The day label no longer clips.** A label anchored to a scrolling day
+  boundary got cut to "UE 6" the moment that boundary sat off-screen.
+  Day boundaries are now plain dividers, and one pinned badge at the
+  strip's left always names the day of the centred hour.
+- **The tall strip reads as a ruler.** Faint full-height gridlines every 3
+  hours, larger hour labels (10 px) and the existing bottom ticks fill the
+  height instead of leaving dead space.
+- **The bar is opaque** (`var(--panel-bg)`), so the map's own attribution
+  text no longer bleeds through it.
+- **The live button matches the strip, not the whole bar:** a centred
+  72 px-tall, 108 px-wide block instead of a full-height slab. The altitude
+  row gained a small "HEIGHT" label so the bare range reads as a control.
+
+Still true and accepted: the slider is ~1.8x (72 px), not a literal 2x,
+because 80 px tips the phone chrome past the 30% map budget. Verified with
+887 unit tests, the production build, and the full e2e suite (113 passed /
+4 skipped).
+
