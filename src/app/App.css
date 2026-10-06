@@ -903,6 +903,208 @@
   white-space: nowrap;
 }
 
+/* ---------------------------------------------------------------------
+   Mobile timeline - the phone's own control (§ Startvind UX Direction).
+
+   One scrollable column per local calendar day, one cell per hour, the
+   selected hour centred under a fixed playhead. Researched and specified
+   in docs/TIMELINE_MOBILE_RESEARCH.md; not the desktop range input at a
+   smaller size.
+   --------------------------------------------------------------------- */
+.mobile-timeline {
+  --hour-width: 13px;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  /* Space for the day/time chip above the strip. */
+  padding-top: 22px;
+}
+
+/* The chip is a readout here, not a handle: on a phone the gesture is
+   scrolling the strip. Centred over the playhead, like Windy's timecode. */
+.mobile-timeline-chip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: 7px;
+  padding: 3px 8px;
+  font-weight: 700;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.mobile-timeline-chip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--accent);
+}
+
+.mobile-timeline-scroll {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.mobile-timeline-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Half a viewport of gutter each side, so the first and last hours can sit
+   dead centre under the playhead (cell i centres at scrollLeft = i * hour). */
+.mobile-timeline-content {
+  width: max-content;
+  padding-left: calc(50% - var(--hour-width) / 2);
+  padding-right: calc(50% - var(--hour-width) / 2);
+}
+
+.mobile-timeline-days {
+  display: flex;
+  height: 14px;
+}
+
+.mobile-timeline-day {
+  flex: 0 0 auto;
+  border-left: 1px solid var(--divider);
+  padding-left: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.mobile-timeline-hours {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 40px;
+}
+
+.mobile-timeline-hour {
+  position: relative;
+  flex: 0 0 var(--hour-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  padding: 0 0 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  scroll-snap-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Same phase colours as the desktop sky band (domain/skyBand.ts), applied
+   per hour cell rather than as one compressed gradient. */
+.mobile-timeline-hour--night {
+  background: rgba(32, 42, 64, 0.55);
+}
+
+.mobile-timeline-hour--transition {
+  background: rgba(120, 132, 152, 0.26);
+}
+
+.mobile-timeline-hour--selected {
+  background: var(--accent-soft);
+}
+
+.mobile-timeline-hour-tick {
+  width: 1px;
+  height: 4px;
+  background: #999;
+}
+
+.mobile-timeline-hour--selected .mobile-timeline-hour-tick {
+  width: 2px;
+  height: 6px;
+  background: var(--accent);
+}
+
+.mobile-timeline-hour-label {
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text);
+}
+
+.mobile-timeline-hour:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Fixed selection reference: the strip moves underneath it. */
+.mobile-timeline-playhead {
+  position: absolute;
+  top: 22px;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  border-radius: 1px;
+  background: var(--accent);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Real clock position, independent of the selection - the same separation
+   the desktop slider keeps between its thumb and its NOW mark. It scrolls
+   with the strip because it is a position on the timeline. */
+.mobile-timeline-now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--now-marker);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Keyboard/assistive-tech path to the exact same value the strip writes. */
+.mobile-timeline-range-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.mobile-timeline-range-sr:focus-visible {
+  outline: none;
+}
+
+/* Tabbing to the (visually hidden) range highlights the whole strip rather
+   than reflowing a native slider into the layout - the arrow keys still
+   drive the exact same value. */
+.mobile-timeline:has(.mobile-timeline-range-sr:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 .site-sheet-close {
   position: absolute;
   top: 4px;

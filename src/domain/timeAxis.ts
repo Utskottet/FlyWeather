@@ -1,4 +1,4 @@
-import { forecastHourMs } from "./forecastTime.ts";
+import { forecastHourMs, parseForecastHour } from "./forecastTime.ts";
 
 /**
  * NOW + this many hourly steps - shared by useSiteForecasts.ts and
@@ -112,4 +112,99 @@ export function nowPositionFraction(hours: string[], now: Date): number | null {
     }
   }
   return null; // unreachable given the clamps above, but keeps the function total
+}
+
+/** Stable local (Europe/Stockholm) calendar-day key, e.g. "2026-10-06". */
+function stockholmDateKey(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: STOCKHOLM_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function stockholmDayOfMonth(date: Date): number {
+  return Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: STOCKHOLM_TZ,
+      day: "numeric",
+    }).format(date),
+  );
+}
+
+/**
+ * One local calendar day's worth of hourly slider indices.
+ *
+ * The mobile timeline lays out one column per day, so it needs the hours
+ * grouped by *local* day (not UTC, or the columns would split at the wrong
+ * midnight for a Swedish pilot). Grouping is keyed on the same DST-safe
+ * Europe/Stockholm formatting used everywhere else in this module, so a
+ * spring-forward day with 23 real hours still becomes exactly one group.
+ * `indices` are positions in the original ascending `hours` array, which is
+ * what `onChange` and every downstream consumer expect.
+ */
+export interface HourDayGroup {
+  /** Stable local date key, e.g. "2026-10-06". */
+  key: string;
+  /** Upper-case short weekday, e.g. "TUE" - matches the desktop rail. */
+  weekday: string;
+  /** Title-case short weekday, e.g. "Tue". */
+  weekdayTitle: string;
+  /** Local day-of-month, e.g. 6. */
+  dayOfMonth: number;
+  /** Ascending indices into the source `hours` array. */
+  indices: number[];
+}
+
+export function groupHoursByLocalDay(hours: string[]): HourDayGroup[] {
+  const groups: HourDayGroup[] = [];
+  const byKey = new Map<string, HourDayGroup>();
+
+  hours.forEach((hour, index) => {
+    const date = parseForecastHour(hour);
+    const key = stockholmDateKey(date);
+    let group = byKey.get(key);
+    if (!group) {
+      group = {
+        key,
+        weekday: stockholmWeekday(date),
+        weekdayTitle: stockholmWeekdayTitle(date),
+        dayOfMonth: stockholmDayOfMonth(date),
+        indices: [],
+      };
+      byKey.set(key, group);
+      groups.push(group);
+    }
+    group.indices.push(index);
+  });
+
+  return groups;
+}
+
+/**
+ * Pixel width of one hour cell on the phone timeline (~312 px for a full
+ * 24-hour day). Large enough that a single hour is a comfortable target and
+ * a 72-hour window is a real (but not endless) flick: at 13 px/hour one hour
+ * is ~13 px and one day is ~312 px, versus the old compressed range input's
+ * ~4.6 px/hour across the entire three days. See
+ * docs/TIMELINE_MOBILE_RESEARCH.md §4.
+ */
+export const MOBILE_HOUR_WIDTH_PX = 13;
+
+/** Distance the strip scrolls to centre hour `index` (cell i centres at i*h). */
+export function scrollLeftForIndex(index: number, hourWidthPx: number = MOBILE_HOUR_WIDTH_PX): number {
+  return index * hourWidthPx;
+}
+
+/** Nearest hour index for a strip scroll position, clamped to the data range. */
+export function indexFromScrollLeft(
+  scrollLeft: number,
+  hourWidthPx: number = MOBILE_HOUR_WIDTH_PX,
+  maxIndex: number = Number.POSITIVE_INFINITY,
+): number {
+  if (hourWidthPx <= 0 || !Number.isFinite(scrollLeft)) return 0;
+  const raw = Math.round(scrollLeft / hourWidthPx);
+  if (raw < 0) return 0;
+  return raw > maxIndex ? maxIndex : raw;
 }

@@ -320,20 +320,29 @@ anyway, per §26.
 
 ---
 
-## 7. Open questions for the owner
+## 7. Decisions taken (2026-10-06)
 
-1. **Day column width on phone** — start at 300 px/day (~5 min/px), or match
-   Windy's denser 160 px/day (~9 min/px) and fit more days on screen?
-2. **Snap vs continuous** — snap to whole hours (predictable, matches
-   `selectedIndex`), or free scroll with the nearest hour selected?
-3. **Tap-to-select hour cells** — worth the vertical space on the strip, or
-   scroll-only?
-4. **Desktop non-linear scale** — adopt now or keep desktop linear for a
-   separate change?
-5. **Keep the current range input** as the desktop control indefinitely, or
-   eventually unify both on the day-strip concept?
+The owner chose the **day strip, ~300 px/day + snap** direction, and it is
+now implemented:
 
-None of these block a first implementation; 1–3 are visual-review decisions.
+1. **Day column width** — one fixed cell per hour at
+   `MOBILE_HOUR_WIDTH_PX = 13px`, so a full 24-hour day is ~312 px
+   (~13 px/hour, ~5 min/px). Wider than Windy's 160 px/day on purpose:
+   with only ~3 forecast days, reachability beats fitting more days on
+   screen.
+2. **Snap vs continuous** — snap to whole hours, via CSS
+   `scroll-snap-type: x mandatory`; the selected hour is recentred under a
+   fixed playhead.
+3. **Tap-to-select hours** — implemented: every hour cell is a tap target.
+4. **Desktop non-linear scale / hover-scrub** — deliberately deferred; the
+   desktop bar is a separate follow-up.
+5. **Range input** — kept off-screen as the keyboard/AT path, sharing the
+   one `selectedIndex` value; the desktop control is unchanged.
+
+Unresolved, to revisit from real use: how the day header reads when the
+strip is centred mid-day (it is left-aligned to the day column, so only its
+tail is visible), and whether a future "today / tomorrow" quick-jump is
+worth adding on top of free scrolling.
 
 ---
 

@@ -1,7 +1,7 @@
-# DECISIONS.md — Architecture decisions
+﻿# DECISIONS.md â€” Architecture decisions
 
 Record of decisions made where `MASTER_SPEC.md` left the choice to the
-implementing agent (per its §0 mandate). Append, don't rewrite history.
+implementing agent (per its Â§0 mandate). Append, don't rewrite history.
 
 ## Block 1
 
@@ -11,57 +11,57 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   no viable non-interactive flag that doesn't risk deleting existing files,
   and it also mis-handles Windows paths passed through Git Bash. Hand
   authoring also lines up better with the custom `src/domain` /
-  `src/providers` / `scripts` layout `MASTER_SPEC.md` §40 asks for, which
+  `src/providers` / `scripts` layout `MASTER_SPEC.md` Â§40 asks for, which
   differs from stock Vite output anyway.
-- **React 19, Vite 6, TypeScript 5.6, ESLint 9 flat config, Vitest 3** — the
-  suggested stack in §14, current stable versions as of 2026-08. Vite/Vitest
+- **React 19, Vite 6, TypeScript 5.6, ESLint 9 flat config, Vitest 3** â€” the
+  suggested stack in Â§14, current stable versions as of 2026-08. Vite/Vitest
   specifically pinned to `^6.4.3` / `^3.2.7` (not the initially-installed
   `^5.4.10` / `^2.1.4`) because those versions closed a moderate-to-critical
   esbuild/Vite/Vitest advisory chain, including a Windows-specific
   `server.fs.deny` bypass relevant to this dev environment. `npm audit`
   is clean at these versions.
-- **Map library (MapLibre vs Leaflet)**: not yet decided — deferred to
+- **Map library (MapLibre vs Leaflet)**: not yet decided â€” deferred to
   Block 4 when the map is actually built.
 - **`public/generated/sites.json` is gitignored**, not committed. It's a
   build artifact of `scripts/parse-sites.ts` reading `SITES.md`; committing
   it would let generated data drift from its source. CI and the weather-
   refresh workflow (Block 8) regenerate it as part of build/deploy.
-- **Sector validation**: a sector is "malformed" (§31) only if a degree
-  value is outside 0–360 or `from_deg === to_deg` (zero-width). A
-  wrap-around sector where `from_deg > to_deg` (e.g. 337.5 → 22.5) is valid
-  by design (§29 test 4) and is *not* rejected — the rose-rendering wrap
+- **Sector validation**: a sector is "malformed" (Â§31) only if a degree
+  value is outside 0â€“360 or `from_deg === to_deg` (zero-width). A
+  wrap-around sector where `from_deg > to_deg` (e.g. 337.5 â†’ 22.5) is valid
+  by design (Â§29 test 4) and is *not* rejected â€” the rose-rendering wrap
   logic itself lands in Block 3, this block only guards the data shape.
-- **`coordinates.verified: true` requires non-null lat/lon** — a coordinate
+- **`coordinates.verified: true` requires non-null lat/lon** â€” a coordinate
   can't be "verified" and simultaneously missing, so the schema enforces
   this pairing rather than leaving it to convention.
 - **`wind_speed.verified: true` requires `good_min_ms`, `good_max_ms`,
-  `maybe_min_ms`, `maybe_max_ms`** to be present (§31: "verified speed
+  `maybe_min_ms`, `maybe_max_ms`** to be present (Â§31: "verified speed
   config missing required values -> build fails"). `hard_max_gust_ms`
-  stays optional — not every site has a documented hard gust limit.
+  stays optional â€” not every site has a documented hard gust limit.
 
 ## Block 3
 
 - **Rose geometry**: a fixed 100x100 SVG `viewBox` with `width`/`height`
   set from the `size` prop. This means the internal path/coordinate math
-  is completely size-independent — a 48px marker and a 160px expanded
+  is completely size-independent â€” a 48px marker and a 160px expanded
   rose use byte-identical `d`/coordinate values, only the outer pixel
-  dimensions differ. This directly satisfies §2.4's "map marker and
+  dimensions differ. This directly satisfies Â§2.4's "map marker and
   expanded rose must use the same underlying component/geometry logic"
   and is asserted directly in `tests/unit/WindRose.test.tsx`.
 - **Sector rendering**: sectors are drawn as a donut/ring band (inner and
   outer radius) rather than pie slices to the center, so the center stays
-  free for the speed number per §2.1.3. An "unfavorable direction" base
+  free for the speed number per Â§2.1.3. An "unfavorable direction" base
   ring is drawn first in a neutral red-family tint, then orange sectors,
-  then green sectors on top — so any direction not explicitly configured
+  then green sectors on top â€” so any direction not explicitly configured
   green/orange visually reads as the same family as the red overall-state
   color, without a separate "explicit red sector" concept.
-- **Overall state (§2.1.5)** is expressed only via the outer ring stroke
-  color and a light center-fill tint — it never repaints the sector ring
+- **Overall state (Â§2.1.5)** is expressed only via the outer ring stroke
+  color and a light center-fill tint â€” it never repaints the sector ring
   itself, so green/orange sector geometry stays visible under every
   state (tested explicitly for all four states).
 - **WindRose scope**: the component owns only the visual gauge (sectors,
-  arrow, speed, history dots, state ring) — not source/age/status-reason
-  text, which §2.4's expanded view also asks for. Those belong to a
+  arrow, speed, history dots, state ring) â€” not source/age/status-reason
+  text, which Â§2.4's expanded view also asks for. Those belong to a
   future `SiteSheet` component (Block 4/6+) that wraps `WindRose` rather
   than being folded into it, keeping the rose itself a pure, reusable
   gauge.
@@ -69,10 +69,10 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   (`playwright.config.ts`, `tests/e2e/rose-gallery.spec.ts`) plus a
   dev-only fixture harness (`gallery.html` / `src/dev/RoseGallery.tsx`,
   a second Vite build entry point) rendering the seven named cases
-  MASTER_SPEC.md §29 asks for Playwright screenshots of. This satisfies
+  MASTER_SPEC.md Â§29 asks for Playwright screenshots of. This satisfies
   Block 3's "component reviewed visually" requirement now and gets a
-  head start on §29's formal acceptance tests. **Not yet wired into CI**
-  — Playwright's browser install is a real per-run cost, and §30's
+  head start on Â§29's formal acceptance tests. **Not yet wired into CI**
+  â€” Playwright's browser install is a real per-run cost, and Â§30's
   mandatory E2E tests need the map and time slider, which don't exist
   until Block 4/5. Deferring CI integration until there's a fuller page
   to test keeps this block's CI change minimal; screenshots for now are
@@ -89,15 +89,15 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
 
 - **Map library: Leaflet, not MapLibre GL.** MapLibre needs a vector-tile
   style source, which in practice means a keyed provider (MapTiler, etc.)
-  — AGENTS.md explicitly says not to make the whole product depend on a
+  â€” AGENTS.md explicitly says not to make the whole product depend on a
   credential we don't have. Leaflet works directly with free OSM raster
-  tiles, no key required, and §14 says to pick whichever "materially
-  reduces complexity" — for a marker-heavy, tile-only map this is Leaflet.
+  tiles, no key required, and Â§14 says to pick whichever "materially
+  reduces complexity" â€” for a marker-heavy, tile-only map this is Leaflet.
   Used `react-leaflet` v5 for idiomatic React integration rather than
   wrapping raw Leaflet by hand.
 - **Rose markers via `renderToStaticMarkup`, not React portals into
   `L.divIcon`.** A portal-based marker would let a mounted marker's rose
-  re-render in place without recreating the Leaflet icon — useful once
+  re-render in place without recreating the Leaflet icon â€” useful once
   the time slider (Block 5) changes wind data per tick. But nothing in
   Block 4 needs that yet (the bottom sheet shows static fixture-free
   data), and building it now would be exactly the kind of premature
@@ -105,13 +105,13 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   when Block 5 actually needs reactive marker updates.
 - **No fake wind/weather data on the map or in the sheet.** Every rose on
   the live map renders `windDirectionDeg: null`, `windSpeedMs: null`,
-  `state: "gray"` — not fixture numbers. AGENTS.md is explicit that
+  `state: "gray"` â€” not fixture numbers. AGENTS.md is explicit that
   "Production must not contain fake fixture weather" outside tests/dev
   harnesses; since no live or forecast provider exists until Block 5/6,
   gray/unknown is the only honest state to show. The dev-only rose
   gallery (`gallery.html`) is the sanctioned place for fixture data.
 - **Only sites with non-null coordinates are placed on the map**,
-  regardless of their `verified` flag — the map's technical requirement
+  regardless of their `verified` flag â€” the map's technical requirement
   is "has a coordinate," not "coordinate is verified." Currently 5 of 24
   enabled sites qualify (hammar, ravlunda, ven-n, ven-sv, ven-v); the
   other 19 stay off the map rather than crash or get a guessed pin, per
@@ -122,51 +122,51 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   regenerated from the current `SITES.md` rather than possibly stale.
 - **Map-fit-to-bounds happens once, on data load** (via `MapContainer`'s
   `bounds`/`boundsOptions` props, set only after the async site fetch
-  resolves), not recomputed on every render — matches §16's "store map
+  resolves), not recomputed on every render â€” matches Â§16's "store map
   position while moving the time slider" intent even though the slider
   itself doesn't exist until Block 5.
 
 ## Block 5
 
-- **Pulled forward a minimal slice of the flyability engine (§5)** even
+- **Pulled forward a minimal slice of the flyability engine (Â§5)** even
   though it isn't its own numbered block, because this is the first point
   with real forecast direction/speed data to evaluate against site
   sectors. Implemented exactly the direction-result, speed-result, and
-  overall-result rules §5.2-§5.4 already specify (`src/domain/
-  flyability.ts`) — not a new policy invention. In particular it
+  overall-result rules Â§5.2-Â§5.4 already specify (`src/domain/
+  flyability.ts`) â€” not a new policy invention. In particular it
   reproduces AGENTS.md's own worked example verbatim: a good direction
   with unverified site speed limits reads ORANGE, never GREEN. Since
   every current site still has `wind_speed.verified: false` (Block 2),
   GREEN is currently unreachable in practice but the logic is written
   generally so it activates automatically once a site gets verified
   numbers - not hardcoded to "never green."
-- **Forecast provider: Open-Meteo**, per §12's explicit V1 preference, no
+- **Forecast provider: Open-Meteo**, per Â§12's explicit V1 preference, no
   API key required. Requests `wind_speed_unit=ms` and `timezone=UTC`
   directly from the API rather than converting client-side, and
   `forecast_days=5` to guarantee the full NOW..+72h window is covered
   regardless of what hour "now" happens to be.
 - **Each site's forecast is fetched once and windowed to [NOW..+72h]** in
   `useSiteForecasts`; the time slider only ever indexes into this
-  already-fetched, already-windowed array (§26's "no API call for every
+  already-fetched, already-windowed array (Â§26's "no API call for every
   slider tick"), verified directly in
   `tests/e2e/time-slider.spec.ts` by counting network requests before
   and after moving the slider.
 - **No map jump on slider movement** falls out of the Block 4 design for
-  free — `MapContainer`'s `bounds` prop only applies at initial mount, so
+  free â€” `MapContainer`'s `bounds` prop only applies at initial mount, so
   re-rendering markers with new per-tick wind data never touches the
   map's pan/zoom state. Verified in the same E2E test by comparing the
   Leaflet map pane's CSS transform before and after moving the slider.
 - **Weather glyphs are small hand-drawn SVG shapes** (`WeatherGlyph`),
-  not emoji or an icon font/asset pack — avoids cross-platform emoji
+  not emoji or an icon font/asset pack â€” avoids cross-platform emoji
   rendering inconsistency and an extra asset dependency, while staying
-  visually secondary to the rose per §8 (16-28px, positioned below/beside
+  visually secondary to the rose per Â§8 (16-28px, positioned below/beside
   it, never inside).
 - **Compass-label and unit conversion helpers** (`degreesToCompass16` /
   `compass16ToDegrees` in `direction.ts`, `units.ts`'s km/h-mph-knots<->m/s
-  functions) were added specifically to satisfy §31's "wind unit
+  functions) were added specifically to satisfy Â§31's "wind unit
   conversion tests" and "compass/degrees conversion tests" requirements,
   and are now used for real in the site sheet's direction readout (e.g.
-  "WSW (238°)").
+  "WSW (238Â°)").
 
 ## Block 6
 
@@ -190,20 +190,20 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   ~5 min of real staleness by the widget's own `<meta refresh=300>`.
 - **Live collection happens in `npm run dev`/`build`** (a new
   `collect:live` script, alongside the existing `validate:sites`), not
-  client-side in the browser - matches §13's architecture (server-side
+  client-side in the browser - matches Â§13's architecture (server-side
   collection, static site serves the generated bundle) and sidesteps
   browser CORS restrictions a client-side fetch to `widget.holfuy.com`
   would likely hit. `public/generated/live.json` is gitignored, same
   treatment as `sites.json`.
 - **NOW prefers a fresh/aging live observation; anything else (including
   a stale live reading) falls back to forecast**, implemented as a pure
-  `selectEffectiveSample` function per §6.1/§11.2 - a stale observation
+  `selectEffectiveSample` function per Â§6.1/Â§11.2 - a stale observation
   is deliberately not shown as "current," it's replaced by a clearly
   labeled forecast value instead. Verified end-to-end against live data:
-  Hammar's rose currently shows a real 273°/8.0 m/s/13.9 m/s-gust reading
-  labeled "LIVE — Holfuy live (fresh, 0 min ago)."
+  Hammar's rose currently shows a real 273Â°/8.0 m/s/13.9 m/s-gust reading
+  labeled "LIVE â€” Holfuy live (fresh, 0 min ago)."
 - **Not implemented this block, documented rather than dropped**: ViVa
-  (barsebäck's configured source has no known station ID yet), FindWind,
+  (barsebÃ¤ck's configured source has no known station ID yet), FindWind,
   and wiring the widget's `owind` recent-sample history into the rose's
   optional history dots (parsed and unit-tested, just not plumbed into
   the UI - the `LiveWindProvider` interface only carries a single current
@@ -212,24 +212,24 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
 ## Block 7
 
 - **Height interpolation is circular-safe vector averaging**, not naive
-  linear interpolation of degree values - a wraparound case (e.g. 350°
-  and 10°) would otherwise average to 180° instead of ~0°.
+  linear interpolation of degree values - a wraparound case (e.g. 350Â°
+  and 10Â°) would otherwise average to 180Â° instead of ~0Â°.
   `interpolateWindAtHeight` converts each bracketing angle to a unit
   vector, interpolates the vector components, then converts back via
   `atan2`. Clamps to the nearest available height (10/80/120/180m, Open-
   Meteo's discrete offering, confirmed live) rather than extrapolating
   beyond real data when a site's configured height falls outside that
-  range - §7.2 mentions pressure-level data for "larger heights," which
+  range - Â§7.2 mentions pressure-level data for "larger heights," which
   isn't available from this provider, so clamping is the honest choice
   over guessing.
 - **Live observations never apply in Soaring height mode**, only Surface
-  - a surface anemometer doesn't measure wind aloft (§7.2's explicit
+  - a surface anemometer doesn't measure wind aloft (Â§7.2's explicit
     warning). Soaring mode always uses interpolated forecast, even at
   NOW, even if a fresh live reading exists for that site.
 - **A site with no `soaring_height.agl_m` configured shows explicitly
   unsupported** (null wind, a visible warning message) in Soaring mode
   rather than silently falling back to surface wind - this falls out for
-  free from `computeDirectionFit` already returning "unknown" (→ gray)
+  free from `computeDirectionFit` already returning "unknown" (â†’ gray)
   when direction is null, so no special-casing was needed in the
   flyability logic itself, only in `forecastPointAt`'s branch that
   refuses to compute anything when the config is missing.
@@ -238,18 +238,18 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   overlap and intercept each other's clicks in Playwright. Simplified
   the affected E2E test to avoid the flaky interaction rather than force
   the click - the underlying issue (marker collision/clustering strategy
-  per §16) is real and left for a later polish pass, noted in
+  per Â§16) is real and left for a later polish pass, noted in
   `PROGRESS.md` rather than silently worked around.
 
 ## Block 8
 
 - **Forecast data stays client-fetched, not server-collected**, despite
-  §13's architecture diagram listing "refresh forecast when stale" as a
+  Â§13's architecture diagram listing "refresh forecast when stale" as a
   GitHub Actions step. Open-Meteo is a free, keyless, CORS-open API
   explicitly meant for direct browser use, so every page load already
   gets a genuinely fresh forecast for free - server-staging it would add
   complexity (a cache-freshness policy, another generated file) without
-  a real freshness benefit, and Block 5 already satisfies §26's "no API
+  a real freshness benefit, and Block 5 already satisfies Â§26's "no API
   call per slider tick" (one fetch per page load, not per tick). Only
   Holfuy's live data is server-collected, because its widget endpoint
   can't safely be called cross-origin from a browser (no CORS headers
@@ -263,7 +263,7 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   cron + manual dispatch), each with its own concurrency group rather
   than sharing one - a push-triggered deploy should never be cancelled
   mid-build by an unrelated scheduled refresh, but overlapping refresh
-  runs *should* cancel each other (§32) since only the freshest one's
+  runs *should* cancel each other (Â§32) since only the freshest one's
   output matters. GitHub's own Pages deployment environment additionally
   serializes the actual publish step regardless, so this isn't the only
   safety net.
@@ -276,19 +276,19 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   based Pages deployment (`upload-pages-artifact` + `deploy-pages`)
   rather than the older pattern of pushing built output to a `gh-pages`
   branch - the artifact is uploaded and published directly, never
-  touching git history, satisfying §32's "avoid repository-history
+  touching git history, satisfying Â§32's "avoid repository-history
   spam" without needing to design around it.
 - **`weather-refresh.yml` skips lint/typecheck/unit-test steps** that
   `pages.yml` runs - the application code isn't changing between
   refresh runs, only the collected live data, so re-verifying it every
-  5 minutes would be pure waste (§13.1: "keep the collector fast").
+  5 minutes would be pure waste (Â§13.1: "keep the collector fast").
 - **Two real problems found only by actually deploying, not by local
   build success:**
   1. `actions/configure-pages` failed on the first deploy attempt
      because the repo's Pages feature had never been switched on -
      `pages: write` in the workflow permissions isn't sufficient by
-     itself; the repo owner had to visit Settings → Pages → Build and
-     deployment → Source and select "GitHub Actions" once. A genuine
+     itself; the repo owner had to visit Settings â†’ Pages â†’ Build and
+     deployment â†’ Source and select "GitHub Actions" once. A genuine
      one-time credential/permission blocker per AGENTS.md, so this
      stopped and asked rather than attempting a workaround. Also
      manually triggered `pages.yml` and `weather-refresh.yml` once each
@@ -315,11 +315,11 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
 - **Touch targets bumped to 44px minimum** (the NOW button, height-mode
   toggle buttons, site-sheet close button) - the originals were as small
   as ~24px tall, well under the accessibility-standard 44px minimum
-  §28 calls for. The time slider bar grew from 76px to 92px to
+  Â§28 calls for. The time slider bar grew from 76px to 92px to
   comfortably fit a 44px button row plus the range input without
   cramming.
 - **Red gets a dashed ring, not just a hue** (`WindRose`'s state ring
-  now uses `strokeDasharray` specifically for `state === "red"`). §28
+  now uses `strokeDasharray` specifically for `state === "red"`). Â§28
   only explicitly requires non-color state cues "in expanded view"
   (already satisfied by the GOOD/MAYBE/BAD/UNKNOWN text label there),
   but red is the single most safety-critical signal ("don't fly") and a
@@ -328,15 +328,15 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   low-risk addition worth doing beyond the letter of the requirement.
 - **Darkened several marginal-contrast grays** (`#777`->`#555`,
   `#666`->`#444`, accent blue `#1976d2`->`#1565c0`) for headroom beyond
-  bare WCAG AA minimums, given §28's explicit "UI should work in bright
+  bare WCAG AA minimums, given Â§28's explicit "UI should work in bright
   outdoor light" - direct sunlight on a phone screen eats contrast
   margin fast, so bare-minimum compliance isn't enough here.
 - **PWA: manifest + SVG icon added, no service worker.**
   `manifest.webmanifest` + `public/icon.svg` (referenced via a
   `sizes: "any"`, `type: "image/svg+xml"` icon entry, no PNG generation
   tooling needed) give "Add to Home Screen" installability, satisfying
-  §27's "nice to have, not blocker" framing. A full offline-caching
-  service worker was deliberately **not** built: §27 explicitly only
+  Â§27's "nice to have, not blocker" framing. A full offline-caching
+  service worker was deliberately **not** built: Â§27 explicitly only
   asks for caching "the application shell," but this app rebuilds and
   redeploys every 5 minutes (Block 8's weather-refresh.yml) - a
   naively-cached service worker is a well-known footgun for exactly
@@ -346,7 +346,7 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   invalidation wrong is real, this was judged not worth it for the
   value gained; installability without offline caching is the safer
   subset to ship now.
-- **§38 V1 definition-of-done swept against the actual live URL**
+- **Â§38 V1 definition-of-done swept against the actual live URL**
   (`https://utskottet.github.io/FlyWeather/`), not just local dev - see
   `PROGRESS.md`'s Block 9 report for the item-by-item result.
 
@@ -361,7 +361,7 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   feasible.
 - **Flow-direction convention, deliberately different from WindRose's.**
   `WindRose`'s site arrow points to the compass direction wind is
-  coming FROM (§29.3's station/vane convention, already correct and
+  coming FROM (Â§29.3's station/vane convention, already correct and
   tested). The regional field's arrows instead point in the direction
   wind is blowing TOWARD (`windDirectionDeg + 180`), matching how
   flow/streamline wind maps (Yr's included) conventionally read. Two
@@ -396,14 +396,14 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
 - **Checked text contrast before picking the new fill colors**, not
   after: `#111827` (the speed-number text) against every new fill stays
   well above WCAG AA's 4.5:1 minimum, so the number stays clearly
-  readable per §28 even though the background is now much louder than
+  readable per Â§28 even though the background is now much louder than
   before.
 - **Sector-wedge and existing accessibility work both survive
   unchanged**: green/orange sector colors weren't touched (only overall-
   state colors were), and the Block 9 dashed-red-ring cue automatically
   scales with the new ring width (`STATE_RING_WIDTH * 1.6`) since it
   already referenced the constant rather than a hardcoded number.
-- **Geometry shrank the center circle by ~3px** (radius 25→22 in the
+- **Geometry shrank the center circle by ~3px** (radius 25â†’22 in the
   100-unit viewBox) to make room for the wider ring without changing
   the rose's overall size - a minor, visually unnoticeable tradeoff
   confirmed by re-running the full existing WindRose test suite
@@ -464,8 +464,8 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   not just a test-suite fix.
 - **Marker-clustering elevated from a minor to a clearly-visible issue.**
   Block 7 first flagged Ven's three sites overlapping at low zoom as a
-  deferred §16 gap. With all 24 sites now on the map, several more
-  clusters appeared (Kåseberga's three sites share a coordinate exactly,
+  deferred Â§16 gap. With all 24 sites now on the map, several more
+  clusters appeared (KÃ¥seberga's three sites share a coordinate exactly,
   since two share zero landmark precision and were assigned the same
   village center; Hovs Hallar's two sites likewise). Not fixed in this
   block - still out of scope for "resolve coordinates" - but four E2E
@@ -477,7 +477,7 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
 
 ## Block 14a
 
-- **Leaflet → MapLibre GL JS swap, RELIEF mode only this block**: per the
+- **Leaflet â†’ MapLibre GL JS swap, RELIEF mode only this block**: per the
   user's explicit spec, replaced the raster/DOM-tile Leaflet map with
   MapLibre GL's WebGL vector-tile renderer so Mapterhorn's hillshade DEM
   can be composited live. TOPO and MAP modes are stubbed
@@ -526,10 +526,10 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   clustering `force: true` workarounds (Block 13) are unrelated and still
   needed - this fix only addresses the slider-occlusion case.
 - **Visual verification**: captured screenshots at the initial auto-fit
-  view and two zoomed-in views over the Bjäre peninsula and Kullaberg
-  (the most dramatic terrain in the Skåne region, chosen deliberately as
+  view and two zoomed-in views over the BjÃ¤re peninsula and Kullaberg
+  (the most dramatic terrain in the SkÃ¥ne region, chosen deliberately as
   the hardest test of the hillshade settings). The default exaggeration
-  (1), 315° illumination, and dark-shadow/light-highlight colors produced
+  (1), 315Â° illumination, and dark-shadow/light-highlight colors produced
   clearly visible ridge/valley relief at both zoom levels without needing
   to push the settings further - no adjustment was needed against the
   user's "if too weak, make it more aggressive" instruction.
@@ -609,7 +609,7 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
 - **Thresholds**: 5m minor / 25m major at the closest zoom band (z13+),
   coarsening to 25/100m at z9 and 50/200m below that, per the user's
   explicit "start ~5m minor/25m major, adjust after visually testing"
-  instruction - Skåne's flat terrain would produce an illegible tangle
+  instruction - SkÃ¥ne's flat terrain would produce an illegible tangle
   of lines at low zoom without coarsening.
 - **Hillshade stays visually dominant**: TOPO is built by spreading
   RELIEF's full style (background, water, hillshade) and layering
@@ -805,7 +805,7 @@ implementing agent (per its §0 mandate). Append, don't rewrite history.
   Click-to-inspect (a MapLibre `Popup`) surfaces the exact type/class/
   altitude limits for anyone who needs the specifics.
 - **Verified against a known real-world reference before calling this
-  done**: queried the rendered layer at Malmö Airport's (Sturup, ESMS)
+  done**: queried the rendered layer at MalmÃ¶ Airport's (Sturup, ESMS)
   coordinates and confirmed it returned "STURUP CTR", Class C,
   "0 ft GND - 2000 ft MSL" - matching the real published CTR for that
   airport - both via `queryRenderedFeatures` and an actual simulated
@@ -1156,7 +1156,7 @@ elements" rather than the whole file verbatim.
   proportions but re-expressed as multiples of `OUTER_R` (not copied
   pixel values) so it scales correctly with this component's own
   viewBox. Direction convention unchanged (tip points toward where wind
-  is coming FROM, §29.3) - only the shape changed, not the meaning.
+  is coming FROM, Â§29.3) - only the shape changed, not the meaning.
 - **Added a north tick + "N" label** (the reference has this, the old
   design didn't) - a small, fixed reference mark, not a full compass
   rose, to help orient the wedges/pointer at a glance.
@@ -1328,9 +1328,9 @@ sibling element into the rose's own SVG.
   placeholder shape.
 - **Ring width recalculated from the reference's actual numbers**: its
   CSS is `stroke-width: 3.5` on a `viewBox="0 0 240 240"` circle of
-  `r="90"` - a ratio of `3.5/90 ≈ 0.039` of the radius. Applied that
+  `r="90"` - a ratio of `3.5/90 â‰ˆ 0.039` of the radius. Applied that
   exact ratio to this component's own `OUTER_R` (`RING_WIDTH = OUTER_R
-  * (3.5 / 90)`, ≈1.79) instead of another guessed pixel value - round
+  * (3.5 / 90)`, â‰ˆ1.79) instead of another guessed pixel value - round
   3's `6` was roughly 3x too thick relative to the circle.
   `RING_WIDTH` is a derived constant now, not a hardcoded number, so
   it can't drift out of proportion again if `OUTER_R` ever changes.
@@ -1355,7 +1355,7 @@ sibling element into the rose's own SVG.
   pass's much tighter, guessed offsets.
 - Pointer geometry was re-checked against the reference's literal
   `points="120,38 103,2 120,11 137,2"` and confirmed already correct
-  (tip/notch/wing radii and the 8.2° wing half-angle all matched to
+  (tip/notch/wing radii and the 8.2Â° wing half-angle all matched to
   within rounding) - not touched again.
 - `RoseGallery.tsx`'s fixture `Case` type simplified from
   `green[]`/`orange[]` to a single `sector`, matching the new prop; a
@@ -1372,7 +1372,7 @@ sibling element into the rose's own SVG.
   visually consistent with the reference's model; zero console errors;
   full unit suite green (175/175).
 
-## Site catalogue trim + Barsebäck's ViVa live source
+## Site catalogue trim + BarsebÃ¤ck's ViVa live source
 - User asked to disable 12 named sites to shrink the working set
   ("only a few to get right" for now) and, separately, to wire up
   `barseback`'s live wind source - previously a stub
@@ -1392,7 +1392,7 @@ sibling element into the rose's own SVG.
   (`docs/DATA_SOURCE_AUDIT.md`).
 - **Response shape is a named-sample array, not one wind object** -
   `Medelvind` (mean/sustained, m/s), `Byvind` (gust, m/s),
-  `Vindriktning` (direction, degrees), plus an unrelated `Vattenstånd`
+  `Vindriktning` (direction, degrees), plus an unrelated `VattenstÃ¥nd`
   (water level) sample this app ignores. Speed/gust values carry a
   Swedish compass-letter prefix ("V 3.2") that's redundant with (and
   less precise than) `Vindriktning`'s own decimal value - stripped via
@@ -1622,13 +1622,13 @@ sibling element into the rose's own SVG.
   reference (`uploads/wind-sector-rose.html`) places the weather graphic
   fixed above center and speed fixed below - fine for its own demo sector,
   but covers the colored sector whenever a real site's sector points
-  upward. Weather now centers at `sectorMidpointDeg(sector) + 180°`
+  upward. Weather now centers at `sectorMidpointDeg(sector) + 180Â°`
   (translated only, never rotated, per explicit instruction), using the
   existing wraparound-safe `sectorMidpointDeg`/`polarToCartesian` helpers -
   no new angle math. Speed nudges to whichever vertical half the weather
   graphic isn't in. With no sector configured it falls back to the
-  original fixed layout - there's nothing to avoid. `MASTER_SPEC.md` §2.5
-  is now the authoritative spec for this; §2's old permanent-green-and-
+  original fixed layout - there's nothing to avoid. `MASTER_SPEC.md` Â§2.5
+  is now the authoritative spec for this; Â§2's old permanent-green-and-
   orange multi-sector language is marked obsolete (not deleted) since the
   single-sector model already shipped in an earlier round (WindRose round
   4) and this milestone only added the placement math on top of it.
@@ -1636,7 +1636,7 @@ sibling element into the rose's own SVG.
   92-unit ring diameter)** and is allowed to protrude ~12% past the ring
   (`ICON_PROTRUSION_FRACTION`) - within the task's documented 35-40%-of-
   diameter / 10-15%-protrusion targets. Verified against 8 mandated sector
-  cases (0-40°, 70-120°, 150-210°, 240-300°, 310-350°, very narrow, very
+  cases (0-40Â°, 70-120Â°, 150-210Â°, 240-300Â°, 310-350Â°, very narrow, very
   wide, wraparound) in both `tests/unit/WindRose.test.tsx` and
   `tests/e2e/rose-gallery.spec.ts` (`adaptive-*` fixtures in
   `src/dev/RoseGallery.tsx`).
@@ -1687,22 +1687,22 @@ sibling element into the rose's own SVG.
   overlap.
 - **Compact provenance line** is a new pure function
   (`provenanceLine` in `domain/effectiveSample.ts`) returning the task's
-  exact mandated strings - `"Live site wind · Forecast map & RASP"` at
+  exact mandated strings - `"Live site wind Â· Forecast map & RASP"` at
   NOW, `"Sites, map & RASP: forecast"` for any future hour - rendered as
   one line in the control bar. Additive to, not a replacement for,
   `SiteSheet`'s existing per-site LIVE/FORECAST badge
   (`live-data.spec.ts`, left untouched).
 - **`ParameterLegend` title format** changed from `"{label}
-  ({technicalLabel}) · {unit}"` to `"{label} · {technicalLabel} · {unit}"`
-  (e.g. `"Thermal strength · W* · m/s"`) - the task's exact requested
+  ({technicalLabel}) Â· {unit}"` to `"{label} Â· {technicalLabel} Â· {unit}"`
+  (e.g. `"Thermal strength Â· W* Â· m/s"`) - the task's exact requested
   format, a wording-only change.
 
 ---
 
-## 2026-09-18 — Startvind UX Direction, chunk 1 (layout structure)
+## 2026-09-18 â€” Startvind UX Direction, chunk 1 (layout structure)
 
 The reference image supplied by the user is stored in the repository at
-`docs/design/ux-reference-2026-09-18.png` and linked from MASTER_SPEC §15,
+`docs/design/ux-reference-2026-09-18.png` and linked from MASTER_SPEC Â§15,
 which the new arrangement replaces the conflicting parts of. Screenshots of
 this chunk's result are beside it (`chunk1-desktop-1336.png`,
 `chunk1-desktop-rasp-on.png`, `chunk1-mobile-390.png`).
@@ -1753,20 +1753,20 @@ this chunk's result are beside it (`chunk1-desktop-1336.png`,
 
 ### Deliberate deviations from the image
 
-- **AMSL → AGL.** The image labels the altitude control "m AMSL". The
+- **AMSL â†’ AGL.** The image labels the altitude control "m AMSL". The
   behaviour is AGL and unchanged, so the label stays "Altitude (m AGL)".
-  Unresolved: whether the product should offer AMSL at all — that is a
+  Unresolved: whether the product should offer AMSL at all â€” that is a
   data and interpolation question (terrain elevation per site), not a
   label change, and nothing about it should be implied by wording before
   it is decided.
 - **No Wind switch.** The image shows a Wind row in the layer panel.
-  Animated wind is unconditional today (§9; only `prefers-reduced-motion`
+  Animated wind is unconditional today (Â§9; only `prefers-reduced-motion`
   turns it off, which was never a user control), so adding the switch
   would be a behaviour change, not a re-layout. Unresolved: whether to
   add it back as a real toggle in chunk 2.
 - **The RASP chip is still only shown while the RASP overlay is on**, as
   before; the image shows update times unconditionally. Unresolved, chunk
-  2 — showing a RASP time while RASP is off is arguably information, not
+  2 â€” showing a RASP time while RASP is off is arguably information, not
   noise, but it must not imply the overlay is active.
 - **Add site is no longer behind `?admin=1`.** The image puts it in the
   header as a normal control, and the user's direction says authentication
@@ -1775,7 +1775,7 @@ this chunk's result are beside it (`chunk1-desktop-1336.png`,
   site every visitor can open the editor and the Worker's sign-in gates
   the save. The per-site **Edit** button is still `ADMIN_MODE`-gated, and
   no editor behaviour changed. This is the one visitor-visible change in
-  chunk 1 that is not purely presentational — flagged for the visual
+  chunk 1 that is not purely presentational â€” flagged for the visual
   review.
 - **Current Wind** replaces the "LIVE SITE" label on the same control
   (`StartButton`), wording only.
@@ -1797,7 +1797,7 @@ this chunk's result are beside it (`chunk1-desktop-1336.png`,
 
 ---
 
-## 2026-09-18 — Startvind UX Direction, chunk 2 (first review pass)
+## 2026-09-18 â€” Startvind UX Direction, chunk 2 (first review pass)
 
 Three items from the user's review of chunk 1, plus one crash found on the
 way.
@@ -1811,7 +1811,7 @@ move with them - MapLibre's zoom control to the top right
 desktop site sheet and the RASP legend to the right column, and the map's
 fit padding now reserves 300px on the left instead of the right. The
 reference image remains the authority for everything else; this one
-deviation is recorded in MASTER_SPEC §15 so it is not "fixed" back later
+deviation is recorded in MASTER_SPEC Â§15 so it is not "fixed" back later
 by someone comparing against the image.
 
 ### The timeline marker now carries the day and the time
@@ -1822,7 +1822,7 @@ text itself was a bare hour ("17") on the current day, or "NOW" with no
 time at all. Now:
 
 - `formatSliderLabel` always states day + clock time ("Sat 14:00"), and
-  "NOW · Fri 20:00" at the live position - NOW keeps its word because
+  "NOW Â· Fri 20:00" at the live position - NOW keeps its word because
   live-vs-forecast matters, but it no longer costs you the timestamp. The
   function no longer takes a reference date, since it no longer shortens
   anything relative to today.
@@ -1961,3 +1961,52 @@ was added while diagnosing and kept - queued style events after
   end stops at something readable and lets the closest pair touch.
   Clustering was rejected: a badge saying "5" replaces the one thing a
   rose is for.
+
+## Phone timeline is its own control (2026-10-06)
+
+The user reported that the time slider is hard to aim at a specific hour on
+a specific day on mobile, and asked for the Windy-style mobile slider.
+
+**Read Windy's own client rather than guessing.** It really does ship two
+timelines, dispatched by device (`userControl: isMobile ? 'mobile-calendar'
+: 'progress-bar'`), mounted on separate `bottom-controls-mobile` /
+`bottom-controls-desktop` anchors. The desktop `progress-bar` is a
+horizontal ruler with a hover-scrub ghost chip and a *non-linear* time
+scale that gives near-term days up to 5x the pixels/hour; the mobile
+`mobile-calendar` is a horizontally scrollable strip of fixed-width day
+columns (160 px/day default), 3-hour labels, momentum scroll, a yellow
+"now" line and an orange day/time chip. Full findings, numbers and source
+URLs: `docs/TIMELINE_MOBILE_RESEARCH.md`.
+
+**Decision: build the phone day strip now; leave the desktop bar alone.**
+`MobileTimeSlider` is rendered by `BottomBar` on compact viewports
+(`useIsCompact`, 760px); the desktop `TimeSlider` is untouched. The strip
+gives each hour a `MOBILE_HOUR_WIDTH_PX = 13px` cell (~312 px per full
+day, ~13 px/hour) versus the old range input's ~4.6 px/hour across the
+whole 72 h window, and one column per **local calendar day**, so the day
+boundary is a real position rather than a tick in a compressed track.
+
+- The per-day width is deliberately wider than Windy's 160 px: with only
+  ~3 days of forecast, being able to reach an hour with a thumb matters
+  more than fitting more days on screen at once.
+- Snap-to-hour is CSS `scroll-snap-type: x mandatory`, not
+  `requestAnimationFrame` inertia - native phone scrolling already has
+  momentum, and Windy's hand-rolled inertia exists for mouse-drag, which
+  is not a problem here.
+- Scroll and selection are synchronised both ways with a guard flag so a
+  fling is never yanked by the recentre effect, and an external selection
+  (START, tapping an hour) recentres the strip. Same shape as Windy's own
+  guard.
+- Night/twilight shading is per hour cell, reusing `classifySkyBand` and
+  the same phase colours as the desktop `skyBand` module - more legible
+  than one 72 h gradient squeezed into a track.
+- An off-screen native range input carries the same index for keyboard and
+  assistive tech; the two are one value, not two states. Tabbing outlines
+  the whole strip via `:has(:focus-visible)` rather than reflowing a
+  native slider into the layout.
+
+**Bug found and fixed in passing:** `usePrefersReducedMotion` guarded with
+`"matchMedia" in window` and then called `window.matchMedia(...)` - true
+but not callable under jsdom, so any unit test mounting it threw. Changed
+to `typeof window.matchMedia === "function"`, matching `useIsCompact`.
+

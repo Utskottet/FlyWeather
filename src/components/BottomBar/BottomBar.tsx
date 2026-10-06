@@ -1,6 +1,7 @@
 import type { RefObject } from "react";
 import { StartButton } from "../StartButton/StartButton.tsx";
 import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
+import { MobileTimeSlider } from "../TimeSlider/MobileTimeSlider.tsx";
 import { AltitudeControl } from "../AltitudeControl/AltitudeControl.tsx";
 
 export interface BottomBarProps {
@@ -55,7 +56,14 @@ export function BottomBar({
       </div>
       <div className="bottom-bar-time">
         <div className="bottom-bar-section-title">Forecast time (local time)</div>
-        <TimeSlider hours={hours} selectedIndex={selectedIndex} onChange={onTimeChange} />
+        {/* Two genuinely different timelines, not one scaled down: the wide
+            desktop range input and the phone's scrollable day strip. See
+            docs/TIMELINE_MOBILE_RESEARCH.md for why. */}
+        {compact ? (
+          <MobileTimeSlider hours={hours} selectedIndex={selectedIndex} onChange={onTimeChange} />
+        ) : (
+          <TimeSlider hours={hours} selectedIndex={selectedIndex} onChange={onTimeChange} />
+        )}
       </div>
       {!compact && (
         <div className="bottom-bar-altitude">

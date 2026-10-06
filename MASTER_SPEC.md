@@ -848,6 +848,23 @@ No heavy backend framework in V1.
 >   full-width timeline. Desktop shows the altitude slider permanently
 >   (`AltitudeControl`) because it has the width for it.
 >
+> **Phone timeline is a different control, not the desktop one scaled down
+> (current, authoritative).** The desktop range input compresses all 72
+> hours into ~334 px of thumb travel (~4.6 px/hour), which makes a single
+> hour on a single day an uncomfortable target on a phone. On a compact
+> viewport (`useIsCompact`, 760px) `BottomBar` renders `MobileTimeSlider`
+> instead of `TimeSlider`: a horizontally scrollable strip with one column
+> per local calendar day (~312 px per full day, ~13 px per hour), one
+> tappable cell per hour, 3-hour labels, night/day shading per cell, the
+> real-clock NOW marker, and the selected hour kept centred under a fixed
+> playhead beneath the same day/time chip. Duration is snap-to-hour via CSS
+> scroll-snap; an off-screen native range input carries the same value for
+> keyboard/assistive tech. Both sliders expose the identical
+> `hours`/`selectedIndex`/`onChange` contract, so nothing downstream
+> changed. This mirrors Windy's own split between its desktop
+> `progress-bar` and mobile `mobile-calendar` timelines - research, exact
+> findings and rationale in `docs/TIMELINE_MOBILE_RESEARCH.md`.
+>
 > **The site detail sheet** (§15.2) keeps its content and behaviour; on
 > desktop it is a card in the right column rather than a full-width
 > drawer, so the map stays dominant while a site is open.

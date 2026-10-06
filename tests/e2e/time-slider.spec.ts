@@ -166,3 +166,49 @@ test.describe("Time chip as a drag handle", () => {
     await expect(page.locator('[data-testid="time-slider-label"]')).not.toContainText("NOW");
   });
 });
+
+test.describe("Mobile day strip (phone timeline)", () => {
+  /**
+   * The phone's timeline is a different control, not the desktop range input
+   * shrunk: one scrollable column per local day, one 13px cell per hour, the
+   * selected hour centred under a fixed playhead. See
+   * docs/TIMELINE_MOBILE_RESEARCH.md.
+   */
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await expect(page.getByTestId("time-slider-range")).not.toHaveAttribute("max", "0", { timeout: 15_000 });
+    await expect(page.getByTestId("mobile-timeline-scroll")).toBeVisible();
+  });
+
+  test("lays out one day column per local calendar day, with 3-hour labels", async ({ page }) => {
+    const days = page.locator(".mobile-timeline-day");
+    // 73 hours always spans at least three local days.
+    expect(await days.count()).toBeGreaterThanOrEqual(3);
+    for (const text of await days.allTextContents()) {
+      expect(text).toMatch(/^[A-Z]{3} \d{1,2}$/);
+    }
+    expect(await page.locator(".mobile-timeline-hour-label").count()).toBeGreaterThan(0);
+  });
+
+  test("tapping an hour selects it, and START returns to NOW", async ({ page }) => {
+    const label = page.getByTestId("time-slider-label");
+    await expect(label).toContainText("NOW");
+
+    await page.locator('[data-testid="mobile-timeline-hour"][data-index="6"]').click();
+    await expect(label).not.toContainText("NOW");
+    await expect(page.getByTestId("time-slider-range")).toHaveValue("6");
+
+    await page.getByTestId("start-button").click();
+    await expect(label).toContainText("NOW");
+    await expect(page.getByTestId("time-slider-range")).toHaveValue("0");
+  });
+
+  test("scrolling the strip changes the selected hour", async ({ page }) => {
+    await page.getByTestId("mobile-timeline-scroll").evaluate((el) => {
+      el.scrollLeft = 13 * 12; // 12 hours ahead, one hour = 13px
+    });
+    await expect(page.getByTestId("time-slider-range")).toHaveValue("12");
+    await expect(page.getByTestId("time-slider-label")).not.toContainText("NOW");
+  });
+});

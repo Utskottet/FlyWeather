@@ -96,8 +96,10 @@ test.describe("phone layout", () => {
 
   test("altitude runs parallel to time but stays the shorter of the two", async ({ page }) => {
     // It is a modifier, not the primary control, and should read as one.
+    // On a phone the timeline is now a scrollable day strip rather than a
+    // range input, so measure the strip itself.
     const altitude = (await page.locator('[data-testid="altitude-control"] input').boundingBox())!;
-    const time = (await page.locator('[data-testid="time-slider-range"]').boundingBox())!;
+    const time = (await page.locator('[data-testid="mobile-timeline-scroll"]').boundingBox())!;
     expect(altitude.width).toBeLessThan(time.width);
     expect(altitude.y).toBeLessThan(time.y);
   });

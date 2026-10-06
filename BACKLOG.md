@@ -123,12 +123,10 @@ known rather than discovered later.
 - **Trafikverket and Windy are not implemented.** Both appeared in the
   station-finder prototype as "setup needed"; neither reader exists, and
   neither is offered anywhere in the app.
-- **Mobile time slider resolution (designed, not built).** The phone
-  timeline crams 72 hours into ~334 px (~4.6 px/hour), which makes hitting
-  a specific hour on a specific day hard. Windy ships two separate
-  timelines (`progress-bar` desktop / `mobile-calendar` mobile); research,
-  exact findings and an implementation sketch are in
-  `docs/TIMELINE_MOBILE_RESEARCH.md`. Suggested first step: a phone-specific
-  horizontally scrollable day strip with snap-to-hour, reusing
-  `formatSliderLabel`/`nowPositionFraction`. Open visual decisions listed in
-  the doc's §7.
+- **Mobile time slider resolution (DONE 2026-10-06).** The phone timeline
+  was changed from the compressed desktop range input to a horizontally
+  scrollable day strip (`MobileTimeSlider`, one 13px cell per hour, one
+  column per local day, snap-to-hour). Research and Windy's exact approach:
+  `docs/TIMELINE_MOBILE_RESEARCH.md`; decision and implementation notes:
+  `docs/DECISIONS.md`. Follow-ups still open: desktop hover-scrub and a
+  non-linear desktop time scale.
