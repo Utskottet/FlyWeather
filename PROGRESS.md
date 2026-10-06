@@ -1953,3 +1953,50 @@ time-critical: nothing can be analysed until rows exist.
   should be settled first. Existing untracked `uploads/` logo folders were
   deliberately left untouched.
 
+## Mobile time slider: scrollable day strip (2026-10-06)
+
+- Status: done. A direct user-directed feature (not a numbered block):
+  after the research entry above, the owner chose the "day strip,
+  ~300 px/day + snap" direction.
+- Definition of Done: [x] `npm run typecheck` clean  [x] `npm run lint`
+  clean  [x] 878 unit tests green (862 + 16 new: 9 `timeAxis`, 7
+  `MobileTimeSlider`)  [x] `npm run build` green  [x] full e2e 113 passed /
+  4 skipped (the 3 new mobile day-strip tests included)  [x] phone layout
+  inspected with real Playwright screenshots at 360/390/430 plus a
+  future-hour case, and geometry measured directly (scrollLeft 0, first
+  cell and chip both centred, day columns 200/317 px) rather than eyeballed
+- What changed: on compact viewports (`useIsCompact`, 760px) `BottomBar`
+  now renders the new `MobileTimeSlider` instead of `TimeSlider`. One
+  horizontally scrollable column per local calendar day, one 13 px hour
+  cell (~312 px/day, ~13 px/hour vs the old ~4.6 px/hour), 3-hour labels,
+  per-cell night/twilight shading reusing `classifySkyBand`, the existing
+  real-clock NOW marker, snap-to-hour via CSS scroll-snap, the selected
+  hour centred under a fixed playhead beneath the day/time chip, and an
+  off-screen native range for keyboard/AT. Desktop is untouched.
+- New pure helpers on `domain/timeAxis.ts`: `groupHoursByLocalDay`,
+  `MOBILE_HOUR_WIDTH_PX`, `scrollLeftForIndex`, `indexFromScrollLeft` -
+  DST-safe (tested across both 2026 transitions, where a spring-forward day
+  still groups as one column).
+- Real bug found and fixed in passing: `usePrefersReducedMotion` guarded
+  with `"matchMedia" in window` then called it - true but not callable under
+  jsdom, so mounting it in a unit test threw. Changed to
+  `typeof window.matchMedia === "function"`, matching `useIsCompact`.
+- Files changed: `src/components/TimeSlider/MobileTimeSlider.tsx` (new),
+  `src/components/BottomBar/BottomBar.tsx`, `src/domain/timeAxis.ts`,
+  `src/app/App.css`, `src/app/usePrefersReducedMotion.ts`,
+  `tests/unit/MobileTimeSlider.test.tsx` (new),
+  `tests/unit/timeAxis.test.ts`, `tests/e2e/time-slider.spec.ts`,
+  `tests/e2e/mobile-layout.spec.ts`, `MASTER_SPEC.md`, `docs/DECISIONS.md`,
+  `docs/TIMELINE_MOBILE_RESEARCH.md`, `BACKLOG.md`
+- Commit: 7b75b76 "Mobile timeline: scrollable day strip instead of the
+  compressed range input"
+- Deferred / unresolved: desktop hover-scrub and a non-linear desktop time
+  scale (the other half of the Windy research) were deliberately not done
+  here; the day header is left-aligned to its column, so on a mid-day strip
+  only its tail is visible - noted for real-use feedback; no "today/
+  tomorrow" quick-jump yet. The working tree's regenerated
+  `SITES_INDEX.md`/`sites-index.csv` (from `npm run build`) were left out of
+  this commit as unrelated generated drift already tracked in `BACKLOG.md`.
+- Next: visual review on a real phone; then the optional desktop
+  timeline precision work.
+
