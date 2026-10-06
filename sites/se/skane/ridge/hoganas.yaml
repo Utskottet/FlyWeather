@@ -3,26 +3,37 @@ id: hoganas
 name: Höganäs Strandbaden
 short_name: Höganäs
 coordinates:
-  lat: 56.200857
-  lon: 12.551585
-  verified: false
+  lat: 56.212084783695225
+  lon: 12.54315414185535
+  verified: true
   source: OSM Nominatim place-name lookup - "Höganäs Strandbaden" returned no results; using "Höganäs" (the town center) as a coarser fallback, since the site is a specific beach within the town, not the town center itself
 sector:
-  from_deg: 275.25
-  to_deg: 315
-  margin_under_deg: 11.25
-  margin_over_deg: 11.25
+  ranges:
+    - from_deg: 268
+      to_deg: 324
+      margin_under_deg: 11.25
+      margin_over_deg: 11.25
   verified: true
 wind:
   verified: true
-  min_ms: 4
+  min_ms: 5
   max_ms: 7
   notes: CPS calls this a hard-wind ridge; do not infer numeric limits without verification.
+  margin_under_ms: 1
+  margin_over_ms: 1
 station:
   provider: holfuy
   station_id: "128"
   verified: true
-description: WNW-facing Höganäs site; CPS describes it as an intermediate hard-wind ridge.
+description: "WNW-facing Höganäs site; Start along the road. At the middle of the ridge there is a path to top for easy takeoff. "
 links:
   - label: CPS listing
     url: https://www.cps.to/flygstallen/vnv-hoganas/
+last_edited_by: edvin buregren
+parking:
+  lat: 56.215066
+  lon: 12.544291
+  note: Toalett grillplats
+pilot_level: medium
+ridge_height_m: 15
+last_edited_at: 2026-10-06T08:07:35.626Z
