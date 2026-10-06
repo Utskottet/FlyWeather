@@ -130,3 +130,19 @@ known rather than discovered later.
   `docs/TIMELINE_MOBILE_RESEARCH.md`; decision and implementation notes:
   `docs/DECISIONS.md`. Follow-ups still open: desktop hover-scrub and a
   non-linear desktop time scale.
+- **"Forecast at NOW" as a separate view from the live station reading
+  (explored, deliberately NOT built - 2026-10-06).** Today the NOW position
+  has exactly one meaning: the site's **live station reading** (falling back
+  to forecast, clearly labelled, when no fresh observation exists). Pressing
+  Live wind reading and manually dragging the slider back to index 0 land on
+  the same thing, so they can never differ. That is honest, but it means
+  there is no way to ask *"what does the forecast model say for the current
+  hour?"* - a genuinely useful question (is the station reading high/low for
+  the wind that is actually forecast? what does now look like at a site with
+  no station?). A future option: keep Live wind reading as the observation,
+  and add a separate affordance to view the **forecast value for the current
+  time** (a toggle at NOW, a long-press on the chip, or a small "forecast for
+  now" control). Not started; recorded so the idea is not lost. It would need
+  (a) an unambiguous visual difference between observation and model at the
+  same timestamp, and (b) a decision on which of the two the rose colours /
+  verdict reflect while both are visible.

@@ -220,7 +220,10 @@ export function MobileTimeSlider({ hours, selectedIndex, onChange }: MobileTimeS
 
   return (
     <div className="mobile-timeline" data-testid="time-slider">
-      <div className="mobile-timeline-chip" data-testid="time-slider-label">
+      <div
+        className={`mobile-timeline-chip${selectedIndex === 0 ? " mobile-timeline-chip--now" : ""}`}
+        data-testid="time-slider-label"
+      >
         {label}
       </div>
       {/* The day of the centred hour, pinned at the strip's left. A label

@@ -12,11 +12,20 @@ function hoursFromNow(count: number): string[] {
 }
 
 describe("MobileTimeSlider", () => {
-  it("shows NOW at index 0", () => {
+  it("shows NOW at index 0 and tints the chip live-green", () => {
     const { getByTestId } = render(
       <MobileTimeSlider hours={hoursFromNow(73)} selectedIndex={0} onChange={() => {}} />,
     );
-    expect(getByTestId("time-slider-label").textContent).toContain("NOW");
+    const chip = getByTestId("time-slider-label");
+    expect(chip.textContent).toContain("NOW");
+    expect(chip.className).toContain("mobile-timeline-chip--now");
+  });
+
+  it("drops the live-green chip once the selection leaves NOW", () => {
+    const { getByTestId } = render(
+      <MobileTimeSlider hours={hoursFromNow(73)} selectedIndex={5} onChange={() => {}} />,
+    );
+    expect(getByTestId("time-slider-label").className).not.toContain("mobile-timeline-chip--now");
   });
 
   it("renders one hour cell per hour", () => {

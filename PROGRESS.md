@@ -2128,3 +2128,29 @@ time-critical: nothing can be analysed until rows exist.
   the bar (intended).
 - Next: user's next visual verdict.
 
+## NOW chip turns live-green; "forecast at NOW" logged as a future idea (2026-10-06)
+
+- Status: done. User: at NOW the time chip should be green like the Live
+  wind button, to reinforce that this is a station reading, not a forecast.
+- Definition of Done: [x] `npm run typecheck` clean  [x] `npm run lint`
+  clean  [x] 892 unit tests green (891 + 1 new chip-colour test)
+  [x] `npm run build` green  [x] full e2e 113 passed / 4 skipped
+  [x] chip-at-NOW (green) and chip-at-future (blue) screenshots reviewed
+- What changed: `MobileTimeSlider` adds `mobile-timeline-chip--now` at
+  index 0; the CSS colours it with `--live` and a dark label (matching the
+  START button), pointer included. Text still reads "NOW · Tue 10:00", so
+  colour is not the only signal.
+- Documentation: the idea the user raised - a separate way to view the
+  **forecast for the current time** alongside the live station reading at
+  NOW (they currently cannot differ, since both are index 0) - is recorded
+  as a deliberately-unbuilt future option in `BACKLOG.md`, with a pointer
+  from `MASTER_SPEC.md` §6.1 listing what it would need (observation vs
+  model distinguished at the same timestamp; which one the verdict
+  reflects).
+- Commit: pending (this commit)
+- Files changed: `src/components/TimeSlider/MobileTimeSlider.tsx`,
+  `src/app/App.css`, `tests/unit/MobileTimeSlider.test.tsx`, `BACKLOG.md`,
+  `MASTER_SPEC.md`, `PROGRESS.md`
+- Deferred / unresolved: "forecast at NOW" intentionally not implemented.
+- Next: user's next visual verdict.
+

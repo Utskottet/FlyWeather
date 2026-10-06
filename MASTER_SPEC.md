@@ -444,6 +444,16 @@ For `NOW`:
 - if live data is stale/unavailable, allow model fallback but clearly mark the source as forecast/model;
 - never present model data as an observation.
 
+> **Future option, not built (see `BACKLOG.md`):** NOW currently has exactly
+> one meaning - the live station reading (or its clearly-labelled forecast
+> fallback when no fresh observation exists). Pressing Live wind reading and
+> dragging the slider to index 0 land on the same thing, so there is no way
+> to ask "what does the forecast model say for the current hour?". A
+> separate *forecast-at-NOW* view is recorded in `BACKLOG.md`; do not add it
+> without first deciding how observation and model are visually
+> distinguished at the same timestamp, and which of the two the rose
+> colours/verdict reflect.
+
 ## 6.2 Future
 
 For future positions:

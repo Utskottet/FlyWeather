@@ -950,6 +950,20 @@
   border-top: 5px solid var(--accent);
 }
 
+/* At NOW the chip turns the same green as the Live wind button: this is a
+   station reading, not a forecast - the colour says so before the word
+   does. The text still says "NOW · Wed 09:00", so colour is not the only
+   signal. */
+.mobile-timeline-chip--now {
+  background: var(--live);
+  color: #08240f;
+  box-shadow: 0 1px 4px rgba(52, 199, 89, 0.4);
+}
+
+.mobile-timeline-chip--now::after {
+  border-top-color: var(--live);
+}
+
 .mobile-timeline-scroll {
   position: relative;
   overflow-x: auto;
