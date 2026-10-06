@@ -94,14 +94,20 @@ test.describe("phone layout", () => {
     await expect(page.locator('[data-testid="altitude-control"]')).toBeVisible();
   });
 
-  test("altitude runs parallel to time but stays the shorter of the two", async ({ page }) => {
-    // It is a modifier, not the primary control, and should read as one.
-    // On a phone the timeline is now a scrollable day strip rather than a
-    // range input, so measure the strip itself.
-    const altitude = (await page.locator('[data-testid="altitude-control"] input').boundingBox())!;
+  test("live wind reading sits beside the timeline on one row, altitude above", async ({ page }) => {
+    // Phone arrangement revised 2026-10-06: the bar floats clear of the
+    // bottom gesture area, altitude is a slim row, and Live wind reading
+    // stretches tall beside the day strip so it is an easy target.
+    const altitude = (await page.locator('[data-testid="altitude-control"]').boundingBox())!;
+    const live = (await page.locator('[data-testid="start-button"]').boundingBox())!;
     const time = (await page.locator('[data-testid="mobile-timeline-scroll"]').boundingBox())!;
-    expect(altitude.width).toBeLessThan(time.width);
-    expect(altitude.y).toBeLessThan(time.y);
+
+    // Altitude is its own row above.
+    expect(altitude.y + altitude.height).toBeLessThanOrEqual(live.y + 1);
+    // Live wind is left of the timeline, and stretched to its height.
+    expect(live.x + live.width).toBeLessThanOrEqual(time.x + 2);
+    expect(live.height).toBeGreaterThan(60);
+    expect(time.width).toBeGreaterThan(150);
   });
 
   test("no control advertises a disclosure it does not have", async ({ page }) => {

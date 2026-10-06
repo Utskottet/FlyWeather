@@ -2010,3 +2010,37 @@ boundary is a real position rather than a tick in a compressed track.
 but not callable under jsdom, so any unit test mounting it threw. Changed
 to `typeof window.matchMedia === "function"`, matching `useIsCompact`.
 
+## Phone bar floats up; Live wind moves beside a taller slider (2026-10-06)
+
+Follow-up user feedback after the day strip shipped, with a Windy phone
+screenshot as reference: the bar sat too close to the bottom edge, where a
+thumb risks the OS gesture area; the timeline needed to be taller so a
+finger finds it; and Live wind reading should move down onto the same row
+as the slider, so it can be large.
+
+- **The bar floats up:** compact `bottom` is now
+  `calc(14px + env(safe-area-inset-bottom, 0px))` (was a flat `6px`), so it
+  clears the iPhone home indicator as well as the gesture zone.
+- **The slider is taller:** the hour cells went from 40 px to 72 px
+  (hero target), with a deeper bottom padding and larger ticks. The chip
+  band above was trimmed 22 -> 20 px so the whole thing still fits.
+- **One row for the two controls a pilot reaches for:** `BottomBar`'s
+  compact branch now renders a slim full-width altitude row, then a
+  `.bottom-bar-main` row of `[StartButton (stretched to the strip's
+  height, fixed 112 px wide)] [MobileTimeSlider]`. The button is ~100 px
+  tall instead of a 36 px chip; the strip takes the remaining width.
+  Desktop is unchanged.
+- **Fits the existing chrome budget.** At 390x844 the phone chrome
+  (header + controls + bottom bar) measures ~251 px, still under the 30%
+  ceiling the `mobile-layout` e2e test enforces - so the taller controls
+  fit without silently eating the map. That test's old "altitude is
+  narrower than the timeline" assertion was replaced with the new,
+  meaningful one: altitude on its own row above, Live wind left of the
+  strip and taller than 60 px, strip still wider than 150 px.
+- **Known cosmetic wart, deliberate not fixed:** because the forecast
+  starts at NOW, the left half of the strip is empty when the selection is
+  index 0 (the selected cell is centred, but there is no past data to its
+  left). Windy fills that space with the elapsed hours of the day. A
+  future option is to render today's earlier hours as non-selectable cells;
+  logged as a follow-up rather than grown here.
+

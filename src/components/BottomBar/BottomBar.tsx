@@ -22,11 +22,14 @@ export interface BottomBarProps {
  * timeline, and altitude - forecast navigation only. No map layer, no site
  * selection and no brand mark lives down here.
  *
- * Phone arrangement is not the desktop one scaled down: Current Wind and
- * the collapsible HEIGHT control share one short top row and the timeline
- * takes the full width below them, rather than three columns squeezed
- * side by side. Desktop gets the reference image's three columns with the
- * altitude slider permanently visible.
+ * The phone arrangement is genuinely different from the desktop one (see
+ * MASTER_SPEC §15). Desktop keeps the reference image's three columns with
+ * the altitude slider permanently visible. On a phone the bar floats clear
+ * of the bottom gesture area, altitude is a slim full-width row, and below
+ * it **Live wind reading shares one row with the timeline** - the button
+ * stretches to the strip's height so it is a large, easy target, and the
+ * scrollable day strip (`MobileTimeSlider`) sits to its right. The desktop
+ * `TimeSlider` range input is never used on a phone.
  */
 export function BottomBar({
   isLiveMode,
@@ -41,34 +44,31 @@ export function BottomBar({
 }: BottomBarProps) {
   return (
     <div className={`bottom-bar${compact ? " bottom-bar-compact" : ""}`} data-testid="bottom-bar" ref={barRef}>
-      <div className="bottom-bar-live">
-        <StartButton isLiveMode={isLiveMode} onStart={onStart} />
-        {/* Altitude runs alongside time on a phone rather than hiding
-            behind a HEIGHT button. A linear slider like the timeline,
-            deliberately shorter: a secondary control that is always
-            readable beats a primary-looking button you have to open to
-            find out what it is set to. */}
-        {compact && (
+      {compact ? (
+        <>
           <div className="bottom-bar-altitude-inline">
             <AltitudeControl altitudeM={altitudeM} onChange={onAltitudeChange} />
           </div>
-        )}
-      </div>
-      <div className="bottom-bar-time">
-        <div className="bottom-bar-section-title">Forecast time (local time)</div>
-        {/* Two genuinely different timelines, not one scaled down: the wide
-            desktop range input and the phone's scrollable day strip. See
-            docs/TIMELINE_MOBILE_RESEARCH.md for why. */}
-        {compact ? (
-          <MobileTimeSlider hours={hours} selectedIndex={selectedIndex} onChange={onTimeChange} />
-        ) : (
-          <TimeSlider hours={hours} selectedIndex={selectedIndex} onChange={onTimeChange} />
-        )}
-      </div>
-      {!compact && (
-        <div className="bottom-bar-altitude">
-          <AltitudeControl altitudeM={altitudeM} onChange={onAltitudeChange} />
-        </div>
+          <div className="bottom-bar-main">
+            <StartButton isLiveMode={isLiveMode} onStart={onStart} />
+            <div className="bottom-bar-time">
+              <MobileTimeSlider hours={hours} selectedIndex={selectedIndex} onChange={onTimeChange} />
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="bottom-bar-live">
+            <StartButton isLiveMode={isLiveMode} onStart={onStart} />
+          </div>
+          <div className="bottom-bar-time">
+            <div className="bottom-bar-section-title">Forecast time (local time)</div>
+            <TimeSlider hours={hours} selectedIndex={selectedIndex} onChange={onTimeChange} />
+          </div>
+          <div className="bottom-bar-altitude">
+            <AltitudeControl altitudeM={altitudeM} onChange={onAltitudeChange} />
+          </div>
+        </>
       )}
     </div>
   );

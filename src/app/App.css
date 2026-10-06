@@ -917,7 +917,7 @@
   width: 100%;
   box-sizing: border-box;
   /* Space for the day/time chip above the strip. */
-  padding-top: 22px;
+  padding-top: 20px;
 }
 
 /* The chip is a readout here, not a handle: on a phone the gesture is
@@ -994,7 +994,10 @@
   position: relative;
   display: flex;
   align-items: stretch;
-  height: 40px;
+  /* Deliberately tall (~1.8x the first version): the strip is the control a
+     thumb has to find, so the vertical target matters more than the row's
+     footprint. */
+  height: 72px;
 }
 
 .mobile-timeline-hour {
@@ -1005,7 +1008,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 3px;
-  padding: 0 0 6px;
+  padding: 0 0 12px;
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -1030,13 +1033,13 @@
 
 .mobile-timeline-hour-tick {
   width: 1px;
-  height: 4px;
+  height: 5px;
   background: #999;
 }
 
 .mobile-timeline-hour--selected .mobile-timeline-hour-tick {
   width: 2px;
-  height: 6px;
+  height: 8px;
   background: var(--accent);
 }
 
@@ -1055,7 +1058,7 @@
 /* Fixed selection reference: the strip moves underneath it. */
 .mobile-timeline-playhead {
   position: absolute;
-  top: 22px;
+  top: 20px;
   bottom: 0;
   left: 50%;
   width: 2px;
@@ -1672,68 +1675,67 @@
     font-size: 14px;
   }
 
-  /* Two rows, not three columns: Current Wind + HEIGHT above, timeline
-     across the full width below. */
+  /* Phone arrangement (§ Startvind UX Direction, revised 2026-10-06): the
+     bar floats clear of the bottom gesture area, and the two controls a
+     pilot actually reaches for share one row - Live wind reading on the
+     left (stretched tall, so it is a big target) with the scrollable day
+     strip to its right. Altitude is a slim full-width row above them. */
   .bottom-bar-compact {
     left: 6px;
     right: 6px;
-    bottom: 6px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     padding: 6px 8px;
   }
 
-  /* The timeline is the one control worth its height on a phone, so this
-     trims around it rather than shrinking it: a smaller gutter above the
-     chip, and smaller tick labels. The tick row's own 20px is left alone -
-     an earlier pass "reduced" it to 30px and made the bar taller. */
-  .bottom-bar-compact .time-slider-track {
-    padding-top: 22px;
-  }
-
-  .bottom-bar-compact .time-slider-tick-label,
-  .bottom-bar-compact .time-slider-tick-hour-label {
-    font-size: 9px;
-  }
-
-  .bottom-bar-compact .time-slider-label {
-    font-size: 12px;
-    padding: 3px 8px;
-  }
-
-  .bottom-bar-compact .bottom-bar-live {
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-  }
-
-  /* Altitude alongside time, not behind a button - but deliberately the
-     shorter of the two. Time is the primary control here; altitude is a
-     modifier, and its slider should read as one. */
-  .bottom-bar-altitude-inline {
-    flex: 1 1 auto;
+  /* Altitude, alone on the top row now that Live wind has moved down beside
+     the timeline. Full width, still the shorter of the two controls. */
+  .bottom-bar-compact .bottom-bar-altitude-inline {
+    flex: 0 0 auto;
+    width: 100%;
     min-width: 0;
   }
 
-  .bottom-bar-altitude-inline .altitude-control {
+  .bottom-bar-compact .bottom-bar-altitude-inline .altitude-control {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  .bottom-bar-altitude-inline .altitude-slider {
+  .bottom-bar-compact .bottom-bar-altitude-inline .altitude-slider {
     flex: 1 1 auto;
     min-width: 0;
   }
 
   /* The 0/2000 end labels are desktop furniture; the value box beside the
      track already says where it is. */
-  .bottom-bar-altitude-inline .altitude-control-ends {
+  .bottom-bar-compact .bottom-bar-altitude-inline .altitude-control-ends {
     display: none;
   }
 
-  .bottom-bar-compact .start-button {
-    min-height: 36px;
+  /* Live wind reading and the timeline share one row. The button stretches
+     to the strip's full height instead of being a short chip, so it is the
+     large, unmissable target the phone wants; the strip takes the rest. */
+  .bottom-bar-main {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .bottom-bar-compact .bottom-bar-main .bottom-bar-time {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .bottom-bar-compact .bottom-bar-main .start-button {
+    align-self: stretch;
+    flex: 0 0 auto;
+    width: 112px;
+    min-height: 0;
+    height: auto;
+    padding: 0 10px;
     font-size: 13px;
   }
 

@@ -842,11 +842,13 @@ No heavy backend framework in V1.
 >   a single "Data" button that opens a panel under the header;
 > - the layer panel is collapsed by default and narrower, so the map keeps
 >   the screen;
-> - the bottom bar becomes two rows: Current Wind plus the collapsible
->   HEIGHT control (`HeightControl` - a disclosure button; collapsing it
->   never resets the altitude, only Current Wind does) above the
->   full-width timeline. Desktop shows the altitude slider permanently
->   (`AltitudeControl`) because it has the width for it.
+> - the bottom bar floats clear of the bottom gesture area (`bottom:
+>   calc(14px + env(safe-area-inset-bottom))`, so it also respects the
+>   iPhone home indicator) and has two rows: a slim full-width altitude
+>   slider (`AltitudeControl`) on top, and below it **Live wind reading
+>   stretched tall beside the `MobileTimeSlider` day strip** - the button
+>   fills the strip's height so it is a large, unmissable target. Desktop
+>   shows the altitude slider as a third column instead.
 >
 > **Phone timeline is a different control, not the desktop one scaled down
 > (current, authoritative).** The desktop range input compresses all 72
@@ -855,9 +857,9 @@ No heavy backend framework in V1.
 > viewport (`useIsCompact`, 760px) `BottomBar` renders `MobileTimeSlider`
 > instead of `TimeSlider`: a horizontally scrollable strip with one column
 > per local calendar day (~312 px per full day, ~13 px per hour), one
-> tappable cell per hour, 3-hour labels, night/day shading per cell, the
-> real-clock NOW marker, and the selected hour kept centred under a fixed
-> playhead beneath the same day/time chip. Duration is snap-to-hour via CSS
+> tappable cell per hour (~72 px tall, so a thumb finds it), 3-hour labels,
+> night/day shading per cell, the real-clock NOW marker, and the selected
+> hour kept centred under a fixed playhead beneath the same day/time chip. Duration is snap-to-hour via CSS
 > scroll-snap; an off-screen native range input carries the same value for
 > keyboard/assistive tech. Both sliders expose the identical
 > `hours`/`selectedIndex`/`onChange` contract, so nothing downstream
