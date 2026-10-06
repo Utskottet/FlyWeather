@@ -2043,3 +2043,33 @@ time-critical: nothing can be analysed until rows exist.
 - Next: visual review on a real phone; then the optional desktop
   timeline precision work.
 
+## Phone bar layout revision: float up, taller slider, Live wind beside it (2026-10-06)
+
+- Status: done. Direct follow-up feedback with a Windy phone screenshot:
+  move the bar up off the gesture area, make the slider taller so a finger
+  finds it, and put Live wind reading on the same row as the slider to its
+  left so it can be large.
+- Definition of Done: [x] `npm run typecheck` clean  [x] `npm run lint`
+  clean  [x] 885 unit tests green  [x] `npm run build` green  [x] full e2e
+  113 passed / 4 skipped  [x] phone screenshots at 360/390/430 reviewed
+- What changed: compact `.bottom-bar` now floats at
+  `calc(14px + env(safe-area-inset-bottom))`; the `MobileTimeSlider` hour
+  cells are 72 px tall (were 40) with trimmed chip banding; and `BottomBar`
+  compact now lays out a slim full-width altitude row above a
+  `[StartButton stretched ~100 px tall | MobileTimeSlider]` row. Desktop
+  untouched.
+- Chrome budget held: header + controls + bar measures ~251 px at 390x844,
+  under the 30% ceiling the `mobile-layout` e2e test enforces. That test's
+  stale "altitude narrower than the timeline" assertion was replaced with
+  the new layout's invariants.
+- Commit: 720983b "Phone bar floats up; Live wind beside a taller timeline"
+- Files changed: `src/app/App.css`, `src/components/BottomBar/BottomBar.tsx`,
+  `tests/e2e/mobile-layout.spec.ts`, `MASTER_SPEC.md`, `docs/DECISIONS.md`
+- Deferred / unresolved: the left half of the strip is empty at NOW (no
+  past data to the left of the centred selection) - a Windy-style fill of
+  today's elapsed hours as non-selectable cells is logged in
+  `docs/DECISIONS.md` as a follow-up. The slider is ~1.8x, not a literal
+  2x, because a full 2x would tip the phone chrome past the 30% map budget.
+- Next: visual review on a real phone; decide whether to widen the
+  slider further (and re-budget chrome) or fill the past-hours gap.
+
