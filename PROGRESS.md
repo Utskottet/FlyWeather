@@ -1921,3 +1921,35 @@ time-critical: nothing can be analysed until rows exist.
   site. (Note: the local clone can lag `origin/main` by many observation
   commits - always pull before analysing.)
 
+## Time slider research (mobile resolution) — 2026-10-06
+
+- Status: done (research only, no app code changed)
+- Trigger: user feedback that the timeline is hard to target to a specific
+  time on a specific day on mobile, and a request to gather how Windy's
+  web vs mobile sliders work so we can implement something similar.
+- Method: read Windy's own live client rather than guessing - server HTML
+  (separate `bottom-controls-mobile` / `bottom-controls-desktop` anchors),
+  `index.css`, `index.js` plugin registry, and the plugin bundles under
+  `/v/51.3.1.ind.c170/plugins/`. Confirmed Windy literally dispatches
+  `userControl: isMobile ? 'mobile-calendar' : 'progress-bar'`.
+- Findings recorded in full in `docs/TIMELINE_MOBILE_RESEARCH.md`:
+  desktop = horizontal progress bar with hover-scrub ghost chip,
+  click-to-jump, draggable timecode chip, live now marker, and a
+  **non-linear** time scale (near-term days get up to 5x the pixels);
+  mobile = `mobile-calendar`, a horizontally scrollable multi-day strip at
+  160 px/day (~9 min/px), 3 h labels revealed on expand, momentum scroll,
+  a yellow now line and an orange chip reading the selected day/time.
+- Root cause of our own difficulty quantified: the current phone slider
+  packs 73 hours into ~334 px of travel (~4.6 px/hour, ~13 min/px), which
+  is below a comfortable touch target per hour.
+- Recommendation: a phone-specific scrollable day strip (group `hours[]`
+  by local day, one scrollable column per day, snap to the hour, keep the
+  chip and the now marker), plus desktop hover-scrub and non-linear
+  spacing as follow-ups. Open questions (column width, snap vs free,
+  tap-to-select, desktop scale timing) are listed in the doc.
+- Files changed: `docs/TIMELINE_MOBILE_RESEARCH.md` (new), `BACKLOG.md`.
+- Deferred / unresolved: implementation itself is not started and is not
+  claimed as a block; the doc's §7 lists the visual-review decisions that
+  should be settled first. Existing untracked `uploads/` logo folders were
+  deliberately left untouched.
+
