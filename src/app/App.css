@@ -917,7 +917,7 @@
   width: 100%;
   box-sizing: border-box;
   /* Space for the day/time chip above the strip. */
-  padding-top: 20px;
+  padding-top: 30px;
 }
 
 /* The chip is a readout here, not a handle: on a phone the gesture is
@@ -972,22 +972,40 @@
   padding-right: calc(50% - var(--hour-width) / 2);
 }
 
-.mobile-timeline-days {
-  display: flex;
-  height: 14px;
+/* Day labels are overlaid on the top strip of the hours row rather than
+   taking a row of their own, so the bar stays short and the label sits
+   directly over its own day - the way Windy's day row reads. */
+.mobile-timeline-daylayer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
 }
 
-.mobile-timeline-day {
-  flex: 0 0 auto;
-  box-sizing: border-box;
-  border-left: 1px solid var(--divider);
-  padding-left: 4px;
-  font-size: 9px;
+.mobile-timeline-day-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--divider);
+}
+
+/* Day of the centred hour, pinned at the strip's left edge so it never
+   clips the way a label that scrolls with its day boundary does. */
+.mobile-timeline-day-badge {
+  position: absolute;
+  top: 36px;
+  left: 0;
+  z-index: 3;
+  padding: 1px 6px;
+  border-radius: 0 5px 5px 0;
+  background: rgba(36, 46, 58, 0.85);
+  font-size: 10px;
   font-weight: 700;
-  line-height: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
+  pointer-events: none;
 }
 
 .mobile-timeline-hours {
@@ -1002,6 +1020,7 @@
 
 .mobile-timeline-hour {
   position: relative;
+  z-index: 1;
   flex: 0 0 var(--hour-width);
   display: flex;
   flex-direction: column;
@@ -1015,6 +1034,14 @@
   cursor: pointer;
   scroll-snap-align: center;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Today's already-elapsed hours: present so the day reads as one column,
+   but not a selectable forecast position and never a snap target. */
+.mobile-timeline-hour--past {
+  cursor: default;
+  scroll-snap-align: none;
+  opacity: 0.45;
 }
 
 /* Same phase colours as the desktop sky band (domain/skyBand.ts), applied
@@ -1043,8 +1070,20 @@
   background: var(--accent);
 }
 
+/* Faint full-height line every 3 hours, so the tall strip reads as a ruler
+   rather than empty space and a 3-hour step is easy to aim at. */
+.mobile-timeline-hour--mark::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .mobile-timeline-hour-label {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1;
   color: var(--text);
@@ -1058,7 +1097,7 @@
 /* Fixed selection reference: the strip moves underneath it. */
 .mobile-timeline-playhead {
   position: absolute;
-  top: 20px;
+  top: 30px;
   bottom: 0;
   left: 50%;
   width: 2px;
@@ -1687,17 +1726,35 @@
     flex-direction: column;
     gap: 6px;
     padding: 6px 8px;
+    /* Solid, not translucent: on a phone the map's own attribution text
+       bled through the bar and read as clutter. */
+    background: var(--panel-bg);
   }
 
   /* Altitude, alone on the top row now that Live wind has moved down beside
-     the timeline. Full width, still the shorter of the two controls. */
+     the timeline. Full width, with a small label so the bare range reads as
+     the height control. */
   .bottom-bar-compact .bottom-bar-altitude-inline {
     flex: 0 0 auto;
     width: 100%;
     min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bottom-bar-inline-label {
+    flex: 0 0 auto;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
   }
 
   .bottom-bar-compact .bottom-bar-altitude-inline .altitude-control {
+    flex: 1 1 auto;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1714,9 +1771,10 @@
     display: none;
   }
 
-  /* Live wind reading and the timeline share one row. The button stretches
-     to the strip's full height instead of being a short chip, so it is the
-     large, unmissable target the phone wants; the strip takes the rest. */
+  /* Live wind reading and the timeline share one row. The button matches
+     the strip's interactive height (not the chip band above it) and is
+     centred against it, so it reads as a big, grounded target rather than a
+     slab spanning the whole bar. */
   .bottom-bar-main {
     display: flex;
     align-items: stretch;
@@ -1730,11 +1788,11 @@
   }
 
   .bottom-bar-compact .bottom-bar-main .start-button {
-    align-self: stretch;
+    align-self: center;
     flex: 0 0 auto;
-    width: 112px;
-    min-height: 0;
-    height: auto;
+    width: 108px;
+    min-height: 72px;
+    height: 72px;
     padding: 0 10px;
     font-size: 13px;
   }

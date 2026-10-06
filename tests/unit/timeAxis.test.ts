@@ -212,4 +212,13 @@ describe("mobile scroll/timestamp mapping", () => {
     expect(indexFromScrollLeft(123, MOBILE_HOUR_WIDTH_PX, 0)).toBe(0);
     expect(indexFromScrollLeft(123, 0, 72)).toBe(0);
   });
+
+  it("accounts for the leading past-hours cells today (leadCells) in both directions", () => {
+    // 10 elapsed hours before NOW: NOW's cell sits at 10 * hourWidth.
+    expect(scrollLeftForIndex(0, MOBILE_HOUR_WIDTH_PX, 10)).toBe(10 * MOBILE_HOUR_WIDTH_PX);
+    expect(indexFromScrollLeft(10 * MOBILE_HOUR_WIDTH_PX, MOBILE_HOUR_WIDTH_PX, 72, 10)).toBe(0);
+    expect(indexFromScrollLeft(13 * MOBILE_HOUR_WIDTH_PX, MOBILE_HOUR_WIDTH_PX, 72, 10)).toBe(3);
+    // Scrolling into the past clamps to the first selectable hour.
+    expect(indexFromScrollLeft(0, MOBILE_HOUR_WIDTH_PX, 72, 10)).toBe(0);
+  });
 });

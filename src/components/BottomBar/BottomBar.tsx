@@ -47,6 +47,7 @@ export function BottomBar({
       {compact ? (
         <>
           <div className="bottom-bar-altitude-inline">
+            <span className="bottom-bar-inline-label">Height</span>
             <AltitudeControl altitudeM={altitudeM} onChange={onAltitudeChange} />
           </div>
           <div className="bottom-bar-main">

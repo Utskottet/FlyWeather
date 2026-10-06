@@ -192,9 +192,16 @@ export function groupHoursByLocalDay(hours: string[]): HourDayGroup[] {
  */
 export const MOBILE_HOUR_WIDTH_PX = 13;
 
-/** Distance the strip scrolls to centre hour `index` (cell i centres at i*h). */
-export function scrollLeftForIndex(index: number, hourWidthPx: number = MOBILE_HOUR_WIDTH_PX): number {
-  return index * hourWidthPx;
+/** Distance the strip scrolls to centre hour `index` (cell i centres at i*h).
+ * `leadCells` is how many non-selectable past cells precede the first
+ * forecast cell (today's elapsed hours), so the whole day reads as one
+ * continuous strip. */
+export function scrollLeftForIndex(
+  index: number,
+  hourWidthPx: number = MOBILE_HOUR_WIDTH_PX,
+  leadCells = 0,
+): number {
+  return (leadCells + index) * hourWidthPx;
 }
 
 /** Nearest hour index for a strip scroll position, clamped to the data range. */
@@ -202,9 +209,10 @@ export function indexFromScrollLeft(
   scrollLeft: number,
   hourWidthPx: number = MOBILE_HOUR_WIDTH_PX,
   maxIndex: number = Number.POSITIVE_INFINITY,
+  leadCells = 0,
 ): number {
   if (hourWidthPx <= 0 || !Number.isFinite(scrollLeft)) return 0;
-  const raw = Math.round(scrollLeft / hourWidthPx);
+  const raw = Math.round(scrollLeft / hourWidthPx) - leadCells;
   if (raw < 0) return 0;
   return raw > maxIndex ? maxIndex : raw;
 }

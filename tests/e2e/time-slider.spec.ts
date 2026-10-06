@@ -181,13 +181,11 @@ test.describe("Mobile day strip (phone timeline)", () => {
     await expect(page.getByTestId("mobile-timeline-scroll")).toBeVisible();
   });
 
-  test("lays out one day column per local calendar day, with 3-hour labels", async ({ page }) => {
-    const days = page.locator(".mobile-timeline-day");
+  test("lays out one day divider per local calendar day, with 3-hour labels and a day badge", async ({ page }) => {
+    const dividers = page.locator(".mobile-timeline-day-divider");
     // 73 hours always spans at least three local days.
-    expect(await days.count()).toBeGreaterThanOrEqual(3);
-    for (const text of await days.allTextContents()) {
-      expect(text).toMatch(/^[A-Z]{3} \d{1,2}$/);
-    }
+    expect(await dividers.count()).toBeGreaterThanOrEqual(3);
+    await expect(page.getByTestId("time-slider-day-badge")).toHaveText(/^[A-Z]{3} \d{1,2}$/);
     expect(await page.locator(".mobile-timeline-hour-label").count()).toBeGreaterThan(0);
   });
 
@@ -205,9 +203,15 @@ test.describe("Mobile day strip (phone timeline)", () => {
   });
 
   test("scrolling the strip changes the selected hour", async ({ page }) => {
-    await page.getByTestId("mobile-timeline-scroll").evaluate((el) => {
-      el.scrollLeft = 13 * 12; // 12 hours ahead, one hour = 13px
-    });
+    const scroll = page.getByTestId("mobile-timeline-scroll");
+    // Hour index 0 (NOW) sits after today's elapsed ("past") cells, so
+    // measure its offset instead of assuming the strip starts at NOW.
+    const nowCellLeft = await page
+      .locator('[data-testid="mobile-timeline-hour"][data-index="0"]')
+      .evaluate((el) => (el as HTMLElement).offsetLeft);
+    await scroll.evaluate((el, left) => {
+      el.scrollLeft = left;
+    }, nowCellLeft + 13 * 12);
     await expect(page.getByTestId("time-slider-range")).toHaveValue("12");
     await expect(page.getByTestId("time-slider-label")).not.toContainText("NOW");
   });
