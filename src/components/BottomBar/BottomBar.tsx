@@ -3,6 +3,7 @@ import { StartButton } from "../StartButton/StartButton.tsx";
 import { TimeSlider } from "../TimeSlider/TimeSlider.tsx";
 import { MobileTimeSlider } from "../TimeSlider/MobileTimeSlider.tsx";
 import { AltitudeControl } from "../AltitudeControl/AltitudeControl.tsx";
+import { MobileHeightControl } from "../AltitudeControl/MobileHeightControl.tsx";
 
 export interface BottomBarProps {
   isLiveMode: boolean;
@@ -25,10 +26,11 @@ export interface BottomBarProps {
  * The phone arrangement is genuinely different from the desktop one (see
  * MASTER_SPEC §15). Desktop keeps the reference image's three columns with
  * the altitude slider permanently visible. On a phone the bar floats clear
- * of the bottom gesture area, altitude is a slim full-width row, and below
- * it **Live wind reading shares one row with the timeline** - the button
- * stretches to the strip's height so it is a large, easy target, and the
- * scrollable day strip (`MobileTimeSlider`) sits to its right. The desktop
+ * of the bottom gesture area and is **one slim row**: Live wind reading (a
+ * large target matching the strip's height) with the scrollable day strip
+ * (`MobileTimeSlider`) to its right, whose time chip pokes out above the
+ * bar. Height is no longer a permanent row - it is a button below the row
+ * that pops a slider out above the bar (`MobileHeightControl`). The desktop
  * `TimeSlider` range input is never used on a phone.
  */
 export function BottomBar({
@@ -46,16 +48,15 @@ export function BottomBar({
     <div className={`bottom-bar${compact ? " bottom-bar-compact" : ""}`} data-testid="bottom-bar" ref={barRef}>
       {compact ? (
         <>
-          <div className="bottom-bar-altitude-inline">
-            <span className="bottom-bar-inline-label">Height</span>
-            <AltitudeControl altitudeM={altitudeM} onChange={onAltitudeChange} />
-          </div>
           <div className="bottom-bar-main">
             <StartButton isLiveMode={isLiveMode} onStart={onStart} />
             <div className="bottom-bar-time">
               <MobileTimeSlider hours={hours} selectedIndex={selectedIndex} onChange={onTimeChange} />
             </div>
           </div>
+          {/* Height lives behind a button on a slim row below, so the bar is
+              one row tall and the time chip can poke out above it. */}
+          <MobileHeightControl altitudeM={altitudeM} onChange={onAltitudeChange} />
         </>
       ) : (
         <>

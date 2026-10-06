@@ -2073,3 +2073,35 @@ because 80 px tips the phone chrome past the 30% map budget. Verified with
 887 unit tests, the production build, and the full e2e suite (113 passed /
 4 skipped).
 
+## Height becomes a popover; the bar becomes one slim row (2026-10-06)
+
+User: the whole struggle was placing the height slider neatly; move it out
+so the bar can be one slim row and the time chip can protrude above it,
+keeping the Live-wind : slider ratio.
+
+- **The permanent altitude row is gone.** On a phone, height is now a
+  button (`MobileHeightControl`) on a slim row below the main row, whose
+  own label is the current value ("Surface" / "70 m AGL") - so the value is
+  never hidden, unlike the old tool-stack HEIGHT control the phone
+  deliberately left behind. Tapping it pops an `AltitudeSlider` panel out
+  **above the whole bar**, clearing the protruding chip; outside-click and
+  Escape close it; the label tracks the drag live. START still resets it to
+  Surface via the same `altitudeM` prop.
+- **The bar is one row** - `[StartButton (72 px)][MobileTimeSlider (72 px)]`
+  - and the time chip moved from a reserved gutter inside the bar to
+  `bottom: calc(100% + 6px)` on the timeline, so it floats over the map.
+- **Height is real again:** the bar dropped from ~153 px to ~118 px, so
+  the phone chrome budget now has headroom (it was within ~2 px of the 30%
+  ceiling). That headroom is what made the 72 px strip affordable without
+  eating map pixels.
+- Desktop is unchanged (`AltitudeControl` stays a permanent third column).
+- The old always-visible-slider assertions in `mobile-layout.spec.ts` and
+  `altitude-slider.spec.ts` were rewritten for the button: value visible
+  while collapsed, slider absent until opened, and height changes still
+  leave live mode. New `MobileHeightControl.test.tsx` covers label, open,
+  change and Escape-close.
+
+Verified: 891 unit tests, production build, full e2e 113 passed / 4 skipped.
+Screenshots of the closed bar (chip protruding) and the open popover
+reviewed at 2x.
+

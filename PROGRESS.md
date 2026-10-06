@@ -2100,3 +2100,31 @@ time-critical: nothing can be analysed until rows exist.
   ticks is only lightly structured.
 - Next: user's next visual verdict.
 
+## Height popover + one-row phone bar (2026-10-06)
+
+- Status: done. User: the height slider was the awkward part; move it behind
+  a button so the bar is one slim row and the time chip can poke out above
+  it, keeping the Live-wind : slider ratio.
+- Definition of Done: [x] `npm run typecheck` clean  [x] `npm run lint`
+  clean  [x] 891 unit tests green (887 + 4 new `MobileHeightControl`)
+  [x] `npm run build` green  [x] full e2e 113 passed / 4 skipped
+  [x] closed-bar and open-popover screenshots reviewed at 2x
+- What changed: new `MobileHeightControl` - a slim button below the main row
+  whose label *is* the value ("Surface" / "70 m AGL"), popping an
+  `AltitudeSlider` panel above the bar (outside-click/Escape close, label
+  tracks the drag, START resets). The permanent altitude row was removed;
+  the phone bar is now one row `[StartButton 72px][MobileTimeSlider 72px]`,
+  and the time chip moved to `bottom: calc(100% + 6px)` so it floats above
+  the bar. Bar height ~153 -> ~118 px, giving the phone chrome budget
+  headroom it did not have. Desktop unchanged.
+- Commit: pending (this commit)
+- Files changed: `src/components/AltitudeControl/MobileHeightControl.tsx`
+  (new), `src/components/BottomBar/BottomBar.tsx`, `src/app/App.css`,
+  `tests/e2e/mobile-layout.spec.ts`, `tests/e2e/altitude-slider.spec.ts`,
+  `tests/unit/MobileHeightControl.test.tsx` (new), `MASTER_SPEC.md`,
+  `docs/DECISIONS.md`
+- Deferred / unresolved: the popover is a plain disclosure panel, not a
+  modal; no animation; the protruding chip slightly overlaps the map above
+  the bar (intended).
+- Next: user's next visual verdict.
+

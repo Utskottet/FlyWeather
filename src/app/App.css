@@ -916,15 +916,15 @@
   position: relative;
   width: 100%;
   box-sizing: border-box;
-  /* Space for the day/time chip above the strip. */
-  padding-top: 30px;
+  /* No chip gutter: the chip now pokes out above the bar (bottom: 100%). */
+  padding-top: 0;
 }
 
 /* The chip is a readout here, not a handle: on a phone the gesture is
-   scrolling the strip. Centred over the playhead, like Windy's timecode. */
+   scrolling the strip. Centred over the playhead, floating above the bar. */
 .mobile-timeline-chip {
   position: absolute;
-  top: 0;
+  bottom: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 4;
@@ -1097,7 +1097,7 @@
 /* Fixed selection reference: the strip moves underneath it. */
 .mobile-timeline-playhead {
   position: absolute;
-  top: 30px;
+  top: 0;
   bottom: 0;
   left: 50%;
   width: 2px;
@@ -1731,44 +1731,74 @@
     background: var(--panel-bg);
   }
 
-  /* Altitude, alone on the top row now that Live wind has moved down beside
-     the timeline. Full width, with a small label so the bare range reads as
-     the height control. */
-  .bottom-bar-compact .bottom-bar-altitude-inline {
+  /* Height is a button on a slim row below the main row. Its own label is
+     the current value, so nothing is hidden while it is collapsed. */
+  .mobile-height {
     flex: 0 0 auto;
     width: 100%;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
   }
 
-  .bottom-bar-inline-label {
-    flex: 0 0 auto;
-    font-size: 10px;
+  .mobile-height-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    min-height: 28px;
+    padding: 0 10px;
+    border: none;
+    border-radius: var(--panel-radius-sm);
+    background: var(--control-bg);
+    color: var(--text);
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .mobile-height-button.is-active {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+  }
+
+  .mobile-height-chevron {
+    font-size: 10px;
+    opacity: 0.7;
+  }
+
+  /* Pops out above the whole bar, clearing the protruding time chip. */
+  .mobile-height-popover {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 34px);
+    z-index: 20;
+    padding: 10px 12px;
+    background: var(--panel-bg);
+    border: var(--panel-border);
+    border-radius: var(--panel-radius);
+    box-shadow: var(--panel-shadow);
+  }
+
+  .mobile-height-popover-title {
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--text-muted);
   }
 
-  .bottom-bar-compact .bottom-bar-altitude-inline .altitude-control {
-    flex: 1 1 auto;
-    min-width: 0;
+  .mobile-height-popover .altitude-slider {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
 
-  .bottom-bar-compact .bottom-bar-altitude-inline .altitude-slider {
+  .mobile-height-popover .altitude-slider-range {
     flex: 1 1 auto;
     min-width: 0;
   }
 
-  /* The 0/2000 end labels are desktop furniture; the value box beside the
-     track already says where it is. */
-  .bottom-bar-compact .bottom-bar-altitude-inline .altitude-control-ends {
-    display: none;
+  .mobile-height-popover .altitude-slider-label {
+    flex: 0 0 auto;
   }
 
   /* Live wind reading and the timeline share one row. The button matches

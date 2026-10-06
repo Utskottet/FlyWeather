@@ -844,10 +844,12 @@ No heavy backend framework in V1.
 >   the screen;
 > - the bottom bar floats clear of the bottom gesture area (`bottom:
 >   calc(14px + env(safe-area-inset-bottom))`, so it also respects the
->   iPhone home indicator) and has two rows: a slim full-width altitude
->   slider (`AltitudeControl`) on top, and below it **Live wind reading
->   stretched tall beside the `MobileTimeSlider` day strip** - the button
->   fills the strip's height so it is a large, unmissable target. Desktop
+>   iPhone home indicator) and is **one slim row**: Live wind reading (a
+>   large target matching the strip's height) with the `MobileTimeSlider`
+>   day strip to its right, whose time chip pokes out above the bar. Below
+>   them a slim **height button** shows the current value ("Surface" /
+>   "70 m AGL"); tapping it pops a slider out above the bar, and its label
+>   tracks the drag. Height is never a permanent row on a phone. Desktop
 >   shows the altitude slider as a third column instead.
 >
 > **Phone timeline is a different control, not the desktop one scaled down
@@ -859,7 +861,9 @@ No heavy backend framework in V1.
 > per local calendar day (~312 px per full day, ~13 px per hour), one
 > tappable cell per hour (~72 px tall, so a thumb finds it), 3-hour labels,
 > night/day shading per cell, the real-clock NOW marker, and the selected
-> hour kept centred under a fixed playhead beneath the same day/time chip. Duration is snap-to-hour via CSS
+> hour kept centred under a fixed playhead beneath the same day/time chip.
+> That chip floats **above** the bar (the bar no longer reserves a gutter
+> for it), since the bar is now one slim row. Duration is snap-to-hour via CSS
 > scroll-snap; an off-screen native range input carries the same value for
 > keyboard/assistive tech. Both sliders expose the identical
 > `hours`/`selectedIndex`/`onChange` contract, so nothing downstream

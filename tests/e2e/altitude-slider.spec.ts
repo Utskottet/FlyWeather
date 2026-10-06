@@ -82,23 +82,26 @@ test.describe("Altitude control + START (§ Startvind UX Direction)", () => {
     await expect(page.getByTestId("altitude-slider-label")).toHaveText("2000 m AGL");
   });
 
-  test("phone: altitude is a permanent slider, always showing its own value", async ({ page }) => {
-    // It used to be a collapsible HEIGHT button here. That hid the current
-    // value behind a tap and gave a secondary control the visual weight of
-    // a primary one, so the phone now gets the same permanent slider the
-    // desktop has - just shorter, sitting alongside the timeline.
+  test("phone: height is a button that shows the value and opens a slider", async ({ page }) => {
+    // The permanent slider was the tallest thing in the phone bar and forced
+    // it to stay tall; it now lives behind a button whose own label IS the
+    // value, so the selection is still readable while collapsed.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await page.locator(".rose-marker-icon").first().waitFor();
     await page.waitForTimeout(1500);
 
     await expect(page.getByTestId("height-control-button")).toHaveCount(0);
+    const value = page.getByTestId("mobile-height-value");
+    await expect(value).toHaveText("Surface");
+    await expect(page.getByTestId("altitude-slider-range")).toHaveCount(0);
 
+    await page.getByTestId("mobile-height-button").click();
     await page.getByTestId("altitude-slider-range").fill("0.25");
-    await expect(page.getByTestId("altitude-slider-label")).toHaveText("75 m AGL");
+    await expect(value).toHaveText("75 m AGL");
 
-    // Still readable without opening anything, which was the whole point.
-    await expect(page.getByTestId("altitude-slider-label")).toBeVisible();
+    // Moving height away from Surface still leaves live mode (§ START).
+    await expect(page.getByTestId("start-button")).toHaveAttribute("aria-pressed", "false");
   });
 
   test("START also resets time, and moving time alone exits live mode", async ({ page }) => {

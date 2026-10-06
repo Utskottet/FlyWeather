@@ -89,25 +89,33 @@ test.describe("phone layout", () => {
     await expect(page.locator(".maplibregl-ctrl-zoom-in")).toHaveCount(0);
   });
 
-  test("altitude is a permanent slider, not a button hiding its own value", async ({ page }) => {
+  test("height is a button that shows its own value; the slider stays out of the way until asked for", async ({ page }) => {
+    // The old tool-stack HEIGHT control stays gone, and the phone no longer
+    // keeps a permanent slider (it forced the bar to be tall). The button's
+    // label *is* the value, so nothing is hidden while it is collapsed.
     await expect(page.locator('[data-testid="height-control-button"]')).toHaveCount(0);
-    await expect(page.locator('[data-testid="altitude-control"]')).toBeVisible();
+    await expect(page.getByTestId("mobile-height-button")).toBeVisible();
+    await expect(page.getByTestId("mobile-height-value")).toHaveText("Surface");
+    await expect(page.getByTestId("altitude-slider-range")).toHaveCount(0);
+
+    await page.getByTestId("mobile-height-button").click();
+    await expect(page.getByTestId("altitude-slider-range")).toBeVisible();
   });
 
-  test("live wind reading sits beside the timeline on one row, altitude above", async ({ page }) => {
+  test("live wind reading sits beside the timeline; height is a slim row below", async ({ page }) => {
     // Phone arrangement revised 2026-10-06: the bar floats clear of the
-    // bottom gesture area, altitude is a slim row, and Live wind reading
-    // stretches tall beside the day strip so it is an easy target.
-    const altitude = (await page.locator('[data-testid="altitude-control"]').boundingBox())!;
+    // bottom gesture area and is one slim row - Live wind reading a large
+    // target beside the day strip - with the height button below it.
     const live = (await page.locator('[data-testid="start-button"]').boundingBox())!;
     const time = (await page.locator('[data-testid="mobile-timeline-scroll"]').boundingBox())!;
+    const height = (await page.locator('[data-testid="mobile-height-button"]').boundingBox())!;
 
-    // Altitude is its own row above.
-    expect(altitude.y + altitude.height).toBeLessThanOrEqual(live.y + 1);
-    // Live wind is left of the timeline, and stretched to its height.
+    // Live wind is left of the timeline, and a large target.
     expect(live.x + live.width).toBeLessThanOrEqual(time.x + 2);
     expect(live.height).toBeGreaterThan(60);
     expect(time.width).toBeGreaterThan(150);
+    // Height is on its own row below the main row.
+    expect(height.y).toBeGreaterThanOrEqual(live.y + live.height - 2);
   });
 
   test("no control advertises a disclosure it does not have", async ({ page }) => {
