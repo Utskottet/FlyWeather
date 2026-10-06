@@ -25,7 +25,7 @@ station:
   provider: holfuy
   station_id: "128"
   verified: true
-description: "WNW-facing Höganäs site; Start along the road. At the middle of the ridge there is a path to top for easy takeoff. "
+description: "Det går att starta springade längs med vägen och flyga upp på den högre delen. Det finns även en stig upp på mitten av hanget innan den höga delen som ger en enklare start.  "
 links:
   - label: CPS listing
     url: https://www.cps.to/flygstallen/vnv-hoganas/
@@ -36,4 +36,4 @@ parking:
   note: Toalett grillplats
 pilot_level: medium
 ridge_height_m: 15
-last_edited_at: 2026-10-06T08:07:35.626Z
+last_edited_at: 2026-10-06T08:15:44.663Z
