@@ -979,6 +979,7 @@
 
 .mobile-timeline-day {
   flex: 0 0 auto;
+  box-sizing: border-box;
   border-left: 1px solid var(--divider);
   padding-left: 4px;
   font-size: 9px;
