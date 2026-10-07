@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-06T10:25:09.179Z",
+  "generatedAt": "2026-10-07T10:21:16.961Z",
   "providers": [
     {
       "id": "smhi",
@@ -3071,7 +3071,7 @@
       "lon": 18.9839,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -4349,7 +4349,7 @@
       "provider": "viva",
       "id": "23",
       "name": "Oden",
-      "lat": 56.0254,
+      "lat": 56.0255,
       "lon": 12.7008,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
