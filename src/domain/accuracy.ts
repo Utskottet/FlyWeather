@@ -1,5 +1,6 @@
 import { forecastHourMs } from "./forecastTime.ts";
 import { leadHours, type ObservationRow } from "./observationLog.ts";
+import { leadBucket, LEAD_BUCKET_ORDER } from "./leadForecast.ts";
 import { evaluateFlyability, type WindConfig } from "./flyability.ts";
 import type { Sector } from "./siteFile.ts";
 import type { RoseState } from "../components/WindRose/index.ts";
@@ -337,16 +338,17 @@ export function bandLabel(speedMs: number, edges: number[]): string {
   return `${edges[edges.length - 1]}+`;
 }
 
-/** Buckets by how far ahead the forecast was issued. */
-export function leadLabel(hours: number | null): string {
-  if (hours === null) return "unknown";
-  if (hours <= 1) return "nowcast (≤1h)";
-  if (hours <= 6) return "1–6h";
-  if (hours <= 24) return "6–24h";
-  return ">24h";
+/**
+ * Buckets by how far ahead the forecast was issued, using the shared
+ * column definition so the recorder and the analysis cannot disagree about
+ * which lead a sample belongs to.
+ */
+export function leadLabel(hours: number): string {
+  return leadBucket(hours);
 }
 
-const LEAD_ORDER = ["nowcast (≤1h)", "1–6h", "6–24h", ">24h", "unknown"];
+/** Column order for the lead-time table, "unknown" last. */
+export const LEAD_ORDER: string[] = [...LEAD_BUCKET_ORDER, "unknown"];
 
 /** Station identity, so the same instrument attached to two sites is visible. */
 export function stationKey(station: StationRef): string {
@@ -443,6 +445,12 @@ export function summariseSite(
   site: AccuracySite,
   options: AccuracyOptions = DEFAULT_ACCURACY_OPTIONS,
   duplicateStationKeys: ReadonlySet<string> = new Set(),
+  /**
+   * Rows used for the lead-time table. Defaults to `rows`; the caller
+   * passes the short-range pairs joined with the recorded future forecasts
+   * so the headline stays short-range while the table spans leads.
+   */
+  leadRows: ObservationRow[] = rows,
 ): SiteAccuracy {
   const hours = rows.map((r) => r.hour).sort((a, b) => forecastHourMs(a) - forecastHourMs(b));
   const ageUnconfirmed = rows.filter((r) => r.obs.ageConfirmed === false).length;
@@ -461,7 +469,16 @@ export function summariseSite(
     overall: computeAccuracyStats(rows, site, options),
     byBand: strata(rows, site, options, (r) => bandLabel(r.obs.ms, options.bandEdgesMs), null),
     byMonth: strata(rows, site, options, (r) => r.hour.slice(0, 7), null),
-    byLead: strata(rows, site, options, (r) => leadLabel(leadHours(r)), LEAD_ORDER),
+    byLead: strata(
+      leadRows,
+      site,
+      options,
+      (r) => {
+        const lh = leadHours(r);
+        return lh === null ? "unknown" : leadLabel(lh);
+      },
+      LEAD_ORDER,
+    ),
     directionCutoffMs: directionCutoffMs(site, options),
   };
 
@@ -484,8 +501,11 @@ export function summariseAccuracy(
   sites: AccuracySite[],
   options: AccuracyOptions = DEFAULT_ACCURACY_OPTIONS,
   meta: { generatedAt: string; sourceFiles: string[] } = { generatedAt: new Date().toISOString(), sourceFiles: [] },
+  /** Rows for the lead-time table only; defaults to `rows`. See summariseSite. */
+  leadRows: ObservationRow[] = rows,
 ): AccuracyReport {
   const bySite = groupBy(rows, (r) => r.site);
+  const bySiteLead = groupBy(leadRows, (r) => r.site);
 
   // The same instrument attached to two sites is a data error, not two
   // references - detect it before scoring either.
@@ -498,7 +518,9 @@ export function summariseAccuracy(
   }
   const duplicates = new Set([...counts.entries()].filter(([, c]) => c > 1).map(([k]) => k));
 
-  const siteReports = sites.map((site) => summariseSite(bySite.get(site.id) ?? [], site, options, duplicates));
+  const siteReports = sites.map((site) =>
+    summariseSite(bySite.get(site.id) ?? [], site, options, duplicates, bySiteLead.get(site.id) ?? []),
+  );
 
   return {
     generatedAt: meta.generatedAt,

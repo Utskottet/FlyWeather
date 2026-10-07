@@ -10,6 +10,7 @@ on:
     # workflow; this keeps that true if it is ever changed to a PAT.
     paths-ignore:
       - "data/observations/**"
+      - "data/lead-forecasts/**"
   workflow_dispatch:
 
 permissions:

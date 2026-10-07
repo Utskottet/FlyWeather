@@ -4,6 +4,13 @@ import { fileURLToPath } from "node:url";
 import { buildCatalogue } from "./build-sites-catalogue.ts";
 import { parseObservations, type ObservationRow } from "../src/domain/observationLog.ts";
 import {
+  joinLeadPairs,
+  leadBucket,
+  parseLeadForecasts,
+  LEAD_BUCKET_ORDER,
+  type LeadForecastRecord,
+} from "../src/domain/leadForecast.ts";
+import {
   DEFAULT_ACCURACY_OPTIONS,
   summariseAccuracy,
   type AccuracyOptions,
@@ -102,14 +109,44 @@ function main(): void {
   if (args.extra && existsSync(args.extra)) files.push(args.extra);
   const rows = readRows(files);
 
+  // The future forecasts recorded by the recorder, joined with the
+  // observation for the hour each one predicted. These feed the lead-time
+  // table only; the headline stays short-range.
+  const leadFiles = jsonlFiles(resolve(repoRoot, "data/lead-forecasts"));
+  const leads: LeadForecastRecord[] = [];
+  for (const lf of leadFiles) {
+    try {
+      leads.push(...parseLeadForecasts(readFileSync(lf, "utf-8")));
+    } catch (err) {
+      console.warn(`analyze-accuracy: skipping ${lf} - ${(err as Error).message}`);
+    }
+  }
+  const leadPairs = joinLeadPairs(rows, leads);
+  const leadRows = rows.concat(leadPairs);
+
   const catalogue = buildCatalogue();
   // Enabled sites only - archived entries have no station and no data, and
   // listing them would bury the sites that actually matter.
   const sites = catalogue.sites.filter((s) => s.enabled).map(toAccuracySite);
-  const report = summariseAccuracy(rows, sites, args.options, {
-    generatedAt: new Date().toISOString(),
-    sourceFiles: files.map((f) => f.replace(repoRoot + "\\", "").replace(repoRoot + "/", "")),
-  });
+  const report = summariseAccuracy(
+    rows,
+    sites,
+    args.options,
+    {
+      generatedAt: new Date().toISOString(),
+      sourceFiles: [...files, ...leadFiles].map((f) => f.replace(repoRoot + "\\", "").replace(repoRoot + "/", "")),
+    },
+    leadRows,
+  );
+
+  // How the lead-time table is filling: total paired samples per column.
+  const leadCounts = new Map<string, number>(LEAD_BUCKET_ORDER.map((b) => [b, 0]));
+  for (const p of leadRows) {
+    const lh = p.fc.issued ? (Date.parse(p.hour) - Date.parse(p.fc.issued)) / 3_600_000 : null;
+    if (lh === null || !Number.isFinite(lh)) continue;
+    const b = leadBucket(lh);
+    leadCounts.set(b, (leadCounts.get(b) ?? 0) + 1);
+  }
 
   // Sites come and go: an id in the rows that the catalogue no longer has
   // (renamed, archived, moved) must stay visible rather than vanish from
@@ -145,7 +182,10 @@ function main(): void {
   console.log(
     `headline = launchable wind (observed ≥ the site's cutoff, default ${args.options.directionMinObsMs} m/s) within ±${args.options.speedToleranceMs} m/s AND ±${args.options.directionToleranceDeg}°`,
   );
-  console.log(`speed is scored at every wind; direction only above the cutoff.\n`);
+  console.log(`speed is scored at every wind; direction only above the cutoff.`);
+  console.log(
+    `lead-time samples: ${LEAD_BUCKET_ORDER.map((b) => `${b}=${leadCounts.get(b) ?? 0}`).join("  ")}\n`,
+  );
   console.log("site                        ref          n dirN  hit%  ±spd%  ±dir%   bias  median  dirB± verdict  falseGreen");
   console.log("-".repeat(104));
   for (const s of scored) {

@@ -13,6 +13,15 @@ import {
   recordedKeys,
   type ObservationRow,
 } from "../src/domain/observationLog.ts";
+import {
+  appendLeadRecords,
+  buildLeadRecord,
+  leadRecordKey,
+  parseLeadForecasts,
+  recordedLeadKeys,
+  LEAD_OFFSETS_H,
+  type LeadForecastRecord,
+} from "../src/domain/leadForecast.ts";
 import type { GeneratedForecastSitesFile } from "../src/domain/types.ts";
 
 /**
@@ -40,6 +49,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
 const forecastPath = resolve(repoRoot, "public/generated/forecast-sites.json");
 const observationsDir = resolve(repoRoot, "data/observations");
+const leadForecastsDir = resolve(repoRoot, "data/lead-forecasts");
 
 /**
  * The forecast is read from the deployed site, not generated here.
@@ -174,18 +184,59 @@ async function main() {
     rows.push(row);
   }
 
-  if (rows.length === 0) {
+  if (rows.length > 0) {
+    writeFileSync(filePath, appendObservations(existing, rows), "utf-8");
+    const total = parseObservations(readFileSync(filePath, "utf-8")).length;
     console.log(
-      `record-observations: nothing new (${skippedDuplicate} already recorded this hour, ${skippedUnpairable} unpairable)`,
+      `record-observations: +${rows.length} rows (${skippedDuplicate} duplicate, ${skippedUnpairable} unpairable) ` +
+        `-> ${filePath}, ${total} rows this month`,
     );
-    return;
+  } else {
+    console.log(
+      `record-observations: no new pairs (${skippedDuplicate} already recorded this hour, ${skippedUnpairable} unpairable)`,
+    );
   }
 
-  writeFileSync(filePath, appendObservations(existing, rows), "utf-8");
-  const total = parseObservations(readFileSync(filePath, "utf-8")).length;
+  // What the forecast says for the hours ahead, so the lead-time table can
+  // fill in later. Written regardless of whether any observation pair was
+  // new: the whole point is to have the prediction on record before the
+  // hour happens. A station being down now does not stop recording the
+  // forecast - it may well be up by the time the hour arrives.
+  mkdirSync(leadForecastsDir, { recursive: true });
+  const leadPath = resolve(leadForecastsDir, monthFileName(at));
+  const existingLead = existsSync(leadPath) ? readFileSync(leadPath, "utf-8") : "";
+  const alreadyLead = recordedLeadKeys(parseLeadForecasts(existingLead));
+  const leadRows: LeadForecastRecord[] = [];
+  const runMs = Date.parse(at);
+
+  for (const siteId of Object.keys(live.sites)) {
+    const f = forecast.sites[siteId];
+    if (!f) continue;
+    for (const offset of LEAD_OFFSETS_H) {
+      const target = nearestForecastHour(f.hours, new Date(runMs + offset * 3_600_000).toISOString());
+      if (target === null) continue;
+      const i = f.hours.indexOf(target);
+      const record = buildLeadRecord({
+        at,
+        site: siteId,
+        target,
+        issued: forecast.generatedAt,
+        ms: f.heights[SURFACE_HEIGHT_M].windSpeedMs[i] ?? null,
+        deg: f.heights[SURFACE_HEIGHT_M].windDirectionDeg[i] ?? null,
+        gust: f.windGustMs[i] ?? null,
+      });
+      if (record && !alreadyLead.has(leadRecordKey(record))) leadRows.push(record);
+    }
+  }
+
+  if (leadRows.length === 0) {
+    console.log("record-observations: no new lead forecasts");
+    return;
+  }
+  writeFileSync(leadPath, appendLeadRecords(existingLead, leadRows), "utf-8");
+  const leadTotal = parseLeadForecasts(readFileSync(leadPath, "utf-8")).length;
   console.log(
-    `record-observations: +${rows.length} rows (${skippedDuplicate} duplicate, ${skippedUnpairable} unpairable) ` +
-      `-> ${filePath}, ${total} rows this month`,
+    `record-observations: +${leadRows.length} lead forecasts -> ${leadPath}, ${leadTotal} this month`,
   );
 }
 

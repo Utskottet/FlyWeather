@@ -1,6 +1,6 @@
 # TODO — Forecast accuracy (forecast vs. real measured wind)
 
-**Prepared:** 2026-09-23 · **updated:** 2026-10-06 (method fixed v1, §14)
+**Prepared:** 2026-09-23 · **updated:** 2026-10-07 (method v1 §14 · lead-time recording §15)
 **Type:** analysis and advice, plus an isolated local lab (built 2026-09-28).
 The lab is committed but deliberately **not wired into the site** — no badge or
 accuracy card is shown to visitors until the data has earned it. See §13 for the
@@ -701,6 +701,59 @@ spirit as the rest of the app.
 Fixed and implemented 2026-10-06 in `src/domain/accuracy.ts` (17 tests). To be
 re-read in 2–3 days on fresh data, and only then considered for a badge on the
 site. The method belongs in `docs/DECISIONS.md` at the moment the badge ships.
+
+---
+
+## 15. Lead-time recording (chunk B) — built 2026-10-07
+
+The headline the badge shows is **short-range**: the recorder pairs the
+currently published forecast with the current reading, so ~90% of rows carry
+a lead of about half an hour. That answers "is the number on screen true?",
+but not the question a pilot planning a trip has — *how good is Saturday's
+forecast on Wednesday?*
+
+So each run now also writes down what the published forecast says for the
+same sites at **+6 / +12 / +24 / +48 hours**, to
+`data/lead-forecasts/YYYY-MM.jsonl`. When each of those hours arrives, the
+observation for it already exists, and the analyzer joins the two into a
+pair at a known lead. That is the vertical axis of the accuracy table.
+
+Design points worth keeping:
+
+- **The real lead is stored, not the nominal offset.** A "+6h" forecast is
+  recorded as 6.5h (target hour minus the file's actual issue time), and if
+  the published file is stale because Open-Meteo rate-limited the refresh,
+  it is recorded as 16h — because that is what it really is.
+- **Columns are `≈6h / ≈12h / ≈24h / ≈48h`**, with boundaries at the
+  midpoints between offsets. A nominal "+48h" lands at ~48.5h; a boundary at
+  48.0 would scatter one column across two.
+- **One prediction per (site, target hour, column)**, so two runs inside the
+  same window cannot give an hour double weight.
+- **The headline is unchanged.** Lead pairs feed only the lead-time table;
+  the site figure stays short-range so it does not silently change meaning.
+
+### What to expect, and when
+
+The clock starts at the first run after this shipped. Nothing can shortcut it:
+
+| Column | First pairs appear | Meaningful sample |
+| --- | --- | --- |
+| ≈6h | within hours | days |
+| ≈24h | ~1 day | 1–2 weeks |
+| ≈48h | ~2 days | 2–4 weeks |
+
+Cells are sparse — at ~4 samples/day split across leads *and* wind bands, a
+strong-wind × long-lead cell collects only a handful of samples a month. The
+table must therefore show **n in every cell and leave thin cells blank**, and
+it may be worth starting with **2 bands (flyable / strong) × 3 leads** rather
+than 3 × 4, so it fills four times faster.
+
+### Volume
+
+Roughly 5× the rows (~4 lead records per site per run). Still trivial: a few
+MB per month, ~30 MB per year, no database, no new infrastructure. The
+workflow commits `data/lead-forecasts/` alongside `data/observations/`, and
+`pages.yml` ignores both so recording never triggers a site deploy.
 
 ---
 

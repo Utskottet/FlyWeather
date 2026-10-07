@@ -72,12 +72,13 @@ describe("strata labels", () => {
     expect(bandLabel(12, edges)).toBe("9+");
   });
 
-  it("buckets lead time, and keeps unknown honest", () => {
-    expect(leadLabel(null)).toBe("unknown");
-    expect(leadLabel(0.5)).toBe("nowcast (≤1h)");
-    expect(leadLabel(3)).toBe("1–6h");
-    expect(leadLabel(10)).toBe("6–24h");
-    expect(leadLabel(30)).toBe(">24h");
+  it("buckets lead time into the table columns", () => {
+    expect(leadLabel(0.5)).toBe("≤1h");
+    expect(leadLabel(6.5)).toBe("≈6h");
+    expect(leadLabel(12.5)).toBe("≈12h");
+    expect(leadLabel(24.5)).toBe("≈24h");
+    expect(leadLabel(48.5)).toBe("≈48h");
+    expect(leadLabel(80)).toBe(">60h");
   });
 });
 

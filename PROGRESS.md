@@ -1964,6 +1964,44 @@ time-critical: nothing can be analysed until rows exist.
   beta badge with the transparency info box; do **not** show it for the
   `unusable`-reference sites.
 
+## Lead-time recording, chunk B (2026-10-07)
+
+- Status: done (recording and joining built; clock started; nothing on site)
+- Why: the headline is short-range (~90% of rows have a lead of ~0.5 h), so
+  it answers "is the number on screen true?" but not "how good is
+  Saturday's forecast on Wednesday?" - the question a pilot planning a trip
+  actually has.
+- Shipped:
+  - `src/domain/leadForecast.ts` - record shape, real-lead computation,
+    bucket columns, dedupe, and the observation join (+7 tests).
+  - `scripts/record-observations.ts` - each run now also writes what the
+    published forecast says for +6/+12/+24/+48 h to
+    `data/lead-forecasts/YYYY-MM.jsonl`. Written even when the observation
+    pairs were all duplicates, and even if a station is currently down.
+  - `scripts/analyze-accuracy.ts` - joins recorded forecasts with the
+    observation for the target hour; the lead-time table (byLead) is built
+    from those pairs while the headline stays short-range.
+  - `accuracy.ts` byLead now uses the shared `≈6h/≈12h/≈24h/≈48h` columns.
+  - `observations.yml` commits `data/lead-forecasts/` too; `pages.yml`
+    ignores it.
+- Decisions worth keeping: the **real** lead is stored, not the nominal
+  offset (a stale published file makes "+6h" really 16h); one prediction
+  per (site, target, column); the headline's meaning does not change.
+- Verified: typecheck/lint clean; 899 unit tests green (24 new across
+  accuracy + leadForecast); production build green; accuracy code still
+  absent from the bundle. Ran the recorder locally once - it wrote 72 lead
+  records (18 sites x 4 offsets) with correct real leads (6.5/12.5/24.5/
+  48.5 h); those local rows were then reverted so GitHub's cron owns the
+  dataset. Found and fixed a real bug doing so (the output directory was
+  not created).
+- Deferred / unresolved: the table itself (columns x bands) and the badge
+  are not on the site. Lead pairs only start appearing once their target
+  hours arrive: ~6h within hours, ~24h in a day, ~48h in two; a meaningful
+  sample takes weeks.
+- Next: let it record for a few days, then re-read; if the good-reference
+  sites are steady, build the badge + the lead x wind-band table, showing
+  n in every cell and leaving thin cells blank.
+
 ## Time slider research (mobile resolution) — 2026-10-06
 
 - Status: done (research only, no app code changed)

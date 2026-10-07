@@ -69,15 +69,16 @@ jobs:
       # changed to a PAT.
       - name: Commit new rows
         run: |
-          if [ -z "$(git status --porcelain data/observations)" ]; then
+          if [ -z "$(git status --porcelain data/observations data/lead-forecasts)" ]; then
             echo "No new rows this run - nothing to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/observations
-          ROWS=$(cat data/observations/*.jsonl | wc -l)
-          git commit -m "Observations: $(date -u +%Y-%m-%dT%H:%MZ), ${ROWS} rows total"
+          git add data/observations data/lead-forecasts
+          ROWS=$(cat data/observations/*.jsonl 2>/dev/null | wc -l)
+          LEADS=$(cat data/lead-forecasts/*.jsonl 2>/dev/null | wc -l)
+          git commit -m "Observations: $(date -u +%Y-%m-%dT%H:%MZ), ${ROWS} rows / ${LEADS} lead forecasts"
           # Another run (or a person) may have pushed since checkout.
           # Rebase rather than force - nothing here is worth overwriting
           # somebody's site edit for.
