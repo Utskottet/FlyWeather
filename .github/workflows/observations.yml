@@ -75,7 +75,10 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/observations data/lead-forecasts
+          git add data/observations
+          # May not exist on the very first run, or on a run that recorded no
+          # future forecasts - adding a missing path would fail the step.
+          [ -d data/lead-forecasts ] && git add data/lead-forecasts
           ROWS=$(cat data/observations/*.jsonl 2>/dev/null | wc -l)
           LEADS=$(cat data/lead-forecasts/*.jsonl 2>/dev/null | wc -l)
           git commit -m "Observations: $(date -u +%Y-%m-%dT%H:%MZ), ${ROWS} rows / ${LEADS} lead forecasts"
