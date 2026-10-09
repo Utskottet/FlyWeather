@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-10-08T10:40:33.776Z",
+  "generatedAt": "2026-10-09T10:39:32.822Z",
   "providers": [
     {
       "id": "smhi",
       "name": "SMHI",
       "status": "ok",
       "stationCount": 181,
-      "note": "Active stations publishing both wind speed and direction. Some parameter directories failed, so coverage is partial."
+      "note": "Active stations publishing both wind speed and direction."
     },
     {
       "id": "viva",
@@ -186,9 +186,9 @@
       "key": "holfuy:1409",
       "provider": "holfuy",
       "id": "1409",
-      "name": "Norrköping",
-      "lat": 58.5423,
-      "lon": 14.969,
+      "name": "Test",
+      "lat": 58.39328,
+      "lon": 15.70561,
       "stationType": "Holfuy",
       "locationSource": "Holfuy public station page",
       "gustAvailable": true,
@@ -1451,7 +1451,7 @@
       "lon": 13.799,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1463,7 +1463,7 @@
       "lon": 13.7072,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1475,7 +1475,7 @@
       "lon": 14.5041,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1487,7 +1487,7 @@
       "lon": 15.1374,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1511,7 +1511,7 @@
       "lon": 16.9738,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1523,7 +1523,7 @@
       "lon": 16.4279,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1535,7 +1535,7 @@
       "lon": 17.9043,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1547,7 +1547,7 @@
       "lon": 17.1607,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1559,7 +1559,7 @@
       "lon": 17.5584,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1571,7 +1571,7 @@
       "lon": 18.3729,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1595,7 +1595,7 @@
       "lon": 12.8525,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1607,7 +1607,7 @@
       "lon": 14.0355,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1619,7 +1619,7 @@
       "lon": 14.9918,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1631,7 +1631,7 @@
       "lon": 15.7144,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1643,7 +1643,7 @@
       "lon": 16.5385,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1655,7 +1655,7 @@
       "lon": 17.5216,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1667,7 +1667,7 @@
       "lon": 12.6676,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1679,7 +1679,7 @@
       "lon": 13.6086,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1691,7 +1691,7 @@
       "lon": 13.8427,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1703,7 +1703,7 @@
       "lon": 14.4069,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1715,7 +1715,7 @@
       "lon": 14.1542,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1727,7 +1727,7 @@
       "lon": 15.0845,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1739,7 +1739,7 @@
       "lon": 16.2742,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1751,7 +1751,7 @@
       "lon": 17.739,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1775,7 +1775,7 @@
       "lon": 12.2748,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1787,7 +1787,7 @@
       "lon": 12.1734,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1799,7 +1799,7 @@
       "lon": 12.1218,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1811,7 +1811,7 @@
       "lon": 13.5009,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1835,7 +1835,7 @@
       "lon": 14.6048,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1847,7 +1847,7 @@
       "lon": 15.3279,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1859,7 +1859,7 @@
       "lon": 16.1699,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1871,7 +1871,7 @@
       "lon": 16.95,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1883,7 +1883,7 @@
       "lon": 18.2518,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1907,7 +1907,7 @@
       "lon": 18.5466,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1919,7 +1919,7 @@
       "lon": 19.0199,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1931,7 +1931,7 @@
       "lon": 19.6731,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1943,7 +1943,7 @@
       "lon": 20.8645,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1967,7 +1967,7 @@
       "lon": 14.2207,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1979,7 +1979,7 @@
       "lon": 15.5529,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -1991,7 +1991,7 @@
       "lon": 16.2356,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2003,7 +2003,7 @@
       "lon": 16.8386,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2015,7 +2015,7 @@
       "lon": 17.3153,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2027,7 +2027,7 @@
       "lon": 17.6993,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2039,7 +2039,7 @@
       "lon": 18.3619,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2051,7 +2051,7 @@
       "lon": 18.713,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2063,7 +2063,7 @@
       "lon": 19.6943,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2075,7 +2075,7 @@
       "lon": 19.3744,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2087,7 +2087,7 @@
       "lon": 21.5754,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2111,7 +2111,7 @@
       "lon": 14.5055,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2123,7 +2123,7 @@
       "lon": 15.0645,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2135,7 +2135,7 @@
       "lon": 15.0623,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2159,7 +2159,7 @@
       "lon": 17.8554,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2171,7 +2171,7 @@
       "lon": 18.5935,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2183,7 +2183,7 @@
       "lon": 19.2642,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2195,7 +2195,7 @@
       "lon": 20.15,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2207,7 +2207,7 @@
       "lon": 21.5609,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2219,7 +2219,7 @@
       "lon": 21.062,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2231,7 +2231,7 @@
       "lon": 21.635,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2243,7 +2243,7 @@
       "lon": 22.3709,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2255,7 +2255,7 @@
       "lon": 22.124,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2267,7 +2267,7 @@
       "lon": 23.0959,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2279,7 +2279,7 @@
       "lon": 24.1112,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2291,7 +2291,7 @@
       "lon": 16.1053,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2303,7 +2303,7 @@
       "lon": 17.8396,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2315,7 +2315,7 @@
       "lon": 18.0198,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2327,7 +2327,7 @@
       "lon": 19.21,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2339,7 +2339,7 @@
       "lon": 20.142,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2351,7 +2351,7 @@
       "lon": 20.9238,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2363,7 +2363,7 @@
       "lon": 21.1285,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2375,7 +2375,7 @@
       "lon": 22.8427,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2387,7 +2387,7 @@
       "lon": 22.3315,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2399,7 +2399,7 @@
       "lon": 23.4635,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2411,7 +2411,7 @@
       "lon": 17.4668,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2423,7 +2423,7 @@
       "lon": 18.2907,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2435,7 +2435,7 @@
       "lon": 18.6101,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2447,7 +2447,7 @@
       "lon": 19.0212,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2459,7 +2459,7 @@
       "lon": 20.6413,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2471,7 +2471,7 @@
       "lon": 20.2704,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2495,7 +2495,7 @@
       "lon": 22.2288,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2507,7 +2507,7 @@
       "lon": 22.8219,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2519,7 +2519,7 @@
       "lon": 23.3899,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2531,7 +2531,7 @@
       "lon": 18.8164,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2543,7 +2543,7 @@
       "lon": 18.168,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2555,7 +2555,7 @@
       "lon": 19.8351,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2579,7 +2579,7 @@
       "lon": 21.5229,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2591,7 +2591,7 @@
       "lon": 22.4435,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2663,7 +2663,7 @@
       "lon": 12.8166,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2675,7 +2675,7 @@
       "lon": 13.0708,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2699,7 +2699,7 @@
       "lon": 13.6673,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2711,7 +2711,7 @@
       "lon": 14.3144,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2723,7 +2723,7 @@
       "lon": 15.7048,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2735,7 +2735,7 @@
       "lon": 12.7628,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2759,7 +2759,7 @@
       "lon": 12.5453,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2783,7 +2783,7 @@
       "lon": 13.9431,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2795,7 +2795,7 @@
       "lon": 13.8794,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2807,7 +2807,7 @@
       "lon": 13.0601,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2819,7 +2819,7 @@
       "lon": 14.8463,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2831,7 +2831,7 @@
       "lon": 14.8296,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2843,7 +2843,7 @@
       "lon": 15.589,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2855,7 +2855,7 @@
       "lon": 15.265,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2867,7 +2867,7 @@
       "lon": 15.471,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2879,7 +2879,7 @@
       "lon": 16.4005,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2903,7 +2903,7 @@
       "lon": 18.1506,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2915,7 +2915,7 @@
       "lon": 11.9049,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2927,7 +2927,7 @@
       "lon": 11.6048,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2939,7 +2939,7 @@
       "lon": 11.9924,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2951,7 +2951,7 @@
       "lon": 12.7732,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2975,7 +2975,7 @@
       "lon": 13.1642,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2987,7 +2987,7 @@
       "lon": 14.137,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -2999,7 +2999,7 @@
       "lon": 14.4645,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3023,7 +3023,7 @@
       "lon": 15.8009,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3035,7 +3035,7 @@
       "lon": 15.8623,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3047,7 +3047,7 @@
       "lon": 16.4526,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3059,7 +3059,7 @@
       "lon": 17.0954,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3071,7 +3071,7 @@
       "lon": 18.9839,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3083,7 +3083,7 @@
       "lon": 18.3516,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3095,7 +3095,7 @@
       "lon": 18.9533,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3107,7 +3107,7 @@
       "lon": 11.3312,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3119,7 +3119,7 @@
       "lon": 11.0661,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3131,7 +3131,7 @@
       "lon": 11.0038,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3143,7 +3143,7 @@
       "lon": 12.711,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3155,7 +3155,7 @@
       "lon": 12.1973,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3167,7 +3167,7 @@
       "lon": 13.0379,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3179,7 +3179,7 @@
       "lon": 13.1084,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3191,7 +3191,7 @@
       "lon": 13.1514,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3203,7 +3203,7 @@
       "lon": 14.4058,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3215,7 +3215,7 @@
       "lon": 14.557,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3227,7 +3227,7 @@
       "lon": 14.3875,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3239,7 +3239,7 @@
       "lon": 15.233,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3251,7 +3251,7 @@
       "lon": 15.523,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3263,7 +3263,7 @@
       "lon": 15.434,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3275,7 +3275,7 @@
       "lon": 15.0271,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3287,7 +3287,7 @@
       "lon": 16.147,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3299,7 +3299,7 @@
       "lon": 16.3069,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3311,7 +3311,7 @@
       "lon": 17.0074,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3323,7 +3323,7 @@
       "lon": 17.8684,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3335,7 +3335,7 @@
       "lon": 19.194,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3359,7 +3359,7 @@
       "lon": 12.0754,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3371,7 +3371,7 @@
       "lon": 12.6354,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3395,7 +3395,7 @@
       "lon": 13.1166,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3407,7 +3407,7 @@
       "lon": 14.8956,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3419,7 +3419,7 @@
       "lon": 14.1803,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3443,7 +3443,7 @@
       "lon": 15.2522,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3455,7 +3455,7 @@
       "lon": 16.4522,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3467,7 +3467,7 @@
       "lon": 16.6843,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3479,7 +3479,7 @@
       "lon": 17.9067,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3503,7 +3503,7 @@
       "lon": 17.5213,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3515,7 +3515,7 @@
       "lon": 17.12,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3539,7 +3539,7 @@
       "lon": 17.632,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3551,7 +3551,7 @@
       "lon": 17.593,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3563,7 +3563,7 @@
       "lon": 18.115,
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3575,7 +3575,7 @@
       "lon": 18.7404,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3587,7 +3587,7 @@
       "lon": 18.6313,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3599,7 +3599,7 @@
       "lon": 19.5022,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3611,7 +3611,7 @@
       "lon": 19.4054,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": false,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -4049,8 +4049,8 @@
       "provider": "viva",
       "id": "20",
       "name": "Ymer",
-      "lat": 65.5727,
-      "lon": 22.1704,
+      "lat": 65.572731,
+      "lon": 22.170409,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
@@ -4349,7 +4349,7 @@
       "provider": "viva",
       "id": "23",
       "name": "Oden",
-      "lat": 56.0254,
+      "lat": 56.0255,
       "lon": 12.7008,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
