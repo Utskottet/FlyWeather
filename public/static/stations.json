@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-10T09:55:51.786Z",
+  "generatedAt": "2026-10-11T10:05:10.932Z",
   "providers": [
     {
       "id": "smhi",
@@ -3849,8 +3849,8 @@
       "provider": "viva",
       "id": "150",
       "name": "Huvudskär havsboj (SMHI)",
-      "lat": 58.9333,
-      "lon": 19.1667,
+      "lat": 58.9358,
+      "lon": 19.1593,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
@@ -4349,7 +4349,7 @@
       "provider": "viva",
       "id": "23",
       "name": "Oden",
-      "lat": 56.0255,
+      "lat": 56.0254,
       "lon": 12.7008,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
