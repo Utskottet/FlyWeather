@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-10-15T08:23:02.658Z",
+  "generatedAt": "2026-10-16T08:15:44.824Z",
   "providers": [
     {
       "id": "smhi",
       "name": "SMHI",
       "status": "ok",
-      "stationCount": 181,
+      "stationCount": 182,
       "note": "Active stations publishing both wind speed and direction."
     },
     {
@@ -1764,6 +1764,18 @@
       "stationType": "SMHI, ten-minute mean reported hourly",
       "intervalMinutes": 60,
       "gustAvailable": false,
+      "locationSource": "SMHI station catalogue"
+    },
+    {
+      "key": "smhi:128390",
+      "provider": "smhi",
+      "id": "128390",
+      "name": "Lungö A",
+      "lat": 62.6417,
+      "lon": 18.0899,
+      "stationType": "SMHI, one-minute mean",
+      "intervalMinutes": 1,
+      "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
     {
@@ -3849,8 +3861,8 @@
       "provider": "viva",
       "id": "150",
       "name": "Huvudskär havsboj (SMHI)",
-      "lat": 58.9333,
-      "lon": 19.1667,
+      "lat": 58.9359,
+      "lon": 19.1597,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
@@ -4049,8 +4061,8 @@
       "provider": "viva",
       "id": "20",
       "name": "Ymer",
-      "lat": 65.572734,
-      "lon": 22.170404,
+      "lat": 65.5727,
+      "lon": 22.1704,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
