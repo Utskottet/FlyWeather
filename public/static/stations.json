@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-16T08:15:44.824Z",
+  "generatedAt": "2026-10-17T07:52:06.686Z",
   "providers": [
     {
       "id": "smhi",
@@ -3862,7 +3862,7 @@
       "id": "150",
       "name": "Huvudskär havsboj (SMHI)",
       "lat": 58.9359,
-      "lon": 19.1597,
+      "lon": 19.1596,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
@@ -4061,8 +4061,8 @@
       "provider": "viva",
       "id": "20",
       "name": "Ymer",
-      "lat": 65.5727,
-      "lon": 22.1704,
+      "lat": 65.572735,
+      "lon": 22.170412,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
