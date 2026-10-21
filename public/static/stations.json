@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-20T08:37:51.017Z",
+  "generatedAt": "2026-10-21T08:39:17.991Z",
   "providers": [
     {
       "id": "smhi",
@@ -186,9 +186,9 @@
       "key": "holfuy:1409",
       "provider": "holfuy",
       "id": "1409",
-      "name": "Test",
-      "lat": 58.39328,
-      "lon": 15.70561,
+      "name": "Motala Tower",
+      "lat": 58.54232,
+      "lon": 14.969,
       "stationType": "Holfuy",
       "locationSource": "Holfuy public station page",
       "gustAvailable": true,
@@ -342,9 +342,9 @@
       "key": "holfuy:1844",
       "provider": "holfuy",
       "id": "1844",
-      "name": "Motala Tower",
-      "lat": 58.54232,
-      "lon": 14.969,
+      "name": "Test",
+      "lat": 58.39321,
+      "lon": 15.70565,
       "stationType": "Holfuy",
       "locationSource": "Holfuy public station page",
       "gustAvailable": true,
@@ -4061,8 +4061,8 @@
       "provider": "viva",
       "id": "20",
       "name": "Ymer",
-      "lat": 65.572735,
-      "lon": 22.170402,
+      "lat": 65.5727,
+      "lon": 22.1704,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
