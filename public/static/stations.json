@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-24T08:12:00.182Z",
+  "generatedAt": "2026-10-25T08:29:55.523Z",
   "providers": [
     {
       "id": "smhi",
@@ -4061,8 +4061,8 @@
       "provider": "viva",
       "id": "20",
       "name": "Ymer",
-      "lat": 65.5727,
-      "lon": 22.1704,
+      "lat": 65.572733,
+      "lon": 22.170401,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
