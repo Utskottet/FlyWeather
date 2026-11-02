@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-01T10:33:26.638Z",
+  "generatedAt": "2026-11-02T11:18:15.149Z",
   "providers": [
     {
       "id": "smhi",
       "name": "SMHI",
       "status": "ok",
-      "stationCount": 183,
+      "stationCount": 181,
       "note": "Active stations publishing both wind speed and direction."
     },
     {
@@ -2103,18 +2103,6 @@
       "locationSource": "SMHI station catalogue"
     },
     {
-      "key": "smhi:151380@60",
-      "provider": "smhi",
-      "id": "151380@60",
-      "name": "Skellefteå Flygplats",
-      "lat": 64.6244,
-      "lon": 21.0717,
-      "stationType": "SMHI, ten-minute mean reported hourly",
-      "intervalMinutes": 60,
-      "gustAvailable": false,
-      "locationSource": "SMHI station catalogue"
-    },
-    {
       "key": "smhi:154730",
       "provider": "smhi",
       "id": "154730",
@@ -3215,18 +3203,6 @@
       "lon": 14.4058,
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
-      "gustAvailable": true,
-      "locationSource": "SMHI station catalogue"
-    },
-    {
-      "key": "smhi:84340@60",
-      "provider": "smhi",
-      "id": "84340@60",
-      "name": "Axstål",
-      "lat": 58.571,
-      "lon": 14.557,
-      "stationType": "SMHI, ten-minute mean reported hourly",
-      "intervalMinutes": 60,
       "gustAvailable": true,
       "locationSource": "SMHI station catalogue"
     },
