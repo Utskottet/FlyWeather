@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-02T11:18:15.149Z",
+  "generatedAt": "2026-11-03T10:58:08.643Z",
   "providers": [
     {
       "id": "smhi",
       "name": "SMHI",
       "status": "ok",
-      "stationCount": 181,
+      "stationCount": 182,
       "note": "Active stations publishing both wind speed and direction."
     },
     {
@@ -2100,6 +2100,18 @@
       "stationType": "SMHI, one-minute mean",
       "intervalMinutes": 1,
       "gustAvailable": true,
+      "locationSource": "SMHI station catalogue"
+    },
+    {
+      "key": "smhi:151380@60",
+      "provider": "smhi",
+      "id": "151380@60",
+      "name": "Skellefteå Flygplats",
+      "lat": 64.6244,
+      "lon": 21.0717,
+      "stationType": "SMHI, ten-minute mean reported hourly",
+      "intervalMinutes": 60,
+      "gustAvailable": false,
       "locationSource": "SMHI station catalogue"
     },
     {
