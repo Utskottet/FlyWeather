@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T11:50:49.367Z",
+  "generatedAt": "2026-11-19T11:47:18.638Z",
   "providers": [
     {
       "id": "smhi",
@@ -19,8 +19,8 @@
       "id": "holfuy",
       "name": "Holfuy",
       "status": "ok",
-      "stationCount": 60,
-      "note": "60 of 64 Swedish stations publish readable coordinates."
+      "stationCount": 61,
+      "note": "61 of 64 Swedish stations publish readable coordinates."
     },
     {
       "id": "metar",
@@ -93,6 +93,18 @@
       "name": "Visingsö Hamn",
       "lat": 58.03256,
       "lon": 14.35356,
+      "stationType": "Holfuy",
+      "locationSource": "Holfuy public station page",
+      "gustAvailable": true,
+      "note": "The public widget reports a time with no date, so a reading's exact age cannot be confirmed."
+    },
+    {
+      "key": "holfuy:1213",
+      "provider": "holfuy",
+      "id": "1213",
+      "name": "Gränna Hamn",
+      "lat": 58.02979,
+      "lon": 14.45144,
       "stationType": "Holfuy",
       "locationSource": "Holfuy public station page",
       "gustAvailable": true,
@@ -4061,8 +4073,8 @@
       "provider": "viva",
       "id": "20",
       "name": "Ymer",
-      "lat": 65.572719,
-      "lon": 22.170401,
+      "lat": 65.572721,
+      "lon": 22.170397,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
