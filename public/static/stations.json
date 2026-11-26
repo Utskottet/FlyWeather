@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-25T13:03:57.180Z",
+  "generatedAt": "2026-11-26T12:43:54.399Z",
   "providers": [
     {
       "id": "smhi",
@@ -4073,8 +4073,8 @@
       "provider": "viva",
       "id": "20",
       "name": "Ymer",
-      "lat": 65.572725,
-      "lon": 22.170414,
+      "lat": 65.5727,
+      "lon": 22.1704,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
@@ -4293,8 +4293,8 @@
       "provider": "viva",
       "id": "22",
       "name": "Frej",
-      "lat": 65.570605,
-      "lon": 22.172083,
+      "lat": 65.5706,
+      "lon": 22.1721,
       "stationType": "Sjöfartsverket ViVa",
       "locationSource": "ViVa station catalogue"
     },
